@@ -119,7 +119,7 @@ An administrator opens **Table → Import data** and may upload any combination 
 - stopovers as `.gpkg` or GeoJSON;
 - descriptive/completed records as `.xlsx` with a `photos` sheet.
 
-The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers; existing annotations are preserved. The history identifies the administrator, time, sources and result of every batch.
+The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers. `Analysed=yes` in the `photos` worksheet marks a record complete. An empty `unstarted` placeholder may be filled from Excel, while annotations containing user-entered data are preserved. The history identifies the administrator, time, sources and result of every batch.
 
 Photo coordinates come only from JPEG/PNG/WebP EXIF geotags. `data_clear30m.txt` supplies the independent route layer and is never used to infer a missing photo position from its timestamp. The report lists photos with and without EXIF GPS separately.
 
