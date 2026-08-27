@@ -6,6 +6,8 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 
 - unchanged public map/photo viewer with lazy image loading;
 - server-backed photographs, GPS routes and stopovers;
+- photo positions read exclusively from embedded EXIF geotags, never inferred from route time;
+- browser-persisted interface font scaling from 100% to 160%;
 - three-column desktop editor: map / form / photo;
 - mobile Map / Form / Photo editor tabs;
 - field help, conditional controls and missing-value indicators;
@@ -29,6 +31,8 @@ Photographs remain ordinary files under `photo-data/`. PostgreSQL stores metadat
 GitHub stores only the application code. Scientific data is managed by an administrator in **Table → Import data** and remains on the QNAP: PostgreSQL stores individuals, photo records, annotations, GPS and stopovers, while `photo-data/` stores the image files.
 
 Each browser import has two explicit stages. **Analyse files** uploads to temporary staging and produces a report of new records, existing records, duplicates, missing media and annotations that will be preserved. It does not change the scientific tables. Only **Run import**, shown after that report, applies the batch. Existing annotations are never overwritten by the browser workflow. Every preview, completed batch, failure and cancellation is recorded in import history with the administrator and timestamp.
+
+The route GPS file and photo geotags are intentionally separate. A photo latitude/longitude is accepted only from that image's EXIF GPS block. Photos without a geotag are reported and are not positioned by matching their timestamp to the route.
 
 ## Repository layout
 

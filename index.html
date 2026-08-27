@@ -17,6 +17,14 @@
       --border: rgba(255,255,255,0.10);
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 16px;
+      --ui-font-scale: 1.25;
+      --ui-font-body: 17.5px;
+      --ui-font-control: 16.25px;
+      --ui-font-label: 15px;
+      --ui-font-small: 13.75px;
+      --ui-font-title: 16.25px;
+      --ui-font-heading: 20px;
+      --ui-font-display: 30px;
       --mobile-map-height: 50dvh;
       --mobile-photo-height: 50dvh;
     }
@@ -1111,6 +1119,18 @@
   .editorVisualTop #closeEditorMode { padding: 7px 8px; }
 }
 
+/* Readable typography on GitHub Pages and user-controlled scaling. */
+body { font-size: var(--ui-font-body); }
+button, input, select, textarea { font-size: var(--ui-font-control) !important; }
+label, #settingsCard label { font-size: var(--ui-font-label) !important; }
+.miniNote, .status, #settingsCard .status, .editorStatus, .editorRecordLine, .subSettings summary { font-size: var(--ui-font-small) !important; }
+.dataTable, .importHistory { font-size: var(--ui-font-label) !important; }
+.panelHeader .title, #settingsCard .panelHeader .title { font-size: var(--ui-font-title) !important; }
+.panelHeader .subtitle, #settingsCard .panelHeader .subtitle { font-size: var(--ui-font-label) !important; }
+header h1 { font-size: var(--ui-font-heading); }
+header .hint, .metaGrid { font-size: var(--ui-font-label); }
+#metaTime, #metaCoords { font-size: var(--ui-font-display); }
+
 
   </style>
 </head>
@@ -1158,6 +1178,20 @@
             <label>Animation speed</label>
             <input id="speed" type="range" min="0.25" max="6" step="0.25" value="0.5" />
           </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Interface font size</label>
+            <select id="fontScale">
+              <option value="1">100% — compact</option>
+              <option value="1.15">115%</option>
+              <option value="1.25" selected>125% — recommended</option>
+              <option value="1.4">140% — large</option>
+              <option value="1.6">160% — very large</option>
+            </select>
+          </div>
+          <div class="miniNote" style="align-self:end;margin-bottom:8px;">Saved automatically in this browser.</div>
         </div>
 
         <div class="row">
@@ -1652,7 +1686,7 @@
               <div class="editorDerived" id="editorHeightClass">—</div>
             </div>
             <div class="editorField full">
-              <label>GPS record</label>
+              <label>Photo EXIF GPS</label>
               <div class="editorDerived" id="editorGpsRecord">—</div>
             </div>
           </div>
@@ -1743,6 +1777,7 @@
   const followZoomEl  = el("followZoom");
   const followModeEl  = el("followMode");
   const layoutSplitEl = el("layoutSplit");
+  const fontScaleEl = el("fontScale");
 
   const editorWebAppUrlEl = el("editorWebAppUrl");
   const editorSecretEl = el("editorSecret");
@@ -2652,7 +2687,7 @@ loopCurrentEl.checked = false;
     try {
       const data = await apiFetch(`/api/photos?${query}`);
       dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${tableOptions()}</select><select id="tableStatusFilter"><option value="">All statuses</option>${["unstarted","draft","needs_review","complete"].map((s)=>`<option value="${s}" ${tableFilters.status===s?"selected":""}>${s}</option>`).join("")}</select><input id="tableSearch" type="search" placeholder="Filename or remarks" value="${escapeHtml(tableFilters.search)}"><button id="tableApply" class="secondary" type="button">Apply</button></div>
-      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button></td></tr>`).join("")}</tbody></table>
+      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Photo location</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td>${photo.locationSource==="exif"?`EXIF geotag<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:'<span class="muted">No EXIF geotag</span>'}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button></td></tr>`).join("")}</tbody></table>
       <div class="btnrow" style="margin-top:10px;"><button id="tablePrev" class="secondary tiny" type="button" ${data.page<=1?"disabled":""}>Previous</button><span class="muted">Page ${data.page} • ${data.total} records</span><button id="tableNext" class="secondary tiny" type="button" ${data.page*data.pageSize>=data.total?"disabled":""}>Next</button></div>`;
       setDataStatus(`${data.total} records`);
       el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,search:el("tableSearch").value.trim()};tablePage=1;loadDataTable();});
@@ -2681,6 +2716,7 @@ loopCurrentEl.checked = false;
   const importNumber=(value)=>Number(value||0).toLocaleString();
   const importSummaryHtml=(summary={})=>`<div class="importSummary">
     <div>Photos found</div><div>${importNumber(summary.mediaFilesFound)}</div><div>New photos</div><div>${importNumber(summary.newMedia)}</div><div>Already stored</div><div>${importNumber(summary.existingMedia)}</div><div>Missing against Excel</div><div>${importNumber(summary.missingMedia)}</div>
+    <div>Photos with EXIF GPS</div><div>${importNumber(summary.photosWithExifGps)}</div><div>Photos without EXIF GPS</div><div>${importNumber(summary.photosWithoutExifGps)}</div><div>Positions inferred from track/time</div><div>0</div>
     <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
     <div>Excel records</div><div>${importNumber(summary.workbookRows)}</div><div>New records</div><div>${importNumber(summary.newPhotoRecords)}</div><div>Already existing</div><div>${importNumber(summary.existingPhotoRecords)}</div><div>Annotations preserved</div><div>${importNumber(summary.annotationsToPreserve)}</div>
     <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
@@ -3050,10 +3086,29 @@ loopCurrentEl.checked = false;
   setTimeout(refreshMapSizes, 100);
 
   const validPhotoShares = new Set(["40", "50", "60", "70"]);
+  const validFontScales = new Set(["1", "1.15", "1.25", "1.4", "1.6"]);
   try {
     const savedPhotoShare = localStorage.getItem("storkViewerPhotoShare");
     if (validPhotoShares.has(savedPhotoShare)) layoutSplitEl.value = savedPhotoShare;
+    const savedFontScale = localStorage.getItem("storkViewerFontScale");
+    if (validFontScales.has(savedFontScale)) fontScaleEl.value = savedFontScale;
   } catch(e) {}
+
+  const applyFontScale = ({ persist = true } = {}) => {
+    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : "1.25";
+    const multiplier = Number(scale);
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty("--ui-font-scale", scale);
+    rootStyle.setProperty("--ui-font-body", `${14 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-control", `${13 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-label", `${12 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-small", `${11 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-title", `${13 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-heading", `${16 * multiplier}px`);
+    rootStyle.setProperty("--ui-font-display", `${24 * multiplier}px`);
+    if (persist) try { localStorage.setItem("storkViewerFontScale", scale); } catch(e) {}
+    refreshMapSizes();
+  };
 
   const applyLayoutSplit = ({ persist = true } = {}) => {
     const photoShare = Number(layoutSplitEl.value) || 50;
@@ -3071,6 +3126,8 @@ loopCurrentEl.checked = false;
   };
 
   layoutSplitEl.addEventListener("change", () => applyLayoutSplit());
+  fontScaleEl.addEventListener("change", () => applyFontScale());
+  applyFontScale({ persist: false });
   applyLayoutSplit({ persist: false });
 
   const stopAnim = () => {
@@ -3173,7 +3230,7 @@ loopCurrentEl.checked = false;
     if (!editorHasConnection()) throw new Error("Log in to the editor account first.");
     const result = await apiFetch(`/api/photos/${encodeURIComponent(photoId)}`);
     const photo = result.photo || {};
-    return { ok:true, data:{ ...(photo.annotation || {}), FileName:photo.filename, Bird:photo.bird, Altitude_m:photo.altitudeM, GPS_time:photo.gpsTime, Latitude:photo.lat, Longitude:photo.lon, Elevation_m:photo.elevationM, Analysed:photo.status === "complete" ? "yes" : "no" }, version:photo.version, status:photo.status };
+    return { ok:true, data:{ ...(photo.annotation || {}), FileName:photo.filename, Bird:photo.bird, Altitude_m:photo.altitudeM, GPS_time:photo.gpsTime, GPS_source:photo.locationSource, Latitude:photo.lat, Longitude:photo.lon, Elevation_m:photo.elevationM, Analysed:photo.status === "complete" ? "yes" : "no" }, version:photo.version, status:photo.status };
   };
 
   const editorApiPost = async ({ photoId, values, expectedVersion, status }) => {
@@ -3317,6 +3374,8 @@ loopCurrentEl.checked = false;
     const latitude = editorLoadedRecord && editorLoadedRecord.Latitude;
     const longitude = editorLoadedRecord && editorLoadedRecord.Longitude;
     const gpsParts = [];
+    if (editorLoadedRecord?.GPS_source === "exif") gpsParts.push("EXIF geotag");
+    else if (editorLoadedRecord?.GPS_source === "missing") gpsParts.push("no EXIF geotag");
     if (gpsTime) gpsParts.push(String(gpsTime));
     if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined) {
       gpsParts.push(String(latitude) + ", " + String(longitude));
@@ -3882,64 +3941,21 @@ loopCurrentEl.checked = false;
     return tmp;
   };
 
-  // Remote photos are positioned from the already-downloaded GPS timeline.
-  // This avoids fetching every JPG merely to read its EXIF block. The actual
-  // image bytes are therefore requested only when imgA/imgB display them.
-  const PHOTO_GPS_MAX_NEAREST_MS = 3 * 60 * 60 * 1000;
-  const PHOTO_GPS_MAX_INTERPOLATION_GAP_MS = 6 * 60 * 60 * 1000;
-
-  const estimatePhotoPosition = (timedGps, dt) => {
-    if (!dt || !timedGps.length) return null;
-    const target = dt.getTime();
-
-    let lo = 0;
-    let hi = timedGps.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (timedGps[mid].dt.getTime() < target) lo = mid + 1;
-      else hi = mid;
-    }
-
-    const before = lo > 0 ? timedGps[lo - 1] : null;
-    const after = lo < timedGps.length ? timedGps[lo] : null;
-
-    if (before && after) {
-      const t0 = before.dt.getTime();
-      const t1 = after.dt.getTime();
-      const gap = t1 - t0;
-      if (gap >= 0 && gap <= PHOTO_GPS_MAX_INTERPOLATION_GAP_MS) {
-        const ratio = gap === 0 ? 0 : Math.max(0, Math.min(1, (target - t0) / gap));
-        return {
-          lat: lerp(before.lat, after.lat, ratio),
-          lon: lerpLonShortest(before.lon, after.lon, ratio)
-        };
-      }
-    }
-
-    const nearest = !before ? after : !after ? before :
-      (target - before.dt.getTime() <= after.dt.getTime() - target ? before : after);
-    if (!nearest || Math.abs(nearest.dt.getTime() - target) > PHOTO_GPS_MAX_NEAREST_MS) return null;
-    return { lat: nearest.lat, lon: nearest.lon };
-  };
-
-  const buildRemoteTrackFromGps = (id, files) => {
-    const timedGps = (gpsTracksByBird.get(id) || []).filter(p => p.dt);
+  // Server photo coordinates come only from each image's EXIF geotag.
+  // The separate GPS timeline is rendered as context and never substitutes
+  // a position for an image that has no embedded geotag.
+  const buildRemoteTrackFromExif = (files) => {
     const points = [];
     let skipped = 0;
 
     for (const entry of files) {
-      const position = Number.isFinite(entry.lat) && Number.isFinite(entry.lon)
-        ? { lat:entry.lat, lon:entry.lon }
-        : estimatePhotoPosition(timedGps, entry.dt);
-      if (!position) {
+      if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon) || entry.locationSource !== "exif") {
         skipped++;
         continue;
       }
       points.push({
         ...entry,
-        lat: position.lat,
-        lon: position.lon,
-        locationSource: "gps-timeline"
+        locationSource: "exif"
       });
     }
 
@@ -3949,7 +3965,7 @@ loopCurrentEl.checked = false;
       if (ta !== tb) return ta - tb;
       return a.name.localeCompare(b.name);
     });
-    return { points, skipped, gpsPointCount: timedGps.length };
+    return { points, skipped };
   };
 
   const loadGithubFiles = async () => {
@@ -4090,7 +4106,7 @@ loopCurrentEl.checked = false;
         files = (response.photos || []).map((photo) => ({
           file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
           lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,
-          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime
+          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource
         }));
         groupedFiles.set(id, files);
       } catch(error) {
@@ -4114,13 +4130,12 @@ loopCurrentEl.checked = false;
       let loadMessage = "";
 
       if (remoteFiles) {
-        setStatus(`Preparing ${id} from lightweight GPS metadata…`);
-        await backgroundLoads.gps;
-        const matched = buildRemoteTrackFromGps(id, files);
+        setStatus(`Preparing ${id} from photo EXIF geotags…`);
+        const matched = buildRemoteTrackFromExif(files);
         tmp = matched.points;
         loadMessage =
           `Loaded bird ${id}.\n` +
-          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no matching GPS time)` : ""}.\n` +
+          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no EXIF geotag)` : ""}.\n` +
           `Image downloads: current photo + one-photo buffer.`;
       } else {
         setStatus(`Reading EXIF GPS for ${id}… (0 / ${files.length})`);

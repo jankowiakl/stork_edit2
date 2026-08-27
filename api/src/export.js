@@ -9,7 +9,7 @@ export const EXPORT_HEADERS = [
   "Quality_selected","Pheno_period","Residence","Feather_perc","Feather_occ","Ciconia_num","Env_desc_en","Remarks",
   "Altitude","Fly_ground","Above_ground","Height_class_100m","Thermal_updraft","Activity_class","Agriculture_type",
   "Foraging_habitat_group","Roost_site_group","Period_day","Artificial_lights","Water_presence_class",
-  "Spec1_abund","Spec1_name","Spec2_abund","Spec2_name","Altitude_m","GPS_time","Latitude","Longitude","Elevation_m",
+  "Spec1_abund","Spec1_name","Spec2_abund","Spec2_name","Altitude_m","GPS_time","Latitude","Longitude","Location_source","Elevation_m",
   "Analysed","Status","Updated_by","Updated_at"
 ];
 const csvCell = (value) => {
@@ -31,7 +31,7 @@ export function rowToExport(row, publicApiUrl = "") {
     Foraging_habitat_group:row.foraging_habitat_group, Roost_site_group:row.roost_site_group, Period_day:row.period_day,
     Artificial_lights:row.artificial_lights, Water_presence_class:row.water_presence_class, Spec1_abund:row.spec1_abund,
     Spec1_name:row.spec1_name, Spec2_abund:row.spec2_abund, Spec2_name:row.spec2_name, Altitude_m:row.altitude_m,
-    GPS_time:row.gps_time, Latitude:row.latitude, Longitude:row.longitude, Elevation_m:row.elevation_m,
+    GPS_time:row.gps_time, Latitude:row.latitude, Longitude:row.longitude, Location_source:row.location_source, Elevation_m:row.elevation_m,
     Analysed:row.status === "complete" ? "yes" : "no", Status:row.status || "unstarted",
     Updated_by:row.updated_by_name, Updated_at:row.annotation_updated_at
   };
@@ -97,4 +97,3 @@ export function sendZip(res, sourceRows, rows, photoDir) {
   for(const row of sourceRows){ if(!row.storage_path||used.has(row.storage_path))continue; const file=path.resolve(root,row.storage_path),rel=path.relative(root,file); if(rel.startsWith("..")||path.isAbsolute(rel)||!fs.existsSync(file))continue; used.add(row.storage_path); archive.file(file,{name:`photos/${row.individual_id}/${row.filename}`}); }
   archive.finalize();
 }
-

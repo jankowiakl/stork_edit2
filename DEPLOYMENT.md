@@ -121,6 +121,10 @@ An administrator opens **Table → Import data** and may upload any combination 
 
 The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers; existing annotations are preserved. The history identifies the administrator, time, sources and result of every batch.
 
+Photo coordinates come only from JPEG/PNG/WebP EXIF geotags. `data_clear30m.txt` supplies the independent route layer and is never used to infer a missing photo position from its timestamp. The report lists photos with and without EXIF GPS separately.
+
+The interface defaults to 125% typography. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
+
 ## Updating
 
 ```sh
