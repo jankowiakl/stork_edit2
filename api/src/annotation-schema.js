@@ -1,3 +1,5 @@
+import { FIELD_INFO,fieldInfoHelp } from "./field-info.js";
+
 export const ANNOTATION_FIELDS = Object.freeze([
   { key:"Quality_selected", db:"quality_selected", label:"Quality selected", type:"select", options:["yes","no"], required:true, help:"Whether the photograph is retained in the analytical dataset." },
   { key:"Pheno_period", db:"pheno_period", label:"Phenological period", type:"select", options:["fledging","pre-migratory","A_migration","Wintering"], help:"Phenological or annual-cycle phase assigned to the observation." },
@@ -30,8 +32,7 @@ export const ANNOTATION_DB_COLUMNS = ANNOTATION_FIELDS.filter((field) => field.t
 export function publicAnnotationSchema() {
   return {
     version: 1,
-    fields: ANNOTATION_FIELDS.map(({ db:_db, table:_table, ...field }) => field),
+    fields: ANNOTATION_FIELDS.map(({ db:_db, table:_table, ...field }) => ({...field,...(FIELD_INFO[field.key]||{}),help:fieldInfoHelp(FIELD_INFO[field.key],field.help)})),
     statuses: ["unstarted","draft","complete","needs_review"]
   };
 }
-

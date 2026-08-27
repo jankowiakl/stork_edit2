@@ -34,6 +34,10 @@ Each browser import has two explicit stages. **Analyse files** uploads to tempor
 
 All XLSX text cells are sanitized by removing only the invisible NUL character (`U+0000`). The dry-run report records every removal as `nul_characters_removed` with `sourceRow` and `field`; ordinary characters, including Polish letters, are unchanged. Annotation values are sanitized again immediately before PostgreSQL writes.
 
+Composite `Bird + FileName` keys use NUL only inside process-local maps. Reports use the safe `Bird | FileName` representation and separate `bird` / `filename` fields. Every import issue is deep-sanitized again before both `source_key` and `details` JSONB are inserted. Run the PostgreSQL duplicate-row integration test against an isolated test database with `TEST_DATABASE_URL=... npm run test:integration`.
+
+On desktop, annotation mode keeps the map on the left, the form in the centre and gives the photograph the largest pane on the right. Drag either blue divider to resize adjacent panes; the proportions are saved in the browser. Double-click a divider to restore the default 18% / 30% / 52% proportions. Each `?` button opens the complete data type, unit, source/role and definition copied from the workbook's `info` sheet.
+
 The route GPS file and photo geotags are intentionally separate. A photo latitude/longitude is accepted only from that image's EXIF GPS block. Photos without a geotag are reported and are not positioned by matching their timestamp to the route.
 
 ## Repository layout

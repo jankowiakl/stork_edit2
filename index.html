@@ -652,6 +652,7 @@
       border-bottom: 1px solid rgba(255,255,255,.10);
     }
     .editorPanelHeader h2 { margin: 0 0 3px; font-size: 16px; }
+    .editorPaneHint { margin:0 0 5px; color:var(--muted); font-size:10px; }
     .editorRecordLine { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
     .editorStatus {
       margin-top: 9px;
@@ -754,15 +755,26 @@
       border-color: rgba(255,107,107,.8) !important;
       box-shadow: 0 0 0 2px rgba(255,107,107,.13);
     }
-    .fieldHelp { display:inline-grid; place-items:center; width:15px; height:15px; margin-left:4px; border:1px solid rgba(119,209,255,.5); border-radius:50%; color:var(--accent); font-size:10px; cursor:help; }
+    .fieldHelp { display:inline-grid; place-items:center; width:17px; height:17px; min-width:17px; padding:0 !important; margin-left:4px; border:1px solid rgba(119,209,255,.58); border-radius:50%; background:rgba(119,209,255,.08); color:var(--accent); font-size:10px !important; line-height:1; cursor:help; vertical-align:middle; }
+    .fieldHelpPopover { position:fixed; z-index:7200; display:none; width:min(390px,calc(100vw - 24px)); padding:12px 13px; box-sizing:border-box; border:1px solid rgba(119,209,255,.38); border-radius:12px; background:#101a2a; color:var(--text); box-shadow:0 18px 48px rgba(0,0,0,.55); font-size:12px; line-height:1.45; white-space:normal; }
+    .fieldHelpPopover.open { display:block; }
+    .fieldHelpPopover b { display:block; margin-bottom:6px; color:#fff; }
+    .fieldHelpMeta { margin-top:7px; color:var(--muted); font-size:11px; }
     .editorField.hasValue { padding-left:7px; border-left:3px solid rgba(57,217,138,.65); }
     .editorField.missingValue { padding-left:7px; border-left:3px solid rgba(255,193,7,.7); }
     .editorMobileTabs { display:none; gap:5px; margin-top:8px; }
     .editorMobileTabs button { flex:1; }
-    body.editorOpen .wrap { grid-template-columns:minmax(240px,.85fr) minmax(380px,1.15fr) minmax(260px,1fr); gap:10px; padding:10px; }
+    .editorPaneDivider { display:none; min-width:0; touch-action:none; user-select:none; }
+    body.editorOpen .wrap { grid-template-columns:minmax(180px,var(--editor-map-pane,18fr)) 9px minmax(360px,var(--editor-form-pane,30fr)) 9px minmax(320px,var(--editor-photo-pane,52fr)); gap:0; padding:10px; }
     body.editorOpen .mapStack { grid-column:1; }
-    body.editorOpen .editorPanel { grid-column:2; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-    body.editorOpen .side { grid-column:3; min-width:0; grid-template-rows:minmax(0,1fr); }
+    body.editorOpen .mapStack .overviewInset { width:min(72%,240px); height:150px; }
+    body.editorOpen .editorPaneDivider { display:grid; place-items:center; position:relative; cursor:col-resize; outline:none; }
+    body.editorOpen .editorPaneDivider::after { content:""; width:3px; height:54px; border-radius:999px; background:rgba(119,209,255,.28); transition:height .16s ease,background .16s ease,box-shadow .16s ease; }
+    body.editorOpen .editorPaneDivider:hover::after, body.editorOpen .editorPaneDivider:focus-visible::after, body.editorOpen .editorPaneDivider.dragging::after { height:88px; background:var(--accent); box-shadow:0 0 0 3px rgba(119,209,255,.12); }
+    body.editorOpen #editorMapDivider { grid-column:2; }
+    body.editorOpen .editorPanel { grid-column:3; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    body.editorOpen #editorPhotoDivider { grid-column:4; }
+    body.editorOpen .side { grid-column:5; min-width:0; grid-template-rows:minmax(0,1fr); }
     body.editorOpen .side #settingsCard, body.editorOpen .side .metaCard { display:none !important; }
     body.editorOpen .side .photoCard { grid-row:1; height:100%; min-height:0; }
     body.editorOpen .editorPanelHeader > #closeEditorMode { float:right; margin-top:-25px; }
@@ -1105,6 +1117,7 @@
   .editorForm { padding: 9px 10px 18px; }
   .editorFooter { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
   body.editorOpen .wrap { display:block; height:100dvh; padding:0; }
+  body.editorOpen .editorPaneDivider { display:none; }
   body.editorOpen header, body.editorOpen #mobilePanelBtn { display:none; }
   body.editorOpen .editorMobileTabs { display:flex; }
   body.editorOpen[data-editor-tab="form"] .mapStack, body.editorOpen[data-editor-tab="form"] .side { display:none; }
@@ -1151,6 +1164,9 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
       <div id="mapOverview"></div>
     </div>
   </div>
+
+  <div class="editorPaneDivider" id="editorMapDivider" role="separator" aria-orientation="vertical" aria-label="Resize map and editor" tabindex="0"></div>
+  <div class="editorPaneDivider" id="editorPhotoDivider" role="separator" aria-orientation="vertical" aria-label="Resize editor and photo" tabindex="0"></div>
 
   <div class="side">
     <div class="card panel settings settingsCollapsed" id="settingsCard">
@@ -1461,6 +1477,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
     <aside class="editorPanel">
       <div class="editorPanelHeader">
         <h2>Photo editor</h2>
+        <div class="editorPaneHint">Drag the blue dividers to resize map, form and photo. Double-click a divider to reset.</div>
         <div class="editorRecordLine" id="editorRecordLine">No photo selected.</div>
         <div class="editorStatus" id="editorStatus">Log in and open a photo to load its SQL record.</div>
         <div class="editorMobileTabs"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
@@ -1761,7 +1778,10 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const toggleSettingsBtn = el("toggleSettings");
   const settingsBodyEl = el("settingsBody");
   const wrapEl = document.querySelector(".wrap");
+  const mapStackEl = document.querySelector(".mapStack");
   const sideEl = document.querySelector(".side");
+  const editorMapDividerEl = el("editorMapDivider");
+  const editorPhotoDividerEl = el("editorPhotoDivider");
 
   const folderInput = el("folderInput");
   const loadGithubBtn = el("loadGithubBtn");
@@ -3220,6 +3240,45 @@ loopCurrentEl.checked = false;
   let editorLoadedRecord = null;
   let editorLoadedVersion = null;
   let editorLoadToken = 0;
+  const defaultEditorPaneRatios = [0.18,0.30,0.52];
+  let editorPaneRatios = [...defaultEditorPaneRatios];
+  try {
+    const saved=JSON.parse(localStorage.getItem("storkEditorPaneRatios")||"null");
+    if(Array.isArray(saved)&&saved.length===3&&saved.every((value)=>Number.isFinite(Number(value))&&Number(value)>0)){
+      const total=saved.reduce((sum,value)=>sum+Number(value),0);editorPaneRatios=saved.map((value)=>Number(value)/total);
+    }
+  } catch(e) {}
+
+  const applyEditorPaneRatios = ({persist=false}={}) => {
+    const total=editorPaneRatios.reduce((sum,value)=>sum+value,0)||1,[mapRatio,formRatio,photoRatio]=editorPaneRatios.map((value)=>value/total),style=document.documentElement.style;
+    editorPaneRatios=[mapRatio,formRatio,photoRatio];style.setProperty("--editor-map-pane",`${mapRatio}fr`);style.setProperty("--editor-form-pane",`${formRatio}fr`);style.setProperty("--editor-photo-pane",`${photoRatio}fr`);
+    if(persist)try{localStorage.setItem("storkEditorPaneRatios",JSON.stringify(editorPaneRatios));}catch(e){}
+    refreshMapSizes();
+  };
+
+  const resizeEditorPaneBoundary = (boundary,delta) => {
+    const mapWidth=mapStackEl.getBoundingClientRect().width,formWidth=editorPanelEl.getBoundingClientRect().width,photoWidth=sideEl.getBoundingClientRect().width,total=mapWidth+formWidth+photoWidth;if(!total)return;
+    let nextMap=mapWidth,nextForm=formWidth,nextPhoto=photoWidth;
+    if(boundary==="map"){
+      const change=Math.max(180-mapWidth,Math.min(formWidth-360,delta));nextMap+=change;nextForm-=change;
+    }else{
+      const change=Math.max(360-formWidth,Math.min(photoWidth-320,delta));nextForm+=change;nextPhoto-=change;
+    }
+    editorPaneRatios=[nextMap/total,nextForm/total,nextPhoto/total];applyEditorPaneRatios();
+  };
+
+  const startEditorPaneResize = (boundary,divider,event) => {
+    if(!document.body.classList.contains("editorOpen")||window.innerWidth<=980)return;event.preventDefault();const startX=event.clientX;let previous=0;divider.classList.add("dragging");divider.setPointerCapture?.(event.pointerId);
+    const move=(moveEvent)=>{const current=moveEvent.clientX-startX,delta=current-previous;previous=current;resizeEditorPaneBoundary(boundary,delta);};
+    const finish=()=>{divider.classList.remove("dragging");window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",finish);applyEditorPaneRatios({persist:true});};
+    window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",finish);
+  };
+  editorMapDividerEl.addEventListener("pointerdown",(event)=>startEditorPaneResize("map",editorMapDividerEl,event));
+  editorPhotoDividerEl.addEventListener("pointerdown",(event)=>startEditorPaneResize("photo",editorPhotoDividerEl,event));
+  for(const [divider,boundary] of [[editorMapDividerEl,"map"],[editorPhotoDividerEl,"photo"]]){
+    divider.addEventListener("keydown",(event)=>{if(!["ArrowLeft","ArrowRight"].includes(event.key))return;event.preventDefault();resizeEditorPaneBoundary(boundary,event.key==="ArrowLeft"?-24:24);applyEditorPaneRatios({persist:true});});
+    divider.addEventListener("dblclick",()=>{editorPaneRatios=[...defaultEditorPaneRatios];applyEditorPaneRatios({persist:true});});
+  }
 
   const editorSetStatus = (message, type = "") => {
     editorStatusEl.textContent = message;
@@ -3440,13 +3499,21 @@ loopCurrentEl.checked = false;
     }
   };
 
+  const fieldHelpPopoverEl=document.createElement("div");fieldHelpPopoverEl.className="fieldHelpPopover";fieldHelpPopoverEl.setAttribute("role","dialog");fieldHelpPopoverEl.setAttribute("aria-live","polite");document.body.appendChild(fieldHelpPopoverEl);
+  const closeFieldHelp=()=>{fieldHelpPopoverEl.classList.remove("open");document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));};
+  const showFieldHelp=(field,anchor)=>{
+    fieldHelpPopoverEl.replaceChildren();const title=document.createElement("b"),definition=document.createElement("div"),meta=document.createElement("div");title.textContent=field.label||field.key;definition.textContent=field.definition||field.help||"";meta.className="fieldHelpMeta";meta.textContent=[field.dataType?`Data type: ${field.dataType}`:"",field.unit?`Unit / format: ${field.unit}`:"",field.sourceRole?`Source / role: ${field.sourceRole}`:""].filter(Boolean).join(" • ");fieldHelpPopoverEl.append(title,definition,meta);fieldHelpPopoverEl.classList.add("open");const rect=anchor.getBoundingClientRect(),width=fieldHelpPopoverEl.offsetWidth,height=fieldHelpPopoverEl.offsetHeight,left=Math.max(12,Math.min(window.innerWidth-width-12,rect.left)),below=rect.bottom+8,top=below+height<=window.innerHeight-12?below:Math.max(12,rect.top-height-8);fieldHelpPopoverEl.style.left=`${left}px`;fieldHelpPopoverEl.style.top=`${top}px`;
+  };
+  document.addEventListener("click",(event)=>{if(!fieldHelpPopoverEl.contains(event.target)&&!event.target.closest?.(".fieldHelp"))closeFieldHelp();});
+  document.addEventListener("keydown",(event)=>{if(event.key==="Escape")closeFieldHelp();});
+
   const loadEditorHelp = async () => {
     try {
       const schema = await apiFetch("/api/schema/annotation", {}, { auth:false });
       for (const field of schema.fields || []) {
         const input = editorFormEl.querySelector(`[data-field="${field.key}"]`), label = input?.closest(".editorField")?.querySelector("label");
         if (!label || label.querySelector(".fieldHelp")) continue;
-        const help = document.createElement("span"); help.className = "fieldHelp"; help.textContent = "?"; help.title = field.help || field.label; help.setAttribute("aria-label", field.help || field.label); label.appendChild(help);
+        const help = document.createElement("button");help.type="button";help.className="fieldHelp";help.textContent="?";help.title=field.help||field.label;help.setAttribute("aria-label",`Information about ${field.label}`);help.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();if(fieldHelpPopoverEl.classList.contains("open")&&help.getAttribute("aria-expanded")==="true"){closeFieldHelp();help.setAttribute("aria-expanded","false");return;}document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));help.setAttribute("aria-expanded","true");showFieldHelp(field,help);});label.appendChild(help);
       }
     } catch(error) { console.warn("Field help could not be loaded", error); }
   };
@@ -3664,6 +3731,7 @@ loopCurrentEl.checked = false;
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.add("editorOpen");
     document.body.dataset.editorTab = "form";
+    applyEditorPaneRatios();
     refreshMapSizes();
     await editorLoadPhoto(index);
   };
