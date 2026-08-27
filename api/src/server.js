@@ -20,6 +20,7 @@ import { publicAnnotationSchema,ANNOTATION_DB_COLUMNS } from "./annotation-schem
 import { normalizeAnnotationInput,validateAnnotation,toDbAnnotation,fromDbAnnotation } from "./validation.js";
 import { queryExportRows,rowToExport,sendCsv,sendXlsx,sendGeoJson,sendKml,sendZip } from "./export.js";
 import { stageBrowserImport,runStagedImport,removeStagedImport } from "./admin-import.js";
+import { parsePhotoFilename } from "./photo-filename.js";
 
 assertAuthConfiguration();
 await migrate();
@@ -29,6 +30,18 @@ const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=p
 const publicApiUrl=String(process.env.PUBLIC_API_URL||"").replace(/\/$/,"");
 const publicAppUrl=String(process.env.PUBLIC_APP_URL||"").replace(/\/$/,"")+"/";
 await Promise.all([photoDir,previewDir,uploadDir,importStageDir,importUploadDir].map((dir)=>fsp.mkdir(dir,{recursive:true})));
+
+async function repairMisclassifiedPhotoImports(){
+  const mistakenIds=["stork-log-photos-main","stork-log-photos"],rows=(await db.query("SELECT id,individual_id,filename FROM photos WHERE individual_id=ANY($1::text[])",[mistakenIds])).rows,repairedIds=[];
+  await transaction(async(client)=>{
+    for(const row of rows){const parsed=parsePhotoFilename(row.filename);if(!parsed.bird||parsed.bird===row.individual_id)continue;await client.query("INSERT INTO individuals(id) VALUES($1) ON CONFLICT(id) DO NOTHING",[parsed.bird]);const result=await client.query("UPDATE photos SET individual_id=$1,capture_time=COALESCE(capture_time,$2),updated_at=now() WHERE id=$3 AND NOT EXISTS(SELECT 1 FROM photos target WHERE target.individual_id=$1 AND target.filename=$4) RETURNING id",[parsed.bird,parsed.captureTime,row.id,row.filename]);if(result.rows[0])repairedIds.push(result.rows[0].id);}
+    let gpsLinked=0;if(repairedIds.length){const result=await client.query(`UPDATE photos p SET (latitude,longitude,gps_time,altitude_m)=(SELECT g.latitude,g.longitude,g.observed_at,COALESCE(p.altitude_m,g.altitude_m) FROM gps_points g WHERE g.individual_id=p.individual_id AND g.observed_at BETWEEN p.capture_time-interval '3 hours' AND p.capture_time+interval '3 hours' ORDER BY abs(extract(epoch FROM (g.observed_at-p.capture_time))) LIMIT 1) WHERE p.id=ANY($1::text[]) AND p.capture_time IS NOT NULL AND p.latitude IS NULL AND EXISTS(SELECT 1 FROM gps_points g WHERE g.individual_id=p.individual_id AND g.observed_at BETWEEN p.capture_time-interval '3 hours' AND p.capture_time+interval '3 hours')`,[repairedIds]);gpsLinked=result.rowCount;}
+    for(const mistakenId of mistakenIds)await client.query("UPDATE individuals SET active=false,public_visible=false,updated_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM photos WHERE individual_id=$1)",[mistakenId]);if(repairedIds.length)await client.query("INSERT INTO audit_log(action,entity_type,payload) VALUES('misclassified_photo_import_repaired','photo_import',$1::jsonb)",[JSON.stringify({repaired:repairedIds.length,gpsLinked,sourceIndividuals:mistakenIds})]);
+  });
+  if(repairedIds.length)console.log(`Repaired ${repairedIds.length} photo records imported under a folder name.`);
+}
+await repairMisclassifiedPhotoImports();
+await db.query("UPDATE import_batches SET status='failed',summary=summary||$1::jsonb,finished_at=now() WHERE status='started'",[JSON.stringify({error:"server_restarted_during_import"})]);
 
 if(String(process.env.TRUST_PROXY||"")==="1")app.set("trust proxy",1);
 app.use(helmet({crossOriginResourcePolicy:{policy:"cross-origin"}}));
@@ -56,8 +69,7 @@ async function servePhoto(req,res,next,publicOnly=true){try{
   const stat=fs.statSync(original),etag=`\"${photo.sha256||`${photo.id}-${stat.size}`}\"`; if(req.headers["if-none-match"]===etag)return res.status(304).end();
   res.setHeader("ETag",etag);res.setHeader("Cache-Control","public, max-age=604800, stale-while-revalidate=2592000");
   if(req.query.kind!=="preview")return res.sendFile(original);
-  const preview=path.join(previewDir,`${photo.id}.webp`); if(!fs.existsSync(preview))await sharp(original).rotate().resize({width:720,height:720,fit:"inside",withoutEnlargement:true}).webp({quality:78}).toFile(preview);
-  res.type("image/webp").sendFile(preview);
+  const preview=path.join(previewDir,`${photo.id}.webp`);try{if(!fs.existsSync(preview)){const temporary=`${preview}.${randomId()}.tmp.webp`;try{await sharp(original).rotate().resize({width:720,height:720,fit:"inside",withoutEnlargement:true}).webp({quality:78}).toFile(temporary);await fsp.rename(temporary,preview).catch(async(error)=>{if(error.code!=="EEXIST")throw error;await fsp.unlink(temporary).catch(()=>{});});}catch(error){await fsp.unlink(temporary).catch(()=>{});throw error;}}return res.type("image/webp").sendFile(preview);}catch(error){console.warn(`Preview generation failed for ${photo.id}; serving original.`,error.message);return res.type(photo.mime_type||"image/jpeg").sendFile(original);}
 }catch(error){next(error);}}
 
 async function assignments(userId,client=db){const result=await client.query("SELECT individual_id FROM user_individual_access WHERE user_id=$1 ORDER BY individual_id",[userId]);return result.rows.map((r)=>r.individual_id);}
@@ -130,6 +142,10 @@ app.get("/api/export",authenticateUser,requireRole("admin","coordinator"),async(
 
 const publicImportBatch=(row)=>({id:row.id,sourceName:row.source_name,status:row.status,summary:row.summary||{},createdAt:iso(row.created_at),finishedAt:iso(row.finished_at),createdBy:row.created_by_name?{id:row.created_by,name:row.created_by_name}:null});
 const safeImportStage=(value)=>{if(!value)return null;const absolute=path.resolve(value),relative=path.relative(importStageDir,absolute);return relative&&!relative.startsWith("..")&&!path.isAbsolute(relative)?absolute:null;};
+async function processImportBatch(row,user,requestIp){
+  try{const stage=safeImportStage(row.staging_path);if(!stage||!fs.existsSync(stage))throw new Error("import_staging_missing");const reportPath=path.join(stage,"report-applied.json"),report=await runStagedImport({batchId:row.id,createdBy:user.id,manifest:row.input_manifest,reportPath,apply:true,replaceAnnotations:false});await audit(user,"import_completed","import_batch",row.id,report.summary,{ip:requestIp});await removeStagedImport(stage);await db.query("UPDATE import_batches SET staging_path=NULL,input_manifest=$1::jsonb WHERE id=$2",[JSON.stringify({sourceName:row.source_name}),row.id]);}
+  catch(error){console.error(`Import ${row.id} failed.`,error);await db.query("UPDATE import_batches SET status='failed',summary=summary||$1::jsonb,finished_at=now() WHERE id=$2",[JSON.stringify({error:String(error.message||"import_failed")}),row.id]).catch(()=>{});}
+}
 
 app.get("/api/admin/imports",authenticateUser,requireRole("admin"),async(req,res,next)=>{try{
   const result=await db.query("SELECT b.*,u.name created_by_name FROM import_batches b LEFT JOIN users u ON u.id=b.created_by ORDER BY b.created_at DESC LIMIT $1",[positiveInt(req.query.limit,30,100)]);
@@ -150,13 +166,10 @@ app.post("/api/admin/imports/preview",authenticateUser,requireRole("admin"),writ
   if(staged){await db.query("INSERT INTO import_batches(id,source_name,status,summary,staging_path,created_by,finished_at) VALUES($1,$2,'failed',$3::jsonb,$4,$5,now()) ON CONFLICT(id) DO UPDATE SET status='failed',summary=EXCLUDED.summary,finished_at=now()",[batchId,staged.manifest?.sourceName||"browser import",JSON.stringify({error:String(e.message||"preview_failed")}),staged.stage,req.user.id]).catch(()=>{});await removeStagedImport(staged.stage);}
   next(e);
 }});
-app.post("/api/admin/imports/:id/apply",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{let row;try{
-  row=(await db.query("UPDATE import_batches SET status='started' WHERE id=$1 AND status='previewed' RETURNING *",[req.params.id])).rows[0];if(!row)return res.status(409).json({error:"import_not_ready"});
-  const stage=safeImportStage(row.staging_path);if(!stage||!fs.existsSync(stage))throw new Error("import_staging_missing");const reportPath=path.join(stage,"report-applied.json");
-  const report=await runStagedImport({batchId:row.id,createdBy:req.user.id,manifest:row.input_manifest,reportPath,apply:true,replaceAnnotations:false});
-  await audit(req.user,"import_completed","import_batch",row.id,report.summary,req);await removeStagedImport(stage);await db.query("UPDATE import_batches SET staging_path=NULL,input_manifest=$1::jsonb WHERE id=$2",[JSON.stringify({sourceName:row.source_name}),row.id]);
-  res.json({import:{id:row.id,sourceName:row.source_name,status:"completed",summary:report.summary,finishedAt:new Date().toISOString()},issues:report.issues.slice(0,500),issueCount:report.issues.length});
-}catch(e){if(row)await db.query("UPDATE import_batches SET status='failed',summary=summary||$1::jsonb,finished_at=now() WHERE id=$2",[JSON.stringify({error:String(e.message||"import_failed")}),row.id]).catch(()=>{});next(e);}});
+app.post("/api/admin/imports/:id/apply",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{try{
+  const row=(await db.query("UPDATE import_batches SET status='started' WHERE id=$1 AND status='previewed' RETURNING *",[req.params.id])).rows[0];if(!row)return res.status(409).json({error:"import_not_ready"});
+  res.status(202).json({import:{id:row.id,sourceName:row.source_name,status:"started",summary:row.summary}});void processImportBatch(row,req.user,req.ip);
+}catch(e){next(e);}});
 app.delete("/api/admin/imports/:id",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{try{
   const row=(await db.query("SELECT * FROM import_batches WHERE id=$1",[req.params.id])).rows[0];if(!row)return res.status(404).json({error:"import_not_found"});if(!["previewed","failed"].includes(row.status))return res.status(409).json({error:"import_cannot_be_cancelled"});
   const stage=safeImportStage(row.staging_path);if(stage)await removeStagedImport(stage);await db.query("UPDATE import_batches SET status='cancelled',staging_path=NULL,input_manifest='{}'::jsonb,finished_at=now() WHERE id=$1",[row.id]);await audit(req.user,"import_cancelled","import_batch",row.id,{},req);res.json({ok:true});
