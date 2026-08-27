@@ -1,0 +1,107 @@
+# Deployment on the QNAP/server
+
+This stack is separate from Sieweczka and from the older `stork_edit` work. It has its own PostgreSQL database, API container and repository.
+
+## 1. Download the new repository
+
+```sh
+mkdir -p /share/CACHEDEV1_DATA/stork_edit2
+cd /share/CACHEDEV1_DATA/stork_edit2
+git clone https://github.com/jankowiakl/stork_edit2.git app
+cd app
+cp .env.example .env
+```
+
+## 2. Configure `.env`
+
+Replace at least:
+
+- `POSTGRES_PASSWORD` and the same password inside `DATABASE_URL`;
+- `JWT_SECRET` with at least 48 random characters;
+- `BOOTSTRAP_TOKEN` with a different random string of at least 24 characters;
+- `PUBLIC_API_URL` with the final HTTPS address of the API;
+- SMTP values if invitations should be emailed automatically.
+
+Generate secrets on the server:
+
+```sh
+openssl rand -hex 32
+openssl rand -hex 24
+```
+
+Do not commit `.env`.
+
+## 3. Start the database and API
+
+```sh
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 api
+```
+
+PostgreSQL is not exposed publicly. The API listens on `127.0.0.1:18444`; expose it through the QNAP reverse proxy with HTTPS.
+
+Example:
+
+```text
+https://bielik.myqnapcloud.com:18444  →  http://127.0.0.1:18444
+```
+
+Verify:
+
+```sh
+curl https://bielik.myqnapcloud.com:18444/health
+```
+
+The response must contain `"ok":true`.
+
+## 4. Create the first administrator
+
+This endpoint works only while the users table is empty and requires the private `BOOTSTRAP_TOKEN` from `.env`:
+
+```sh
+curl -X POST https://bielik.myqnapcloud.com:18444/api/bootstrap-admin \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: YOUR_BOOTSTRAP_TOKEN" \
+  -d '{"email":"YOUR_EMAIL","name":"Łukasz Jankowiak","password":"A_LONG_UNIQUE_PASSWORD"}'
+```
+
+Further accounts are managed inside **Table → Users**. Temporary passwords must be changed at first login.
+
+## 5. Configure and enable GitHub Pages
+
+Check `config.js`; `apiBase` must point to the HTTPS API. Then in `jankowiakl/stork_edit2` open **Settings → Pages**, select **Deploy from a branch**, branch `main`, folder `/ (root)`.
+
+The frontend address will be:
+
+```text
+https://jankowiakl.github.io/stork_edit2/
+```
+
+No password, database credential or API secret belongs in `config.js`.
+
+## Roles
+
+- **admin** — all individuals, users, roles, exports and editing;
+- **coordinator** — all individuals, progress, editing and exports;
+- **annotator** — only individuals explicitly assigned by an administrator;
+- **public visitor** — current map/photo viewer only.
+
+## Backups
+
+Back up both SQL and photographs:
+
+```sh
+mkdir -p backups
+docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "backups/stork_edit_$(date +%F).sql"
+tar -czf "backups/stork_photos_$(date +%F).tar.gz" photo-data
+```
+
+## Updating
+
+```sh
+git pull --ff-only
+docker compose up -d --build
+curl https://bielik.myqnapcloud.com:18444/health
+```
+

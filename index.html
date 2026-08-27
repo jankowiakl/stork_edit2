@@ -1,0 +1,4446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>White Stork Photo Flight Viewer</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    :root {
+      --text: #e8eefc;
+      --muted: #aab7da;
+      --accent: #77d1ff;
+      --danger: #ff6b6b;
+      --ok: #39d98a;
+      --border: rgba(255,255,255,0.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+      --mobile-map-height: 50dvh;
+      --mobile-photo-height: 50dvh;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: linear-gradient(180deg, #070b14 0%, #0b1220 60%, #07101e 100%);
+      color: var(--text);
+    }
+
+    header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    header h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: 0.2px; }
+    header .hint { font-size: 12px; color: var(--muted); margin: 0; }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      padding: 14px;
+      height: calc(100vh - 62px);
+      box-sizing: border-box;
+      min-height: 0;
+    }
+
+    .card {
+      background: radial-gradient(1200px 800px at 30% -20%, rgba(119,209,255,0.10), transparent 55%),
+                  linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 0;
+      position: relative;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .mapStack { height: 100%; min-height: 0; }
+    #mapFollow { width: 100%; height: 100%; }
+
+    .overviewInset {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      width: min(38vw, 360px);
+      height: 220px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.18);
+      z-index: 650;
+    }
+    #mapOverview { width: 100%; height: 100%; }
+
+    .badge {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 1500;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      color: var(--text);
+      pointer-events: none;
+    }
+    .badge.overview { left: auto; right: 18px; top: 18px; }
+
+    .timeBadge{
+      position: absolute;
+      /* Safe-area aware so it stays visible on phones with notches / home indicator */
+      left: calc(12px + env(safe-area-inset-left));
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      /* Above Leaflet controls (which often use z-index ~1000) */
+      z-index: 1200;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      color: var(--text);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+
+    .side {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      min-height: 0;
+      overflow: hidden;
+      padding-right: 2px;
+    }
+
+    /* Keep every card in its intended row even when Settings is fully hidden. */
+    #settingsCard { grid-row: 1; }
+    .photoCard { grid-row: 2; }
+    .metaCard { grid-row: 3; }
+    .side.settingsHidden { grid-template-rows: minmax(0, 1fr) auto; }
+    .side.settingsHidden .photoCard { grid-row: 1; }
+    .side.settingsHidden .metaCard { grid-row: 2; }
+
+    .panel { padding: 14px; }
+
+    .panelHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .panelHeader .title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .panelHeader .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 10px;
+      font-weight: 500;
+    }
+    .panelHeaderLeft { display: flex; align-items: baseline; flex-wrap: wrap; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+
+    select,
+    input[type="range"],
+    input[type="number"],
+    input[type="text"],
+    input[type="url"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      padding: 10px 10px;
+      outline: none;
+    }
+    textarea { min-height: 82px; resize: vertical; font: inherit; }
+    input[type="file"] { width: 100%; color: var(--muted); }
+
+    button {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(119,209,255,0.20), rgba(119,209,255,0.08));
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+    button.secondary { background: rgba(0,0,0,0.20); }
+    button.danger { background: linear-gradient(180deg, rgba(255,107,107,0.22), rgba(255,107,107,0.08)); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    button.tiny {
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 650;
+      font-size: 12px;
+    }
+
+    .btnrow { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+    .status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .settingsBody { display: block; }
+    .settingsCollapsed .settingsBody { display: none; }
+    .settingsCollapsed .panelHeader { margin-bottom: 0; }
+    .settingsCollapsed .status { margin-top: 8px; }
+
+    /* --- Settings overlay (so controls never get pushed under the photo) --- */
+    /* Note: Overlay removed to fix overlapping; now stacks vertically */
+    #settingsCard{
+      /* position: absolute; */ /* Removed */
+      /* left: 0; */ /* Removed */
+      /* right: 0; */ /* Removed */
+      /* top: 0; */ /* Removed */
+      /* z-index: 1200; */ /* Removed */
+      /* max-height: calc(100% - 160px); */ /* Removed */
+      padding: 14px;                 /* Match other panels */
+      font-size: 12px;
+    }
+
+    /* Scroll only the body, keep header visible */
+    #settingsCard .settingsBody{
+      max-height: 300px; /* Arbitrary max to prevent overgrowth; adjust as needed */
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    /* Smaller typography & tighter spacing in Settings only */
+    #settingsCard label{ font-size: 11px; margin-bottom: 4px; }
+    #settingsCard .panelHeader{ margin-bottom: 8px; }
+    #settingsCard .panelHeader .title{ font-size: 12px; }
+    #settingsCard .panelHeader .subtitle{ font-size: 11px; }
+    #settingsCard .row{ gap: 8px; margin-top: 8px; }
+    #settingsCard .btnrow{ gap: 8px; margin-top: 10px; }
+    #settingsCard select,
+    #settingsCard input[type="range"],
+    #settingsCard input[type="number"]{
+      padding: 8px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    #settingsCard button{
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    #settingsCard button.tiny{
+      padding: 6px 8px;
+      border-radius: 9px;
+      font-size: 11px;
+    }
+    #settingsCard .status{ font-size: 11px; }
+
+    /* When hidden, remove the whole settings card so the photo stays clear. */
+    #settingsCard.settingsCollapsed{
+      display: none !important;
+    }
+    #settingsCard.settingsCollapsed .status{
+      display: none;
+    }
+
+
+    .checkRow {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .checkRow label {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      font-weight: 650;
+    }
+    .checkRow input[type="checkbox"] { transform: translateY(1px); }
+
+    .photoCard {
+      height: 100%;
+      min-height: 260px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.15));
+    }
+    .photoStage { position: relative; height: 100%; width: 100%; overflow: hidden; }
+    .photoStage img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      background: rgba(0,0,0,0.18);
+      transition: opacity 80ms linear;
+    }
+
+    .photoBirdPicker {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      max-width: calc(100% - 150px);
+      padding: 6px 8px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      background: rgba(7,11,20,.30);
+      box-shadow: 0 8px 22px rgba(0,0,0,.18);
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease, background .16s ease;
+    }
+    .photoStage.navControlsVisible .photoBirdPicker {
+      opacity: .72;
+      pointer-events: auto;
+    }
+    .photoBirdPicker:hover,
+    .photoBirdPicker:focus-within {
+      opacity: 1;
+      background: rgba(7,11,20,.68);
+    }
+    .photoBirdPicker label {
+      margin: 0;
+      color: rgba(255,255,255,.78);
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    #birdSelectOverlay {
+      width: auto;
+      min-width: 132px;
+      max-width: min(250px, 40vw);
+      padding: 6px 28px 6px 8px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.16);
+      background-color: rgba(7,11,20,.52);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #birdSelectOverlay option { background: #0b1220; color: #fff; }
+    #birdSelectOverlay:disabled { opacity: .55; cursor: default; }
+    .photoBirdPicker .settingsGear {
+      width: 30px;
+      min-width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(7,11,20,.48);
+      color: rgba(255,255,255,.88);
+      font-size: 17px;
+      line-height: 1;
+    }
+    .photoBirdPicker .settingsGear:hover,
+    .photoBirdPicker .settingsGear:focus-visible {
+      background: rgba(119,209,255,.26);
+      color: #fff;
+    }
+
+    .lineStyleValue {
+      color: var(--accent);
+      font-weight: 750;
+      float: right;
+    }
+
+    .metaGrid { 
+      display: grid; 
+      gap: 6px; 
+      font-size: 12px; 
+      color: var(--text); 
+      text-align: center;
+    }
+    .metaGrid b { font-size: 13px; }
+    .metaGrid .muted { color: var(--muted); }
+    #metaTime, #metaCoords {
+      font-size: 24px;
+    }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(0,0,0,0.18);
+      margin-right: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+    .dot.ok { background: var(--ok); }
+    .dot.bad { background: var(--danger); }
+
+    .leaflet-control-attribution, .leaflet-control-scale {
+      background: rgba(0,0,0,0.35) !important;
+      color: rgba(255,255,255,0.75) !important;
+      border-radius: 10px !important;
+      padding: 2px 6px !important;
+      border: 1px solid rgba(255,255,255,0.15) !important;
+      backdrop-filter: blur(6px);
+    }
+    .leaflet-container { background: #0a0f1c; }
+
+    .leaflet-tooltip.gpsInfoTooltip,
+    .leaflet-tooltip.stopoverInfoTooltip {
+      min-width: 170px;
+      max-width: 280px;
+      white-space: normal;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      background: rgba(7, 11, 20, 0.96);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: 0 8px 22px rgba(0,0,0,.38);
+      line-height: 1.3;
+      font-size: 12px;
+    }
+    .leaflet-tooltip.gpsInfoTooltip:before,
+    .leaflet-tooltip.stopoverInfoTooltip:before {
+      border-top-color: rgba(7, 11, 20, 0.94);
+    }
+    .mapTip { padding: 10px 12px; }
+    .mapTipTitle {
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .mapTipTime {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .mapTipRow {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 8px;
+      align-items: baseline;
+      margin-top: 5px;
+    }
+    .mapTipLabel { color: var(--muted); }
+    .mapTipValue { color: #fff; font-weight: 650; white-space: nowrap; }
+    .mapTipDuration {
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      color: #ffd166;
+      font-weight: 750;
+    }
+
+    .photoTools{
+      position:absolute;
+      right:12px;
+      top:12px;
+      z-index:20;
+      display:flex;
+      gap:8px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .16s ease;
+    }
+    .photoStage.navControlsVisible .photoTools {
+      opacity:.72;
+      pointer-events:auto;
+    }
+    .photoTools:hover,
+    .photoTools:focus-within {
+      opacity:1;
+    }
+
+    .photoNav {
+      position: absolute;
+      top: 50%;
+      z-index: 24;
+      transform: translateY(-50%);
+      min-width: 46px;
+      height: 46px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.20);
+      background: rgba(7,11,20,.26);
+      color: rgba(255,255,255,.90);
+      box-shadow: 0 8px 22px rgba(0,0,0,.22);
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      font-size: 13px;
+      font-weight: 750;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease, background .16s ease, transform .16s ease;
+    }
+    .photoNav.prev { left: 12px; }
+    .photoNav.next { right: 12px; }
+    .photoStage.navControlsVisible .photoNav {
+      opacity: .72;
+      pointer-events: auto;
+    }
+    .photoNav:hover:not(:disabled) {
+      opacity: 1;
+      background: rgba(7,11,20,.62);
+      transform: translateY(-50%) scale(1.04);
+    }
+    .photoNav:disabled { opacity: 0 !important; }
+    .photoStage.navControlsVisible .photoNav:disabled { opacity: .10 !important; }
+
+    .subSettings {
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(0,0,0,.12);
+      overflow: hidden;
+    }
+    .subSettings summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      list-style: none;
+      user-select: none;
+    }
+    .subSettings summary::-webkit-details-marker { display: none; }
+    .subSettings summary::after {
+      content: "Show";
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .subSettings[open] summary::after { content: "Hide"; }
+    .subSettingsBody {
+      padding: 0 10px 10px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .miniNote {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* --- Photo annotation editor --- */
+    body.editorOpen { overflow: hidden; }
+    .editorMode {
+      position: fixed;
+      inset: 0;
+      z-index: 6500;
+      display: none;
+      background: #070b14;
+    }
+    .editorMode.open { display: block; }
+    .editorWorkspace {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(390px, .9fr);
+      min-height: 0;
+    }
+    .editorVisual {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: #02040a;
+      border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .editorVisual img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: #02040a;
+    }
+    .editorVisualTop {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 12px;
+      z-index: 5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .editorVisualTop > * { pointer-events: auto; }
+    .editorPhotoBadges { display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 110px); }
+    .editorBadge {
+      padding: 6px 9px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: rgba(7,11,20,.58);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+      max-width: min(62vw, 620px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .editorVisualNav {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      z-index: 5;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 13px;
+      background: rgba(7,11,20,.62);
+      backdrop-filter: blur(8px);
+    }
+    .editorCounter { min-width: 74px; text-align: center; font-size: 12px; font-weight: 750; }
+    .editorPanel {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      background: linear-gradient(180deg, #111a2a 0%, #0b1321 100%);
+    }
+    .editorPanelHeader {
+      padding: 14px 16px 11px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .editorPanelHeader h2 { margin: 0 0 3px; font-size: 16px; }
+    .editorRecordLine { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+    .editorStatus {
+      margin-top: 9px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .editorStatus.ok { color: #9af0c5; border-color: rgba(57,217,138,.35); }
+    .editorStatus.error { color: #ffb1b1; border-color: rgba(255,107,107,.42); }
+    .editorStatus.busy { color: #b9e7ff; border-color: rgba(119,209,255,.36); }
+    .editorForm {
+      overflow: auto;
+      padding: 12px 14px 24px;
+      min-height: 0;
+    }
+    .editorSection {
+      margin: 0 0 11px;
+      padding: 11px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 13px;
+      background: rgba(0,0,0,.12);
+    }
+    .editorSection h3 {
+      margin: 0 0 9px;
+      color: #fff;
+      font-size: 12px;
+      letter-spacing: .2px;
+    }
+    details.editorSection { padding: 0; overflow: hidden; }
+    details.editorSection > summary {
+      padding: 11px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    details.editorSection > .editorFields { padding: 0 11px 11px; }
+    .editorFields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 10px; }
+    .editorField { min-width: 0; }
+    .editorField.full { grid-column: 1 / -1; }
+    .editorField[hidden] { display: none !important; }
+    .editorField label { margin-bottom: 5px; font-size: 11px; }
+    .editorField label .required { color: #ff9c9c; }
+    .editorMode select,
+    .editorMode input,
+    .editorMode textarea,
+    .editorPanel select,
+    .editorPanel input,
+    .editorPanel textarea {
+      padding: 8px 9px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .editorInlineCheck {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      color: var(--text);
+      font-size: 12px;
+    }
+    .editorInlineCheck input { width: auto; }
+    .editorDerived {
+      padding: 8px 9px;
+      min-height: 35px;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      background: rgba(0,0,0,.14);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .editorConnectionWarning {
+      display: none;
+      margin-bottom: 11px;
+      padding: 10px;
+      border: 1px solid rgba(255,193,7,.35);
+      border-radius: 11px;
+      background: rgba(255,193,7,.08);
+      color: #ffe59a;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .editorConnectionWarning.show { display: block; }
+    .editorFooter {
+      padding: 11px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(7,11,20,.92);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .editorFooter button { flex: 1 1 auto; }
+    .editorFooter .primarySave { background: linear-gradient(180deg, rgba(57,217,138,.28), rgba(57,217,138,.11)); }
+    .editorFooter .saveNext { background: linear-gradient(180deg, rgba(119,209,255,.28), rgba(119,209,255,.10)); }
+    .editorInvalid {
+      border-color: rgba(255,107,107,.8) !important;
+      box-shadow: 0 0 0 2px rgba(255,107,107,.13);
+    }
+    .fieldHelp { display:inline-grid; place-items:center; width:15px; height:15px; margin-left:4px; border:1px solid rgba(119,209,255,.5); border-radius:50%; color:var(--accent); font-size:10px; cursor:help; }
+    .editorField.hasValue { padding-left:7px; border-left:3px solid rgba(57,217,138,.65); }
+    .editorField.missingValue { padding-left:7px; border-left:3px solid rgba(255,193,7,.7); }
+    .editorMobileTabs { display:none; gap:5px; margin-top:8px; }
+    .editorMobileTabs button { flex:1; }
+    body.editorOpen .wrap { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    body.editorOpen .editorPanel { border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    body.editorOpen .side { min-width:0; }
+    body.editorOpen .editorPanelHeader > #closeEditorMode { float:right; margin-top:-25px; }
+    body.editorOpen .editorPanelHeader .editorVisualNav { position:static; transform:none; margin-top:8px; justify-content:center; background:rgba(0,0,0,.18); }
+    .dataWorkspace { position:fixed; inset:0; z-index:6800; display:none; background:#070b14; padding:14px; box-sizing:border-box; }
+    .dataWorkspace.open { display:grid; grid-template-rows:auto minmax(0,1fr); gap:10px; }
+    .dataTopbar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .dataTabs,.dataActions { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+    .dataPanel { min-height:0; overflow:auto; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.035); padding:12px; }
+    .dataControls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .dataControls input,.dataControls select { width:auto; min-width:150px; }
+    .dataTable { width:100%; border-collapse:collapse; font-size:12px; }
+    .dataTable th,.dataTable td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; }
+    .dataTable th { position:sticky; top:0; z-index:2; background:#101827; }
+    .dataTable tr { cursor:pointer; }
+    .dataTable tr:hover { background:rgba(119,209,255,.08); }
+    .dataThumb { width:68px; height:48px; object-fit:cover; border-radius:7px; background:#02040a; }
+    .statusPill { display:inline-block; padding:3px 7px; border-radius:999px; background:rgba(255,255,255,.08); }
+    .progressGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
+    .progressCard { padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,.15); }
+    .progressBar { height:8px; margin:9px 0; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
+    .progressBar span { display:block; height:100%; background:linear-gradient(90deg,#39d98a,#77d1ff); }
+    .userGrid { display:grid; grid-template-columns:minmax(280px,.7fr) minmax(420px,1.3fr); gap:12px; }
+    .userCard { padding:11px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; }
+
+    .photoModal{
+      position:fixed;
+      inset:0;
+      z-index:5000;
+      display:none;
+      background:rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+    }
+    .photoModal.open{ display:block; }
+    .photoModal .inner{
+      position:absolute;
+      inset:18px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.18);
+      overflow:hidden;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+      background: rgba(0,0,0,0.35);
+    }
+    .photoModal .stage{
+      position:absolute;
+      inset:0;
+    }
+    .photoModal img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      background: rgba(0,0,0,0.30);
+      transition: opacity 80ms linear;
+    }
+    .photoModal .topbar{
+      position:absolute;
+      left:12px;
+      right:12px;
+      top:12px;
+      z-index:10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      pointer-events:none;
+    }
+    .photoModal .topbar .left,
+    .photoModal .topbar .right{
+      pointer-events:auto;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(0,0,0,0.35);
+      color: var(--text);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    #sliderOverlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px;
+      background: rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-in-out;
+      z-index: 10;
+    }
+
+    .photoStage:hover #sliderOverlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #sliderOverlay input[type="range"] {
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+
+
+    /* Slider row: play/pause button next to the time slider */
+    #sliderOverlay .sliderRow{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #sliderOverlay .sliderRow input[type="range"]{
+      flex: 1;
+      min-width: 0;
+    }
+/* --- Responsive: single-column mobile layout (map on top, photo + meta below) --- */
+@media (max-width: 980px) {
+  header { padding: 12px 14px; }
+  header h1 { font-size: 15px; }
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    height: auto;
+    min-height: calc(100dvh - 62px);
+    overflow: auto;
+  }
+
+  /* Map takes the top portion */
+  .mapStack { height: 26dvh; min-height: 160px; }
+
+  /* Smaller inset overview on mobile (doesn't cover the follow map) */
+  .overviewInset {
+    right: 10px;
+    bottom: 10px;
+    top: auto;
+    width: min(36vw, 180px);
+    height: 95px;
+  }
+  .overviewInset .badge.overview{
+    right: 8px;
+    top: 8px;
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+
+  /* Side becomes a vertical stack; reorder: photo -> meta -> settings */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 0;
+  }
+  .photoCard { order: 1; height: 50dvh; min-height: 45dvh; }
+  .photoBirdPicker {
+    max-width: calc(100% - 24px);
+    padding: 5px 7px;
+  }
+  #birdSelectOverlay {
+    min-width: 112px;
+    max-width: 58vw;
+  }
+.metaCard  { order: 2; }
+  #settingsCard { order: 3; }
+
+  /* Make big numbers slightly smaller so they don't dominate */
+  #metaTime, #metaCoords { font-size: 18px; }
+}
+
+/* Touch devices: reveal photo controls on activity, then fade them after 3s */
+@media (hover: none) {
+  #sliderOverlay,
+  .photoStage:hover #sliderOverlay {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .photoNav { opacity: 0; pointer-events: none; }
+  .photoNav:disabled { opacity: 0 !important; }
+  .photoBirdPicker,
+  .photoBirdPicker:hover,
+  .photoBirdPicker:focus-within,
+  .photoTools,
+  .photoTools:hover,
+  .photoTools:focus-within {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .photoStage.touchControlsVisible #sliderOverlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .photoStage.touchControlsVisible .photoNav {
+    opacity: .62;
+    pointer-events: auto;
+  }
+  .photoStage.touchControlsVisible .photoBirdPicker {
+    opacity: .88;
+    pointer-events: auto;
+  }
+  .photoStage.touchControlsVisible .photoTools {
+    opacity: .82;
+    pointer-events: auto;
+  }
+  .photoStage.touchControlsVisible .photoNav:disabled { opacity: .10 !important; }
+}
+
+
+/* --- Mobile full-screen mode: map + photo fullscreen, with a slide-up details panel --- */
+#mobilePanelBtn{
+  position: fixed;
+  right: 12px;
+  top: calc(12px + env(safe-area-inset-top));
+  z-index: 9100;
+  display: none;
+}
+#mobilePanel{
+  position: fixed;
+  inset: 0;
+  z-index: 9050;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(14px + env(safe-area-inset-top)) 10px 16px;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0);
+  transition: background 0.25s ease;
+  pointer-events: none; /* important: don't block map when panel is closed */
+}
+#mobilePanel .panelShell{
+  width: min(720px, 100%);
+  max-height: 78dvh;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55);
+  transform: translateY(-110%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+#mobilePanel .panelTopbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+#mobilePanel .panelTopbar .title{
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.2px;
+}
+#mobilePanel .panelBody{
+  overflow: auto;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+/* Only on mobile: lock page to map+photo (full screen) */
+@media (max-width: 980px) {
+  body.mobileLock { overflow: hidden; }
+  body.mobileLock header { display: none; }
+  body.mobileLock .wrap{
+    padding: 0;
+    gap: 0;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+  body.mobileLock .card { border-radius: 0; }
+  body.mobileLock .mapStack { height: var(--mobile-map-height); min-height: 0; }
+  body.mobileLock .photoCard { height: var(--mobile-photo-height); min-height: 0; }
+
+  /* Hide meta/settings in the main layout (they will live inside the panel) */
+  body.mobileLock .metaCard,
+  body.mobileLock #settingsCard { display: none; }
+
+  /* Mobile: hide the map credits/attribution bar entirely */
+  body.mobileLock .leaflet-control-attribution,
+  body.mobileLock .leaflet-control-scale { display: none !important; }
+
+  /* Floating button + slide-up panel */
+  body.mobileLock #mobilePanelBtn { display: inline-flex; }
+  body.mobileLock #mobilePanel { display: flex; }
+
+  body.mobileLock.mobilePanelOpen #mobilePanel{ background: rgba(0,0,0,0.45); pointer-events: auto; }
+  body.mobileLock.mobilePanelOpen #mobilePanel .panelShell{ transform: translateY(0); }
+
+  /* When the panel is open, show the moved cards inside it */
+  body.mobileLock.mobilePanelOpen #mobilePanel .metaCard,
+  body.mobileLock.mobilePanelOpen #mobilePanel #settingsCard { display: block; }
+
+  /* Mobile: make map credits (Leaflet attribution) smaller so it doesn't cover content */
+  .leaflet-control-attribution{
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    padding: 1px 4px !important;
+    border-radius: 8px !important;
+    max-width: 70vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 980px) {
+  .editorWorkspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 38dvh minmax(0, 62dvh);
+  }
+  .editorVisual { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .editorPhotoBadges { max-width: calc(100% - 90px); }
+  .editorBadge { max-width: 70vw; }
+  .editorVisualNav { bottom: 9px; }
+  .editorPanelHeader { padding: 10px 12px 8px; }
+  .editorStatus { margin-top: 6px; padding: 6px 8px; }
+  .editorForm { padding: 9px 10px 18px; }
+  .editorFooter { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  body.editorOpen .wrap { display:block; height:100dvh; padding:0; }
+  body.editorOpen header, body.editorOpen #mobilePanelBtn { display:none; }
+  body.editorOpen .editorMobileTabs { display:flex; }
+  body.editorOpen[data-editor-tab="form"] .mapStack, body.editorOpen[data-editor-tab="form"] .side { display:none; }
+  body.editorOpen[data-editor-tab="map"] .editorPanel, body.editorOpen[data-editor-tab="map"] .side { display:none; }
+  body.editorOpen[data-editor-tab="photo"] .editorPanel, body.editorOpen[data-editor-tab="photo"] .mapStack { display:none; }
+  body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { width:100%; height:100dvh; border-radius:0; }
+  .dataWorkspace { padding:8px; }
+  .userGrid { grid-template-columns:1fr; }
+}
+
+@media (max-width: 560px) {
+  .editorFields { grid-template-columns: 1fr; }
+  .editorField.full { grid-column: auto; }
+  .editorVisualTop { left: 8px; right: 8px; top: 8px; }
+  .editorVisualTop #closeEditorMode { padding: 7px 8px; }
+}
+
+
+  </style>
+</head>
+
+<body>
+</header>
+
+<div class="wrap">
+  <div class="card mapStack">
+    <div class="timeBadge" id="mapTimeBadge">—</div>
+    <div id="mapFollow"></div>
+
+    <div class="overviewInset">
+      <div class="badge overview">Overview</div>
+      <div id="mapOverview"></div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="card panel settings settingsCollapsed" id="settingsCard">
+      <div class="panelHeader">
+        <div class="panelHeaderLeft">
+          <span class="title">Settings</span>
+          <span class="subtitle">choose files, bird, playback, loop, music</span>
+        </div>
+        <button id="toggleSettings" class="secondary tiny" type="button">Show</button>
+      </div>
+
+      <div class="settingsBody" id="settingsBody">
+        <label>1) Select folder with JPG files (Chrome/Edge recommended)</label>
+        <input id="folderInput" type="file" multiple webkitdirectory directory />
+
+        <div class="btnrow" style="margin-top:10px;">
+          <button id="loadGithubBtn" type="button">Reload from server</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>2) Individual (bird id)</label>
+            <select id="birdSelect" disabled>
+              <option value="">—</option>
+            </select>
+          </div>
+          <div>
+            <label>Animation speed</label>
+            <input id="speed" type="range" min="0.25" max="6" step="0.25" value="0.5" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Leg duration (seconds)</label>
+            <input id="legSeconds" type="number" min="0.3" max="30" step="0.1" value="3.0">
+          </div>
+          <div>
+            <label>Hold on each photo (seconds)</label>
+            <input id="holdSeconds" type="number" min="0" max="10" step="0.1" value="1.0">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Follow map zoom</label>
+            <input id="followZoom" type="number" min="2" max="18" step="1" value="12">
+          </div>
+          <div>
+            <label>Follow update</label>
+            <select id="followMode">
+              <option value="edge" selected>only when near edge</option>
+              <option value="always">always center</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Basemap</label>
+            <select id="basemapSelect">
+              <option value="osmStd">OSM Standard (local labels)</option>
+              <option value="osmDE">OSM DE (Latin transliteration)</option>
+              <option value="cartoPos">CARTO Positron (light)</option>
+              <option value="cartoVoy">CARTO Voyager (color)</option>
+              <option value="opentopo">OpenTopoMap</option>
+              <option value="plOrtho">PL Ortho (Geoportal)</option>
+              <option value="esriImageryLabels" selected>Esri Imagery + Labels</option>
+              <option value="esriImagery">Esri World Imagery (no labels)</option>
+            </select>
+          </div>
+          <div>
+            <label>Photo area size</label>
+            <select id="layoutSplit">
+              <option value="40">Larger GPS map (40% photo)</option>
+              <option value="50" selected>Equal halves (50% photo)</option>
+              <option value="60">Larger photo (60% photo)</option>
+              <option value="70">Maximum photo (70% photo)</option>
+            </select>
+          </div>
+        </div>
+
+        <details class="subSettings" id="editorConnectionDetails">
+          <summary>Editor account <span style="font-weight:500; opacity:.72;">server login</span></summary>
+          <div class="subSettingsBody">
+            <div class="editorFields" style="margin-top:10px;">
+              <div class="editorField full">
+                <label for="editorWebAppUrl">Email</label>
+                <input id="editorWebAppUrl" type="email" autocomplete="username" placeholder="name@example.com">
+              </div>
+              <div class="editorField full">
+                <label for="editorSecret">Password</label>
+                <input id="editorSecret" type="password" autocomplete="current-password" placeholder="Password">
+              </div>
+            </div>
+            <div class="btnrow" style="margin-top:9px;">
+              <button id="testEditorConnection" class="secondary tiny" type="button">Log in</button>
+              <button id="editorLogout" class="secondary tiny" type="button">Log out</button>
+            </div>
+            <div class="editorFields" id="passwordChangeFields" style="margin-top:10px; display:none;">
+              <div class="editorField full"><label for="editorNewPassword">New password</label><input id="editorNewPassword" type="password" autocomplete="new-password" minlength="10"></div>
+              <div class="editorField full"><button id="changeEditorPassword" class="secondary tiny" type="button">Change password</button></div>
+            </div>
+            <div class="miniNote" id="editorConnectionStatus">Log in to edit descriptions, open the table and view progress.</div>
+          </div>
+        </details>
+
+        <details class="subSettings">
+          <summary>Export data <span style="font-weight:500; opacity:.72;">coordinator/admin</span></summary>
+          <div class="subSettingsBody"><div class="btnrow" style="margin-top:10px;">
+            <button class="secondary tiny exportBtn" data-format="xlsx" type="button">XLSX</button><button class="secondary tiny exportBtn" data-format="csv" type="button">CSV</button><button class="secondary tiny exportBtn" data-format="geojson" type="button">GeoJSON</button><button class="secondary tiny exportBtn" data-format="kml" type="button">KML</button><button class="secondary tiny exportBtn" data-format="zip" type="button">ZIP + photos</button>
+          </div></div>
+        </details>
+
+        <div class="checkRow">
+          <label title="Loop the currently loaded bird forever"><input id="loopCurrent" type="checkbox"> Loop this bird</label>
+          <label title="Auto-switch to the next bird, and loop through all birds in the folder"><input id="loopAll" type="checkbox" checked> Loop all birds</label>
+        </div>
+
+        <div class="checkRow">
+          <label title="Show the complete GPS track for the selected bird"><input id="showGpsTrack" type="checkbox" checked> Full GPS track</label>
+          <label title="Highlight the GPS positions recorded between the two currently animated photos"><input id="showPhotoGpsSegment" type="checkbox" checked> GPS between photos</label>
+          <label title="Show stopover polygons for the selected bird"><input id="showStopovers" type="checkbox" checked> Stopovers</label>
+        </div>
+        <div class="miniNote" id="backgroundDataStatus">GPS &amp; stopovers: loading automatically…</div>
+
+        <details class="subSettings" id="lineStyleDetails">
+          <summary>Route lines <span style="font-weight:500; opacity:.72;">appearance</span></summary>
+          <div class="subSettingsBody">
+            <div class="checkRow">
+              <label title="Automatically reduce line weight and opacity when a bird has many photos">
+                <input id="autoTrackDensity" type="checkbox" checked> Adjust to photo density
+              </label>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Blue photo opacity <span class="lineStyleValue" id="photoLineOpacityValue">100%</span></label>
+                <input id="photoLineOpacity" type="range" min="20" max="200" step="5" value="100">
+              </div>
+              <div>
+                <label>Blue photo width <span class="lineStyleValue" id="photoLineWidthValue">100%</span></label>
+                <input id="photoLineWidth" type="range" min="50" max="200" step="5" value="100">
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Turquoise GPS opacity <span class="lineStyleValue" id="gpsLineOpacityValue">100%</span></label>
+                <input id="gpsLineOpacity" type="range" min="20" max="200" step="5" value="100">
+              </div>
+              <div>
+                <label>Turquoise GPS width <span class="lineStyleValue" id="gpsLineWidthValue">100%</span></label>
+                <input id="gpsLineWidth" type="range" min="50" max="200" step="5" value="100">
+              </div>
+            </div>
+
+            <div class="btnrow">
+              <button id="resetLineStyle" class="secondary tiny" type="button">Reset line style</button>
+            </div>
+            <div class="miniNote">These controls affect the main map. The overview remains clearer and always shows the full route.</div>
+          </div>
+        </details>
+
+        <details class="subSettings" id="musicDetails">
+          <summary>Music <span style="font-weight:500; opacity:.72;">optional</span></summary>
+          <div class="subSettingsBody">
+            <div class="row">
+              <div>
+                <label>Background music</label>
+                <select id="musicSelect">
+                  <option value="off" selected>Off</option>
+                  <option value="sample2">Relaxing sample 1 (piano)</option>
+                  <option value="sample1">Relaxing sample 2 (piano)</option>
+                  <option value="sample3">Relaxing sample 3 (piano)</option>
+                  <option value="somafm_drone">SomaFM — Drone Zone (live ambient)</option>
+                  <option value="somafm_spacestation">SomaFM — Space Station Soma (live ambient)</option>
+                  <option value="somafm_synphaera">SomaFM — Synphaera (live ambient/space)</option>
+                  <option value="random_somafm">Random live station (SomaFM)</option>
+                  <option value="upload">Upload your own</option>
+                </select>
+              </div>
+              <div>
+                <label>Volume</label>
+                <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.35" />
+              </div>
+            </div>
+
+            <div id="musicUploadRow" style="display:none; margin-top: 10px;">
+              <label>Upload audio file (mp3/ogg/wav)</label>
+              <input id="musicFile" type="file" accept="audio/*" />
+            </div>
+
+            <div class="btnrow" style="margin-top:10px;">
+              <button id="musicToggle" class="secondary tiny" type="button" disabled>Play music</button>
+            </div>
+            <div class="miniNote" id="musicAttribution"></div>
+          </div>
+        </details>
+
+        <div class="btnrow">
+          <button id="loadBtn" disabled>Load track</button>
+          <button id="playBtn" class="secondary" disabled>Play</button>
+          <button id="pauseBtn" class="secondary" disabled>Pause</button>
+          <button id="resetBtn" class="danger" disabled>Reset</button>
+        </div>
+      </div>
+
+      <div class="status" id="status">No data loaded.</div>
+    </div>
+
+    <div class="card photoCard">
+      <div class="photoStage">
+        <div class="photoBirdPicker">
+          <label for="birdSelectOverlay">Bird</label>
+          <select id="birdSelectOverlay" aria-label="Select bird" disabled>
+            <option value="">—</option>
+          </select>
+          <button id="settingsGear" class="settingsGear" type="button" title="Open settings" aria-label="Open settings">⚙</button>
+          <button id="editorModeBtn" class="settingsGear" type="button" title="Open photo editor" aria-label="Open photo editor" disabled>✎</button>
+          <button id="tableModeBtn" class="settingsGear" type="button" title="Open data table" aria-label="Open data table" disabled>▦</button>
+          <button id="progressModeBtn" class="settingsGear" type="button" title="Open progress" aria-label="Open progress" disabled>✓</button>
+        </div>
+        <div class="photoTools">
+          <button id="enlargePhoto" class="secondary tiny" type="button">Enlarge photo</button>
+        </div>
+        <button id="prevPhoto" class="photoNav prev" type="button" title="Previous photo" aria-label="Previous photo" disabled>−1</button>
+        <button id="nextPhoto" class="photoNav next" type="button" title="Next photo" aria-label="Next photo" disabled>+1</button>
+        <img id="imgA" alt="photo A" decoding="async" fetchpriority="high" style="opacity:1;">
+        <img id="imgB" alt="photo B" decoding="async" fetchpriority="low" style="opacity:0;">
+        <div id="sliderOverlay" style="display:none;">
+          <div class="sliderRow">
+            <button id="sliderPlayPause" class="secondary tiny" type="button" disabled>Play</button>
+            <input id="timeSlider" type="range" min="0" max="1" step="0.01" value="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card panel metaCard">
+      <div class="metaGrid">
+        <div><b id="metaBird">Bird: —</b></div>
+        <div class="muted" id="metaTime">Time: —</div>
+        <div class="muted" id="metaCoords">Lat/Lon: —</div>
+        <div class="muted" id="metaInfo">Photos used: —</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="mobilePanelBtn" class="secondary tiny" type="button" aria-label="Show details and settings">Details</button>
+
+<div id="mobilePanel" aria-hidden="true">
+  <div class="panelShell" role="dialog" aria-modal="true" aria-label="Details and settings">
+    <div class="panelTopbar">
+      <span class="title">Details &amp; settings</span>
+      <button id="closeMobilePanel" class="secondary tiny" type="button">Close</button>
+    </div>
+    <div class="panelBody" id="mobilePanelBody"></div>
+  </div>
+</div>
+
+<div class="editorMode" id="editorMode" aria-hidden="true">
+  <div class="editorWorkspace" role="dialog" aria-modal="true" aria-label="Photo annotation editor">
+    <section class="editorVisual">
+      <img id="editorPhoto" alt="Photo being annotated" decoding="async">
+      <div class="editorVisualTop">
+        <div class="editorPhotoBadges">
+          <div class="editorBadge" id="editorBirdBadge">Bird: —</div>
+          <div class="editorBadge" id="editorTimeBadge">Time: —</div>
+          <div class="editorBadge" id="editorFileBadge">File: —</div>
+        </div>
+        <button id="closeEditorMode" class="danger tiny" type="button">Close</button>
+      </div>
+      <div class="editorVisualNav">
+        <button id="editorPrevPhoto" class="secondary tiny" type="button">−1</button>
+        <span class="editorCounter" id="editorPhotoCounter">0 / 0</span>
+        <button id="editorNextPhoto" class="secondary tiny" type="button">+1</button>
+      </div>
+    </section>
+
+    <aside class="editorPanel">
+      <div class="editorPanelHeader">
+        <h2>Photo editor</h2>
+        <div class="editorRecordLine" id="editorRecordLine">No photo selected.</div>
+        <div class="editorStatus" id="editorStatus">Log in and open a photo to load its SQL record.</div>
+        <div class="editorMobileTabs"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
+      </div>
+
+      <form class="editorForm" id="editorForm" novalidate>
+        <div class="editorConnectionWarning" id="editorConnectionWarning">
+          You are not logged in. Open Settings → Editor account.
+        </div>
+
+        <section class="editorSection">
+          <h3>Selection and period</h3>
+          <div class="editorFields">
+            <div class="editorField">
+              <label for="editorQuality">Quality selected <span class="required">*</span></label>
+              <select id="editorQuality" data-field="Quality_selected">
+                <option value="">— select —</option>
+                <option value="yes">yes</option>
+                <option value="no">no</option>
+              </select>
+            </div>
+            <div class="editorField">
+              <label for="editorPheno">Phenological period <span class="required">*</span></label>
+              <select id="editorPheno" data-field="Pheno_period">
+                <option value="">— select —</option>
+                <option value="fledging">fledging</option>
+                <option value="pre-migratory">pre-migratory</option>
+                <option value="A_migration">A_migration</option>
+                <option value="Wintering">Wintering</option>
+              </select>
+            </div>
+            <div class="editorField">
+              <label for="editorResidence">Residence <span class="required">*</span></label>
+              <select id="editorResidence" data-field="Residence">
+                <option value="">— select —</option>
+                <option value="yes">yes</option>
+                <option value="no">no</option>
+              </select>
+            </div>
+            <div class="editorField">
+              <label for="editorPeriodDay">Period of day <span class="required">*</span></label>
+              <select id="editorPeriodDay" data-field="Period_day">
+                <option value="">— select —</option>
+                <option value="day">day</option>
+                <option value="night">night</option>
+              </select>
+            </div>
+            <div class="editorField full" id="editorArtificialLightsField" hidden>
+              <label class="editorInlineCheck" for="editorArtificialLights">
+                <input id="editorArtificialLights" data-field="Artificial_lights" type="checkbox"> Artificial lights visible
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="editorSection" id="editorDetailedAnnotations">
+          <h3>Image and individuals</h3>
+          <div class="editorFields">
+            <div class="editorField">
+              <label for="editorFeatherOcc">Feathers visible <span class="required">*</span></label>
+              <select id="editorFeatherOcc" data-field="Feather_occ">
+                <option value="">— select —</option>
+                <option value="yes">yes</option>
+                <option value="no">no</option>
+              </select>
+            </div>
+            <div class="editorField" id="editorFeatherPercField">
+              <label for="editorFeatherPerc">Feather coverage (%)</label>
+              <input id="editorFeatherPerc" data-field="Feather_perc" type="number" min="0" max="100" step="1">
+            </div>
+            <div class="editorField">
+              <label for="editorCiconiaNum">Visible White Storks <span class="required">*</span></label>
+              <input id="editorCiconiaNum" data-field="Ciconia_num" type="number" min="0" step="1">
+            </div>
+            <div class="editorField">
+              <label for="editorWater">Water presence <span class="required">*</span></label>
+              <select id="editorWater" data-field="Water_presence_class">
+                <option value="">— select —</option>
+                <option value="no_water_visible">no_water_visible</option>
+                <option value="small_water">small_water</option>
+                <option value="large_waterbody">large_waterbody</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="editorSection" id="editorBehaviourSection">
+          <h3>Behaviour and height</h3>
+          <div class="editorFields">
+            <div class="editorField">
+              <label for="editorFlyGround">Flight state <span class="required">*</span></label>
+              <select id="editorFlyGround" data-field="Fly_ground">
+                <option value="">— select —</option>
+                <option value="ground">ground</option>
+                <option value="fly">fly</option>
+                <option value="uncertain">uncertain</option>
+              </select>
+            </div>
+            <div class="editorField">
+              <label for="editorActivity">Activity class</label>
+              <select id="editorActivity" data-field="Activity_class">
+                <option value="">— select —</option>
+                <option value="foraging">foraging</option>
+                <option value="roosting">roosting</option>
+                <option value="night_roosting">night_roosting</option>
+                <option value="death">death</option>
+                <option value="fly">fly</option>
+              </select>
+            </div>
+            <div class="editorField" id="editorAltitudeField" hidden>
+              <label for="editorAltitude">Altitude class <span class="required">*</span></label>
+              <select id="editorAltitude" data-field="Altitude">
+                <option value="">— select —</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </div>
+            <div class="editorField" id="editorThermalField" hidden>
+              <label for="editorThermal">Thermal updraft</label>
+              <select id="editorThermal" data-field="Thermal_updraft">
+                <option value="">— not determined —</option>
+                <option value="yes">yes</option>
+                <option value="no">no</option>
+                <option value="?">?</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="editorSection" id="editorHabitatSection">
+          <h3>Habitat classification</h3>
+          <div class="editorFields">
+            <div class="editorField full" id="editorAgricultureField">
+              <label for="editorAgriculture">Agriculture type</label>
+              <select id="editorAgriculture" data-field="Agriculture_type">
+                <option value="">— select —</option>
+                <option value="non_agricultural">non_agricultural</option>
+                <option value="arable_unspecified">arable_unspecified</option>
+                <option value="mixed_cropping_or_agricultural_mosaic">mixed_cropping_or_agricultural_mosaic</option>
+                <option value="meadow_or_pasture">meadow_or_pasture</option>
+                <option value="flooded_or_water_managed_field">flooded_or_water_managed_field</option>
+                <option value="teff_cultivation">teff_cultivation</option>
+                <option value="maize_cultivation">maize_cultivation</option>
+                <option value="not_determinable">not_determinable</option>
+              </select>
+            </div>
+            <div class="editorField full" id="editorForagingField" hidden>
+              <label for="editorForaging">Foraging habitat <span class="required">*</span></label>
+              <select id="editorForaging" data-field="Foraging_habitat_group">
+                <option value="">— select —</option>
+                <option value="agricultural_land">agricultural_land</option>
+                <option value="waste_disposal_site">waste_disposal_site</option>
+                <option value="wetland_or_waterbody">wetland_or_waterbody</option>
+                <option value="natural_or_seminatural_open_habitat">natural_or_seminatural_open_habitat</option>
+                <option value="built_or_industrial_area">built_or_industrial_area</option>
+              </select>
+            </div>
+            <div class="editorField full" id="editorRoostField" hidden>
+              <label for="editorRoost">Roost site <span class="required">*</span></label>
+              <select id="editorRoost" data-field="Roost_site_group">
+                <option value="">— select —</option>
+                <option value="artificial_structure">artificial_structure</option>
+                <option value="ground_open_site">ground_open_site</option>
+                <option value="tree_or_shrub">tree_or_shrub</option>
+                <option value="nest">nest</option>
+                <option value="wetland_or_water_site">wetland_or_water_site</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <details class="editorSection" open>
+          <summary>Environment and remarks</summary>
+          <div class="editorFields">
+            <div class="editorField full">
+              <label for="editorEnvDesc">Environment description</label>
+              <input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvironmentOptions" autocomplete="off">
+            </div>
+            <div class="editorField full">
+              <label for="editorRemarks">Remarks</label>
+              <textarea id="editorRemarks" data-field="Remarks"></textarea>
+            </div>
+          </div>
+        </details>
+
+        <details class="editorSection">
+          <summary>Other visible species</summary>
+          <div class="editorFields">
+            <div class="editorField">
+              <label for="editorSpec1Name">Species 1</label>
+              <input id="editorSpec1Name" data-field="Spec1_name" type="text" list="editorSpeciesOptions" autocomplete="off">
+            </div>
+            <div class="editorField">
+              <label for="editorSpec1Abund">Species 1 abundance</label>
+              <input id="editorSpec1Abund" data-field="Spec1_abund" type="number" min="1" step="1">
+            </div>
+            <div class="editorField">
+              <label for="editorSpec2Name">Species 2</label>
+              <input id="editorSpec2Name" data-field="Spec2_name" type="text" list="editorSpeciesOptions" autocomplete="off">
+            </div>
+            <div class="editorField">
+              <label for="editorSpec2Abund">Species 2 abundance</label>
+              <input id="editorSpec2Abund" data-field="Spec2_abund" type="number" min="1" step="1">
+            </div>
+          </div>
+        </details>
+
+        <details class="editorSection">
+          <summary>Derived height and telemetry</summary>
+          <div class="editorFields">
+            <div class="editorField">
+              <label for="editorElevation">Ground elevation (m)</label>
+              <input id="editorElevation" data-field="Elevation_m" type="number" step="1">
+            </div>
+            <div class="editorField">
+              <label>GPS altitude (m)</label>
+              <div class="editorDerived" id="editorAltitudeM">—</div>
+            </div>
+            <div class="editorField">
+              <label>Above ground (m)</label>
+              <div class="editorDerived" id="editorAboveGround">—</div>
+            </div>
+            <div class="editorField">
+              <label>100-m height class</label>
+              <div class="editorDerived" id="editorHeightClass">—</div>
+            </div>
+            <div class="editorField full">
+              <label>GPS record</label>
+              <div class="editorDerived" id="editorGpsRecord">—</div>
+            </div>
+          </div>
+        </details>
+      </form>
+
+      <div class="editorFooter">
+        <button id="editorSaveDraft" class="secondary" type="button">Save draft</button>
+        <button id="editorSaveAnalysed" class="primarySave" type="button">Save analysed</button>
+        <button id="editorSaveNext" class="saveNext" type="button">Save &amp; next</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="dataWorkspace" id="dataWorkspace" aria-hidden="true">
+  <div class="dataTopbar">
+    <div class="dataTabs"><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button><button class="secondary" id="dataUsersTab" type="button" style="display:none;">Users</button></div>
+    <div class="dataActions"><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
+  </div>
+  <div class="dataPanel" id="dataPanel"></div>
+</div>
+
+<datalist id="editorEnvironmentOptions">
+  <option value="field"><option value="landfill"><option value="landfill slope"><option value="building">
+  <option value="savanna/field"><option value="meadow"><option value="wastewater treatment plant"><option value="tree">
+  <option value="savanna/tree"><option value="roof"><option value="nest"><option value="desert">
+  <option value="river island"><option value="savanna"><option value="tree/shrub"><option value="semi-desert/field">
+  <option value="landfill fence"><option value="dike"><option value="meadow/pasture"><option value="riverbank">
+  <option value="field/pasture"><option value="arable field"><option value="urban area"><option value="dry riverbed">
+</datalist>
+
+<datalist id="editorSpeciesOptions">
+  <option value="Milvus migrans"><option value="Larus argentatus"><option value="Corvus corax"><option value="Larus sensu lato">
+  <option value="Corvus frugilegus"><option value="Laridae"><option value="Milvus sp"><option value="Larus sp">
+  <option value="Egretta garzetta"><option value="Ardea alba"><option value="Homo sapiens"><option value="Sturnus vulgaris">
+  <option value="Canis familiaris"><option value="Grus grus"><option value="Ardeidae"><option value="Mycteria ibis">
+  <option value="Corvus rhipidurus"><option value="Threskiornis aethiopicus"><option value="Circus aeruginosus"><option value="Equus asinus">
+</datalist>
+
+<div class="photoModal" id="photoModal" aria-hidden="true">
+  <div class="inner">
+    <div class="topbar">
+      <div class="left">
+        <div class="chip" id="modalChip">Photo</div>
+      </div>
+      <div class="right">
+        <button id="hidePhoto" class="danger tiny" type="button">Hide photo (show controls)</button>
+      </div>
+    </div>
+    <div class="stage">
+      <img id="modalImgA" alt="modal photo A" decoding="async" style="opacity:1;">
+      <img id="modalImgB" alt="modal photo B" decoding="async" style="opacity:0;">
+    </div>
+  </div>
+</div>
+
+<audio id="bgAudio" preload="auto" loop></audio>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<script src="config.js"></script>
+
+<script>
+(() => {
+  const el = (id) => document.getElementById(id);
+
+  const settingsCard = el("settingsCard");
+  const toggleSettingsBtn = el("toggleSettings");
+  const settingsBodyEl = el("settingsBody");
+  const wrapEl = document.querySelector(".wrap");
+  const sideEl = document.querySelector(".side");
+
+  const folderInput = el("folderInput");
+  const loadGithubBtn = el("loadGithubBtn");
+  const birdSelect  = el("birdSelect");
+  const birdSelectOverlay = el("birdSelectOverlay");
+  const settingsGearBtn = el("settingsGear");
+  const editorModeBtn = el("editorModeBtn");
+  const loadBtn     = el("loadBtn");
+  const playBtn     = el("playBtn");
+  const pauseBtn    = el("pauseBtn");
+  const resetBtn    = el("resetBtn");
+
+  const speedEl       = el("speed");
+  const legSecondsEl  = el("legSeconds");
+  const holdSecondsEl = el("holdSeconds");
+  const followZoomEl  = el("followZoom");
+  const followModeEl  = el("followMode");
+  const layoutSplitEl = el("layoutSplit");
+
+  const editorWebAppUrlEl = el("editorWebAppUrl");
+  const editorSecretEl = el("editorSecret");
+  const testEditorConnectionBtn = el("testEditorConnection");
+  const editorConnectionStatusEl = el("editorConnectionStatus");
+  const editorLogoutBtn = el("editorLogout");
+  const passwordChangeFieldsEl = el("passwordChangeFields");
+  const editorNewPasswordEl = el("editorNewPassword");
+  const changeEditorPasswordBtn = el("changeEditorPassword");
+
+  const loopCurrentEl = el("loopCurrent");
+  const loopAllEl     = el("loopAll");
+
+  const showGpsTrackEl        = el("showGpsTrack");
+  const showPhotoGpsSegmentEl = el("showPhotoGpsSegment");
+  const showStopoversEl       = el("showStopovers");
+  const backgroundDataStatusEl= el("backgroundDataStatus");
+
+  const autoTrackDensityEl      = el("autoTrackDensity");
+  const photoLineOpacityEl      = el("photoLineOpacity");
+  const photoLineWidthEl        = el("photoLineWidth");
+  const gpsLineOpacityEl        = el("gpsLineOpacity");
+  const gpsLineWidthEl          = el("gpsLineWidth");
+  const photoLineOpacityValueEl = el("photoLineOpacityValue");
+  const photoLineWidthValueEl   = el("photoLineWidthValue");
+  const gpsLineOpacityValueEl   = el("gpsLineOpacityValue");
+  const gpsLineWidthValueEl     = el("gpsLineWidthValue");
+  const resetLineStyleBtn       = el("resetLineStyle");
+  const lineStyleDetailsEl      = el("lineStyleDetails");
+
+  const musicSelectEl = el("musicSelect");
+  const musicVolEl    = el("musicVol");
+  const musicFileEl   = el("musicFile");
+  const musicUploadRow= el("musicUploadRow");
+  const musicToggleBtn= el("musicToggle");
+  const musicAttribEl = el("musicAttribution");
+  const bgAudio       = el("bgAudio");
+
+  const statusEl = el("status");
+
+  const imgA = el("imgA");
+  const imgB = el("imgB");
+  const photoStageEl = document.querySelector(".photoStage");
+  const prevPhotoBtn = el("prevPhoto");
+  const nextPhotoBtn = el("nextPhoto");
+
+  const metaBird   = el("metaBird");
+  const metaTime   = el("metaTime");
+  const metaCoords = el("metaCoords");
+  const metaInfo   = el("metaInfo");
+
+  const mapTimeBadge = el("mapTimeBadge");
+
+  // Photo modal
+  const enlargePhotoBtn = el("enlargePhoto");
+  const photoModal = el("photoModal");
+  const hidePhotoBtn = el("hidePhoto");
+  const modalImgA = el("modalImgA");
+  const modalImgB = el("modalImgB");
+  const modalChip = el("modalChip");
+
+  // Photo annotation editor
+  const editorModeEl = el("editorMode");
+  const editorPhotoEl = el("editorPhoto");
+  const closeEditorModeBtn = el("closeEditorMode");
+  const editorPrevPhotoBtn = el("editorPrevPhoto");
+  const editorNextPhotoBtn = el("editorNextPhoto");
+  const editorPhotoCounterEl = el("editorPhotoCounter");
+  const editorBirdBadgeEl = el("editorBirdBadge");
+  const editorTimeBadgeEl = el("editorTimeBadge");
+  const editorFileBadgeEl = el("editorFileBadge");
+  const editorRecordLineEl = el("editorRecordLine");
+  const editorStatusEl = el("editorStatus");
+  const editorFormEl = el("editorForm");
+  const editorConnectionWarningEl = el("editorConnectionWarning");
+  const editorSaveDraftBtn = el("editorSaveDraft");
+  const editorSaveAnalysedBtn = el("editorSaveAnalysed");
+  const editorSaveNextBtn = el("editorSaveNext");
+  const editorQualityEl = el("editorQuality");
+  const editorPhenoEl = el("editorPheno");
+  const editorResidenceEl = el("editorResidence");
+  const editorPeriodDayEl = el("editorPeriodDay");
+  const editorArtificialLightsEl = el("editorArtificialLights");
+  const editorArtificialLightsFieldEl = el("editorArtificialLightsField");
+  const editorFeatherOccEl = el("editorFeatherOcc");
+  const editorFeatherPercEl = el("editorFeatherPerc");
+  const editorFeatherPercFieldEl = el("editorFeatherPercField");
+  const editorCiconiaNumEl = el("editorCiconiaNum");
+  const editorFlyGroundEl = el("editorFlyGround");
+  const editorActivityEl = el("editorActivity");
+  const editorAltitudeEl = el("editorAltitude");
+  const editorAltitudeFieldEl = el("editorAltitudeField");
+  const editorThermalEl = el("editorThermal");
+  const editorThermalFieldEl = el("editorThermalField");
+  const editorAgricultureEl = el("editorAgriculture");
+  const editorAgricultureFieldEl = el("editorAgricultureField");
+  const editorForagingEl = el("editorForaging");
+  const editorForagingFieldEl = el("editorForagingField");
+  const editorRoostEl = el("editorRoost");
+  const editorRoostFieldEl = el("editorRoostField");
+  const editorWaterEl = el("editorWater");
+  const editorSpec1NameEl = el("editorSpec1Name");
+  const editorSpec1AbundEl = el("editorSpec1Abund");
+  const editorSpec2NameEl = el("editorSpec2Name");
+  const editorSpec2AbundEl = el("editorSpec2Abund");
+  const editorElevationEl = el("editorElevation");
+  const editorAltitudeMEl = el("editorAltitudeM");
+  const editorAboveGroundEl = el("editorAboveGround");
+  const editorHeightClassEl = el("editorHeightClass");
+  const editorGpsRecordEl = el("editorGpsRecord");
+  const editorDetailedAnnotationsEl = el("editorDetailedAnnotations");
+  const editorBehaviourSectionEl = el("editorBehaviourSection");
+  const editorHabitatSectionEl = el("editorHabitatSection");
+  const editorPanelEl = document.querySelector(".editorPanel");
+  const editorWorkspaceEl = document.querySelector(".editorWorkspace");
+  const editorPanelHeaderEl = document.querySelector(".editorPanelHeader");
+  const editorVisualNavEl = document.querySelector(".editorVisualNav");
+  const editorVisualEl = document.querySelector(".editorVisual");
+  const editorVisualTopEl = document.querySelector(".editorVisualTop");
+  const tableModeBtn = el("tableModeBtn");
+  const progressModeBtn = el("progressModeBtn");
+  const dataWorkspaceEl = el("dataWorkspace");
+  const dataPanelEl = el("dataPanel");
+  const dataWorkspaceStatusEl = el("dataWorkspaceStatus");
+  const dataTableTabBtn = el("dataTableTab");
+  const dataProgressTabBtn = el("dataProgressTab");
+  const dataUsersTabBtn = el("dataUsersTab");
+  const closeDataWorkspaceBtn = el("closeDataWorkspace");
+
+  const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
+  const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
+  let authState = { token: "", user: null, individualIds: [] };
+  try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
+  const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
+  const clearAuth = () => { authState = { token:"", user:null, individualIds:[] }; try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch(e) {} updateAuthUi(); };
+  const apiFetch = async (apiPath, options = {}, { auth = true, raw = false } = {}) => {
+    const headers = new Headers(options.headers || {});
+    if (auth && authState.token) headers.set("Authorization", `Bearer ${authState.token}`);
+    if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    const response = await fetch(`${API_BASE}${apiPath}`, { ...options, headers });
+    if (raw) {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response;
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) clearAuth();
+      const error = new Error(data.error || `HTTP ${response.status}`); error.status = response.status; error.data = data; throw error;
+    }
+    return data;
+  };
+
+  // Remember settings panel state when toggling the photo modal
+  let prevSettingsCollapsed = false;
+
+  // Time slider
+  const sliderOverlay = el("sliderOverlay");
+  const timeSlider = el("timeSlider");
+
+  const sliderPlayPauseBtn = el("sliderPlayPause");
+  const syncSliderPlayPause = () => {
+    if (!sliderPlayPauseBtn) return;
+    // Disable only when playback is unavailable (same as both main buttons disabled)
+    sliderPlayPauseBtn.disabled = !!(playBtn.disabled && pauseBtn.disabled);
+    sliderPlayPauseBtn.textContent = playing ? "Pause" : "Play";
+  };
+
+  const basemapSelect = el("basemapSelect");
+
+    // Mobile full-screen mode (map+photo). Keep fullscreen on mobile and use a slide-up panel for details/settings.
+  const mobileMQ = window.matchMedia("(max-width: 980px)");
+  const isMobile = () => mobileMQ.matches;
+
+  const mobilePanelBtn = el("mobilePanelBtn");
+  const mobilePanel = el("mobilePanel");
+  const mobilePanelBody = el("mobilePanelBody");
+  const closeMobilePanelBtn = el("closeMobilePanel");
+
+  const metaCardEl = document.querySelector(".metaCard");
+
+  // Remember original positions so we can restore when switching back to desktop layout
+  const origSettings = { parent: settingsCard.parentNode, next: settingsCard.nextSibling };
+  const origMeta = metaCardEl ? { parent: metaCardEl.parentNode, next: metaCardEl.nextSibling } : null;
+
+  const openMobilePanel = () => {
+    document.body.classList.add("mobilePanelOpen");
+    if (mobilePanel) mobilePanel.setAttribute("aria-hidden","false");
+    // Let layout settle, then fix Leaflet sizes
+    setTimeout(() => { try { refreshMapSizes(); } catch(e) {} }, 60);
+  };
+  const closeMobilePanel = () => {
+    document.body.classList.remove("mobilePanelOpen");
+    if (mobilePanel) mobilePanel.setAttribute("aria-hidden","true");
+    setTimeout(() => { try { refreshMapSizes(); } catch(e) {} }, 60);
+  };
+  const toggleMobilePanel = () => {
+    if (document.body.classList.contains("mobilePanelOpen")) closeMobilePanel();
+    else openMobilePanel();
+  };
+
+  const moveCardsIntoMobilePanel = () => {
+    if (!mobilePanelBody) return;
+    if (metaCardEl && metaCardEl.parentNode !== mobilePanelBody) mobilePanelBody.appendChild(metaCardEl);
+    if (settingsCard && settingsCard.parentNode !== mobilePanelBody) mobilePanelBody.appendChild(settingsCard);
+  };
+
+  const restoreCardsFromMobilePanel = () => {
+    if (origMeta && origMeta.parent && metaCardEl && metaCardEl.parentNode !== origMeta.parent) {
+      origMeta.parent.insertBefore(metaCardEl, origMeta.next);
+    }
+    if (origSettings.parent && settingsCard && settingsCard.parentNode !== origSettings.parent) {
+      origSettings.parent.insertBefore(settingsCard, origSettings.next);
+    }
+  };
+
+  const applyMobileMode = () => {
+    if (isMobile()) {
+      // Always start in the fullscreen split view (map+photo). Map stays interactive.
+      document.body.classList.add("mobileLock");
+      moveCardsIntoMobilePanel();
+      closeMobilePanel();
+    } else {
+      document.body.classList.remove("mobileLock");
+      closeMobilePanel();
+      restoreCardsFromMobilePanel();
+    }
+    setTimeout(() => { try { refreshMapSizes(); } catch(e) {} }, 80);
+  };
+
+  applyMobileMode();
+  if (mobileMQ && mobileMQ.addEventListener) mobileMQ.addEventListener("change", applyMobileMode);
+
+  if (mobilePanelBtn) mobilePanelBtn.addEventListener("click", toggleMobilePanel);
+  if (closeMobilePanelBtn) closeMobilePanelBtn.addEventListener("click", closeMobilePanel);
+  if (mobilePanel) mobilePanel.addEventListener("click", (e) => { if (e.target === mobilePanel) closeMobilePanel(); });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMobilePanel();
+  });
+
+  // Collapsible settings
+  let settingsAutoCloseTimer = null;
+  const settingsAutoCloseMQ = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const clearSettingsAutoClose = () => {
+    if (settingsAutoCloseTimer) clearTimeout(settingsAutoCloseTimer);
+    settingsAutoCloseTimer = null;
+  };
+  const setSettingsCollapsed = (collapsed) => {
+    if (collapsed) clearSettingsAutoClose();
+    settingsCard.classList.toggle("settingsCollapsed", collapsed);
+    sideEl.classList.toggle("settingsHidden", collapsed);
+    toggleSettingsBtn.textContent = collapsed ? "Show" : "Hide";
+  };
+  const scheduleSettingsAutoClose = () => {
+    clearSettingsAutoClose();
+    if (!settingsAutoCloseMQ.matches || settingsCard.classList.contains("settingsCollapsed")) return;
+    settingsAutoCloseTimer = setTimeout(() => {
+      settingsAutoCloseTimer = null;
+      if (!settingsCard.matches(":hover")) {
+        setSettingsCollapsed(true);
+        refreshMapSizes();
+      }
+    }, 4000);
+  };
+  toggleSettingsBtn.addEventListener("click", () => {
+    const collapsed = settingsCard.classList.contains("settingsCollapsed");
+    setSettingsCollapsed(!collapsed);
+    if (collapsed) scheduleSettingsAutoClose();
+    refreshMapSizes();
+  });
+  settingsCard.addEventListener("pointerenter", clearSettingsAutoClose);
+  settingsCard.addEventListener("pointerleave", scheduleSettingsAutoClose);
+  settingsGearBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setSettingsCollapsed(false);
+    lineStyleDetailsEl.open = false;
+    settingsBodyEl.scrollTop = 0;
+    if (isMobile()) {
+      openMobilePanel();
+    } else {
+      settingsCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      scheduleSettingsAutoClose();
+    }
+    setTimeout(() => {
+      settingsBodyEl.scrollTop = 0;
+    }, 60);
+    refreshMapSizes();
+  });
+
+// Default UI state (requested):
+// - Settings panel collapsed by default
+// - Loop all birds enabled by default
+setSettingsCollapsed(true);
+loopAllEl.checked = true;
+loopCurrentEl.checked = false;
+
+
+  // Photo modal behavior
+  const openPhoto = () => {
+    modalImgA.src = imgA.src || "";
+    modalImgB.src = imgB.src || "";
+    modalImgA.style.opacity = imgA.style.opacity || "1";
+    modalImgB.style.opacity = imgB.style.opacity || "0";
+    modalChip.textContent = `${metaBird.textContent} • ${metaTime.textContent}`;
+    photoModal.classList.add("open");
+    photoModal.setAttribute("aria-hidden", "false");
+    prevSettingsCollapsed = settingsCard.classList.contains("settingsCollapsed");
+    setSettingsCollapsed(true);
+  };
+  const closePhoto = () => {
+    photoModal.classList.remove("open");
+    photoModal.setAttribute("aria-hidden", "true");
+    // Release the modal's decoded-image references when it is not visible.
+    modalImgA.removeAttribute("src");
+    modalImgB.removeAttribute("src");
+    setSettingsCollapsed(prevSettingsCollapsed);
+  };
+  enlargePhotoBtn.addEventListener("click", openPhoto);
+  hidePhotoBtn.addEventListener("click", closePhoto);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && photoModal.classList.contains("open")) closePhoto();
+  });
+  photoModal.addEventListener("click", (e) => {
+    if (e.target === photoModal) closePhoto();
+  });
+
+  // Mutually exclusive loop toggles
+  loopAllEl.addEventListener("change", () => { if (loopAllEl.checked) loopCurrentEl.checked = false; });
+  loopCurrentEl.addEventListener("change", () => { if (loopCurrentEl.checked) loopAllEl.checked = false; });
+
+  // Music module
+  let musicUploadURL = null;
+
+  // Local "samples" (CC BY 3.0) hosted on Wikimedia Commons
+  const SAMPLES = {
+    sample2: {
+      primary: "https://upload.wikimedia.org/wikipedia/commons/transcoded/e/e8/Kevin_MacLeod_-_02_-_Meditation_Impromptu_02.ogg/Kevin_MacLeod_-_02_-_Meditation_Impromptu_02.ogg.mp3",
+      fallback: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Kevin_MacLeod_-_02_-_Meditation_Impromptu_02.ogg",
+      attribution: "Sample: “Meditation Impromptu 02” — Kevin MacLeod. Licensed CC BY 3.0 (attribution required)."
+    },
+    sample1: {
+      primary: "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/67/Kevin_MacLeod_-_01_-_Meditation_Impromptu_01.ogg/Kevin_MacLeod_-_01_-_Meditation_Impromptu_01.ogg.mp3",
+      fallback: "https://upload.wikimedia.org/wikipedia/commons/6/67/Kevin_MacLeod_-_01_-_Meditation_Impromptu_01.ogg",
+      attribution: "Sample: “Meditation Impromptu 01” — Kevin MacLeod. Licensed CC BY 3.0 (attribution required)."
+    },
+    sample3: {
+      primary: "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/17/Kevin_MacLeod_-_03_-_Meditation_Impromptu_03.ogg/Kevin_MacLeod_-_03_-_Meditation_Impromptu_03.ogg.mp3",
+      fallback: "https://upload.wikimedia.org/wikipedia/commons/1/17/Kevin_MacLeod_-_03_-_Meditation_Impromptu_03.ogg",
+      attribution: "Sample: “Meditation Impromptu 03” — Kevin MacLeod. Licensed CC BY 3.0 (attribution required)."
+    }
+  };
+
+  // Live relaxing stations (SomaFM direct server links)
+  // NOTE: SomaFM states these direct links are for individual/personal use only.
+  const STREAMS = {
+    somafm_drone: {
+      primary: "https://ice3.somafm.com/dronezone-128-mp3",
+      fallback: "https://ice5.somafm.com/dronezone-128-mp3",
+      attribution: "Stream: SomaFM — Drone Zone (live ambient). (Direct server link; personal use per SomaFM.)"
+    },
+    somafm_spacestation: {
+      primary: "https://ice3.somafm.com/spacestation-128-mp3",
+      fallback: "https://ice5.somafm.com/spacestation-128-mp3",
+      attribution: "Stream: SomaFM — Space Station Soma (live ambient). (Direct server link; personal use per SomaFM.)"
+    },
+    somafm_synphaera: {
+      primary: "https://ice3.somafm.com/synphaera-128-mp3",
+      fallback: "https://ice5.somafm.com/synphaera-128-mp3",
+      attribution: "Stream: SomaFM — Synphaera (live ambient/space). (Direct server link; personal use per SomaFM.)"
+    }
+  };
+
+  const RANDOM_SOMAFM_POOL = ["somafm_drone", "somafm_spacestation", "somafm_synphaera"];
+
+  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const setMusicToggleLabel = () => {
+    musicToggleBtn.textContent = bgAudio.paused ? "Play music" : "Pause music";
+  };
+
+  const stopMusic = () => {
+    try { bgAudio.pause(); } catch(e) {}
+    try { bgAudio.currentTime = 0; } catch(e) {}
+    setMusicToggleLabel();
+  };
+
+  const revokeMusicUpload = () => {
+    if (musicUploadURL) {
+      try { URL.revokeObjectURL(musicUploadURL); } catch(e) {}
+      musicUploadURL = null;
+    }
+  };
+
+  const setAudioSource = (primary, fallback) => {
+    bgAudio.onerror = null;
+    bgAudio.src = primary || "";
+    bgAudio.onerror = () => {
+      if (fallback && bgAudio.src !== fallback) {
+        bgAudio.src = fallback;
+        try { bgAudio.load(); } catch(e) {}
+      }
+    };
+    try { bgAudio.load(); } catch(e) {}
+  };
+
+  const configureMusic = () => {
+    // Clean up anything previously loaded
+    revokeMusicUpload();
+    stopMusic();
+
+    const mode = musicSelectEl.value;
+    bgAudio.volume = Math.max(0, Math.min(1, parseFloat(musicVolEl.value || "0.35")));
+    bgAudio.loop = true;
+
+    // Default UI
+    musicUploadRow.style.display = "none";
+    musicAttribEl.textContent = "";
+
+    if (mode === "off") {
+      musicToggleBtn.disabled = true;
+      bgAudio.removeAttribute("src");
+      try { bgAudio.load(); } catch(e) {}
+      return;
+    }
+
+    if (mode === "upload") {
+      musicUploadRow.style.display = "block";
+      const f = (musicFileEl && musicFileEl.files && musicFileEl.files[0]) ? musicFileEl.files[0] : null;
+      if (!f) {
+        musicToggleBtn.disabled = true;
+        musicAttribEl.textContent = "Upload an audio file to enable music.";
+        bgAudio.removeAttribute("src");
+        try { bgAudio.load(); } catch(e) {}
+        return;
+      }
+      musicUploadURL = URL.createObjectURL(f);
+      setAudioSource(musicUploadURL, null);
+      musicToggleBtn.disabled = false;
+      musicAttribEl.textContent = `Local file: ${f.name}`;
+      return;
+    }
+
+    let resolvedMode = mode;
+    if (mode === "random_somafm") resolvedMode = pickRandom(RANDOM_SOMAFM_POOL);
+
+    // Samples
+    if (SAMPLES[resolvedMode]) {
+      const s = SAMPLES[resolvedMode];
+      musicToggleBtn.disabled = false;
+      setAudioSource(s.primary, s.fallback);
+      musicAttribEl.textContent = s.attribution;
+      return;
+    }
+
+    // Streams
+    if (STREAMS[resolvedMode]) {
+      const st = STREAMS[resolvedMode];
+      musicToggleBtn.disabled = false;
+      setAudioSource(st.primary, st.fallback);
+      musicAttribEl.textContent = st.attribution;
+      return;
+    }
+
+    // Fallback
+    musicToggleBtn.disabled = true;
+    bgAudio.removeAttribute("src");
+    try { bgAudio.load(); } catch(e) {}
+  };
+
+  musicVolEl.addEventListener("input", () => {
+    bgAudio.volume = Math.max(0, Math.min(1, parseFloat(musicVolEl.value || "0.35")));
+  });
+  musicSelectEl.addEventListener("change", configureMusic);
+  if (musicFileEl) musicFileEl.addEventListener("change", configureMusic);
+
+  musicToggleBtn.addEventListener("click", async () => {
+    try {
+      if (bgAudio.paused) await bgAudio.play();
+      else bgAudio.pause();
+    } catch(e) {}
+    setMusicToggleLabel();
+  });
+
+  const tryStartMusic = async () => {
+    if (musicSelectEl.value === "off") return;
+    if (!bgAudio.src) return;
+    try {
+      if (bgAudio.paused) await bgAudio.play();
+    } catch(e) {}
+    setMusicToggleLabel();
+  };
+
+  configureMusic();
+
+  // Maps
+  const followMap   = L.map('mapFollow',   { zoomControl: true, worldCopyJump: true }).setView([20, 0], 2);
+  // Shorten credits bar (remove Leaflet prefix)
+  try { followMap.attributionControl.setPrefix(''); } catch(e) {}
+  const overviewMap = L.map('mapOverview', {
+    zoomControl: false,
+    worldCopyJump: true,
+    attributionControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    touchZoom: false
+  }).setView([20, 0], 2);
+
+  // Helper: make sure each map has a labels pane (so place-name tiles sit above imagery)
+  const ensureLabelsPane = (map) => {
+    const paneName = "labelsPane";
+    if (!map.getPane(paneName)) {
+      map.createPane(paneName);
+      const p = map.getPane(paneName);
+      p.style.zIndex = 390;          // above base tiles, below vector overlays (track/markers)
+      p.style.pointerEvents = "none"; // never block map interactions
+    }
+    return paneName;
+  };
+
+
+  const baseDefs = {
+    osmStd: {
+      label: "OSM Standard (local labels)",
+      kind: "tile",
+      url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      opts: { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }
+    },
+    osmDE: {
+      label: "OSM DE (Latin transliteration)",
+      kind: "tile",
+      url: "https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png",
+      opts: { maxZoom: 19, subdomains: "abc", attribution: '&copy; OpenStreetMap contributors (openstreetmap.de)' }
+    },
+    cartoPos: {
+      label: "CARTO Positron (light)",
+      kind: "tile",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",
+      opts: { maxZoom: 19, subdomains: "abcd", attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.' }
+    },
+    cartoVoy: {
+      label: "CARTO Voyager (color)",
+      kind: "tile",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      opts: { maxZoom: 19, subdomains: "abcd", attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.' }
+    },
+    opentopo: {
+      label: "OpenTopoMap",
+      kind: "tile",
+      url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      opts: { maxZoom: 17, subdomains: "abc", attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap' }
+    },
+    plOrtho: {
+      label: "PL Ortho (Geoportal)",
+      kind: "wms",
+      url: "https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/HighResolution",
+      opts: {
+        layers: "Raster",
+        format: "image/jpeg",
+        transparent: false,
+        version: "1.3.0",
+        tileSize: 256,
+        maxZoom: 23,
+        attribution: 'GUGiK / geoportal.gov.pl'
+      }
+    },
+    esriImagery: {
+      label: "Esri World Imagery",
+      kind: "tile",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      opts: {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      }
+    },
+
+    esriImageryLabels: {
+      label: "Esri Imagery + Labels",
+      kind: "group",
+      baseUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      labelsUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      baseOpts: {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      },
+      labelsOpts: {
+        maxZoom: 19,
+        opacity: 0.95
+      }
+    }
+  };
+
+  let followBase = null;
+  let overviewBase = null;
+
+  const createBaseLayer = (key, map) => {
+    const def = baseDefs[key] || baseDefs.esriImageryLabels || baseDefs.esriImagery;
+
+    if (def.kind === "wms") return L.tileLayer.wms(def.url, def.opts);
+
+    if (def.kind === "group") {
+      const paneName = ensureLabelsPane(map);
+      const base = L.tileLayer(def.baseUrl, def.baseOpts);
+      const labelsOpts = Object.assign({}, def.labelsOpts || {}, { pane: paneName });
+      const labels = L.tileLayer(def.labelsUrl, labelsOpts);
+      return L.layerGroup([base, labels]);
+    }
+
+    return L.tileLayer(def.url, def.opts);
+  };
+
+  const applyBasemap = (key) => {
+    try { if (followBase) followMap.removeLayer(followBase); } catch(e) {}
+    try { if (overviewBase) overviewMap.removeLayer(overviewBase); } catch(e) {}
+    followBase = createBaseLayer(key, followMap).addTo(followMap);
+    overviewBase = createBaseLayer(key, overviewMap).addTo(overviewMap);
+  };
+
+  basemapSelect.addEventListener("change", () => applyBasemap(basemapSelect.value));
+
+  applyBasemap(basemapSelect.value || "esriImageryLabels");
+
+  const overviewLine = L.polyline([], { weight: 3, opacity: 0.85 }).addTo(overviewMap);
+  const overviewMarker = L.circleMarker([0,0], {
+    radius: 6,
+    color: "#fff",
+    fillColor: "#3388ff",
+    weight: 3,
+    fillOpacity: 0.95
+  }).addTo(overviewMap);
+
+  const followLine = L.polyline([], { weight: 4, opacity: 0.90 }).addTo(followMap);
+  const followMarker = L.circleMarker([0,0], {
+    radius: 7,
+    color: "#fff",
+    fillColor: "#3388ff",
+    weight: 3,
+    fillOpacity: 0.95
+  }).addTo(followMap);
+
+  // Optional data layers. They sit underneath the original animated blue line,
+  // so the existing photo animation remains visually unchanged.
+  const ensureDataPane = (map, name, zIndex) => {
+    if (!map.getPane(name)) map.createPane(name);
+    map.getPane(name).style.zIndex = String(zIndex);
+  };
+  for (const map of [followMap, overviewMap]) {
+    ensureDataPane(map, "stopoverPane", 395);
+    ensureDataPane(map, "gpsBackgroundPane", 397);
+    ensureDataPane(map, "gpsSegmentPane", 399);
+  }
+  ensureDataPane(followMap, "gpsHitPane", 401);
+
+  const gpsFullFollowLine = L.polyline([], {
+    pane: "gpsBackgroundPane", color: "#73e0c1", weight: 2, opacity: 0.58,
+    dashArray: "5 6", interactive: false
+  }).addTo(followMap);
+  const gpsFullOverviewLine = L.polyline([], {
+    pane: "gpsBackgroundPane", color: "#73e0c1", weight: 2, opacity: 0.55,
+    dashArray: "4 5", interactive: false
+  }).addTo(overviewMap);
+
+  const gpsSegmentFollowLine = L.polyline([], {
+    pane: "gpsSegmentPane", color: "#ffd166", weight: 5, opacity: 0.95,
+    lineCap: "round", lineJoin: "round", interactive: false
+  }).addTo(followMap);
+  const gpsSegmentOverviewLine = L.polyline([], {
+    pane: "gpsSegmentPane", color: "#ffd166", weight: 3, opacity: 0.90,
+    lineCap: "round", lineJoin: "round", interactive: false
+  }).addTo(overviewMap);
+
+  // A wide, nearly invisible hit line makes it easy to hover the GPS path
+  // without creating thousands of individual Leaflet markers.
+  const gpsHitLine = L.polyline([], {
+    pane: "gpsHitPane", color: "#ffffff", weight: 14, opacity: 0.01,
+    interactive: true
+  }).addTo(followMap);
+  const gpsHoverTooltip = L.tooltip({
+    className: "gpsInfoTooltip", direction: "top", offset: [0, -7], opacity: 1
+  });
+
+  const stopoverFollowLayer = L.geoJSON(null, {
+    pane: "stopoverPane",
+    style: () => ({
+      color: "#ff9f43", weight: 2, opacity: 0.90,
+      fillColor: "#ff9f43", fillOpacity: 0.16
+    }),
+    onEachFeature: (feature, layer) => {
+      layer.bindTooltip(stopoverTooltipHtml(feature), {
+        sticky: true, className: "stopoverInfoTooltip", opacity: 1
+      });
+    }
+  }).addTo(followMap);
+  const stopoverOverviewLayer = L.geoJSON(null, {
+    pane: "stopoverPane",
+    interactive: false,
+    style: () => ({
+      color: "#ff9f43", weight: 1.5, opacity: 0.78,
+      fillColor: "#ff9f43", fillOpacity: 0.11
+    })
+  }).addTo(overviewMap);
+
+  const groupedFiles = new Map();
+  const trackCache = new Map();
+  const gpsTracksByBird = new Map();
+
+  // Public viewer data, photographs and GPS routes come from the server API.
+  // Only lightweight metadata is loaded initially; image files remain lazy.
+
+  let stopoverFeatures = [];
+  let currentGpsPoints = [];
+  let currentSegmentGpsPoints = [];
+  let gpsHitPoints = [];
+  let gpsLoadSummary = "GPS: loading…";
+  let stopoverLoadSummary = "Stopovers: loading…";
+  const gpsDatasetPromises = new Map();
+
+  let track = [];
+  let birdId = null;
+
+  let playing = false;
+  let rafId = null;
+  let segIndex = 0;
+  let segT = 0;
+  let lastTs = null;
+
+  let followFixed = [];
+  let lastFollowMove = 0;
+
+  let currentProgress = 0;
+
+  let userInteracted = false;
+
+  const clampNumber = (value, min, max) => Math.max(min, Math.min(max, value));
+  const linePercent = (element, fallback = 100) => {
+    const value = Number(element && element.value);
+    return Number.isFinite(value) ? value : fallback;
+  };
+
+  const updateLineStyleReadouts = () => {
+    photoLineOpacityValueEl.textContent = `${linePercent(photoLineOpacityEl)}%`;
+    photoLineWidthValueEl.textContent = `${linePercent(photoLineWidthEl)}%`;
+    gpsLineOpacityValueEl.textContent = `${linePercent(gpsLineOpacityEl)}%`;
+    gpsLineWidthValueEl.textContent = `${linePercent(gpsLineWidthEl)}%`;
+  };
+
+  // Keep sparse photo tracks strong, but prevent hundreds of overlapping
+  // segments from obscuring the basemap. User controls act as multipliers on
+  // top of that automatic style. The overview stays deliberately clearer.
+  const applyAdaptiveTrackStyle = (photoCount) => {
+    const sparseCount = 40;
+    const denseCount = 900;
+    const n = Math.max(sparseCount, Number(photoCount) || 0);
+    const density = autoTrackDensityEl.checked
+      ? clampNumber(
+          (Math.log(n) - Math.log(sparseCount)) /
+          (Math.log(denseCount) - Math.log(sparseCount)),
+          0,
+          1
+        )
+      : 0;
+
+    const photoOpacityScale = linePercent(photoLineOpacityEl) / 100;
+    const photoWidthScale = linePercent(photoLineWidthEl) / 100;
+    const gpsOpacityScale = linePercent(gpsLineOpacityEl) / 100;
+    const gpsWidthScale = linePercent(gpsLineWidthEl) / 100;
+
+    const photoBaseWeight = 4 - 2.7 * density;
+    const photoBaseOpacity = 0.90 - 0.75 * density;
+    const gpsBaseWeight = 2 - 0.8 * density;
+    const gpsBaseOpacity = 0.58 - 0.36 * density;
+
+    followLine.setStyle({
+      weight: clampNumber(photoBaseWeight * photoWidthScale, 0.5, 8),
+      opacity: clampNumber(photoBaseOpacity * photoOpacityScale, 0.02, 1)
+    });
+    gpsFullFollowLine.setStyle({
+      weight: clampNumber(gpsBaseWeight * gpsWidthScale, 0.5, 6),
+      opacity: clampNumber(gpsBaseOpacity * gpsOpacityScale, 0.02, 1)
+    });
+
+    // The small overview must remain legible even for very dense tracks.
+    overviewLine.setStyle({
+      weight: 3 - 1.2 * density,
+      opacity: 0.85 - 0.25 * density
+    });
+    gpsFullOverviewLine.setStyle({
+      weight: 2 - 0.5 * density,
+      opacity: 0.55 - 0.10 * density
+    });
+  };
+
+  const refreshLineStyle = () => {
+    updateLineStyleReadouts();
+    applyAdaptiveTrackStyle(track.length);
+  };
+
+  for (const input of [photoLineOpacityEl, photoLineWidthEl, gpsLineOpacityEl, gpsLineWidthEl]) {
+    input.addEventListener("input", refreshLineStyle);
+  }
+  autoTrackDensityEl.addEventListener("change", refreshLineStyle);
+  resetLineStyleBtn.addEventListener("click", () => {
+    autoTrackDensityEl.checked = true;
+    photoLineOpacityEl.value = "100";
+    photoLineWidthEl.value = "100";
+    gpsLineOpacityEl.value = "100";
+    gpsLineWidthEl.value = "100";
+    refreshLineStyle();
+  });
+  updateLineStyleReadouts();
+
+  const fitOverviewToFullRoute = () => {
+    const allPoints = [];
+    for (const p of currentGpsPoints) allPoints.push([p.lat, p.lon]);
+    for (const p of track) allPoints.push([p.lat, p.lon]);
+
+    if (allPoints.length >= 2) {
+      const bounds = L.latLngBounds(allPoints);
+      if (bounds.isValid()) {
+        overviewMap.fitBounds(bounds, { padding: [12,12], animate: false });
+      }
+    } else if (allPoints.length === 1) {
+      overviewMap.setView(allPoints[0], 4, { animate: false });
+    } else {
+      overviewMap.setView([20, 0], 2, { animate: false });
+    }
+  };
+
+  const cleanupObjectURLs = () => {
+    for (const p of track) if (p.url) URL.revokeObjectURL(p.url);
+  };
+
+  const setStatus = (msg) => { statusEl.textContent = msg; };
+
+  const parseBirdId = (filename) => (filename.split("_")[0] || null);
+
+  const parseDatetimeFromFilename = (filename) => {
+    const base = filename.replace(/\s*\(\d+\)\./, ".");
+    const parts = base.split("_");
+    if (parts.length < 3) return null;
+
+    const d = parts[1] || "";
+    const t = parts[2] || "";
+    if (!/^\d{8}$/.test(d) || !/^\d{6}$/.test(t)) return null;
+
+    const year = +d.slice(0,4);
+    const mon  = +d.slice(4,6) - 1;
+    const day  = +d.slice(6,8);
+    const hh   = +t.slice(0,2);
+    const mm   = +t.slice(2,4);
+    const ss   = +t.slice(4,6);
+    const dt = new Date(Date.UTC(year, mon, day, hh, mm, ss));
+    return isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const fmtTime = (d) => {
+    if (!d) return "—";
+    const pad = (x) => String(x).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const lerp = (a,b,t) => a + (b-a)*t;
+  const lerpLonShortest = (lon1, lon2, t) => {
+    let d = lon2 - lon1;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    let lon = lon1 + d * t;
+    lon = ((lon + 180) % 360 + 360) % 360 - 180;
+    return lon;
+  };
+
+  const escapeHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  let tablePage = 1;
+  let tableFilters = { individualId:"", status:"", search:"" };
+  const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
+  const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true"); };
+  const openDataWorkspace = async (mode = "table") => {
+    if (!editorHasConnection()) { settingsGearBtn.click(); document.getElementById("editorConnectionDetails").open = true; return; }
+    if (document.body.classList.contains("editorOpen") && !closeEditorMode()) return;
+    dataWorkspaceEl.classList.add("open"); dataWorkspaceEl.setAttribute("aria-hidden","false");
+    if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else await loadDataTable();
+  };
+  const openWorkspacePhoto = async (photoId, individualId, edit = false) => {
+    closeDataWorkspace(); setBirdSelection(individualId); await loadTrackFor(individualId,{autoplay:false});
+    const index = track.findIndex((point)=>point.photoId===photoId); if (index >= 0) showPhotoAtIndex(index);
+    if (edit && index >= 0) await openEditorMode();
+  };
+
+  const tableOptions = () => `<option value="">All birds</option>${idsSorted().map((id)=>`<option value="${escapeHtml(id)}" ${tableFilters.individualId===id?"selected":""}>${escapeHtml(id)}</option>`).join("")}`;
+  const loadDataTable = async () => {
+    setDataStatus("Loading table…");
+    const query = new URLSearchParams({page:String(tablePage),pageSize:"50"});
+    Object.entries(tableFilters).forEach(([key,value])=>{if(value)query.set(key,value);});
+    try {
+      const data = await apiFetch(`/api/photos?${query}`);
+      dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${tableOptions()}</select><select id="tableStatusFilter"><option value="">All statuses</option>${["unstarted","draft","needs_review","complete"].map((s)=>`<option value="${s}" ${tableFilters.status===s?"selected":""}>${s}</option>`).join("")}</select><input id="tableSearch" type="search" placeholder="Filename or remarks" value="${escapeHtml(tableFilters.search)}"><button id="tableApply" class="secondary" type="button">Apply</button></div>
+      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button></td></tr>`).join("")}</tbody></table>
+      <div class="btnrow" style="margin-top:10px;"><button id="tablePrev" class="secondary tiny" type="button" ${data.page<=1?"disabled":""}>Previous</button><span class="muted">Page ${data.page} • ${data.total} records</span><button id="tableNext" class="secondary tiny" type="button" ${data.page*data.pageSize>=data.total?"disabled":""}>Next</button></div>`;
+      setDataStatus(`${data.total} records`);
+      el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,search:el("tableSearch").value.trim()};tablePage=1;loadDataTable();});
+      el("tablePrev").addEventListener("click",()=>{tablePage=Math.max(1,tablePage-1);loadDataTable();}); el("tableNext").addEventListener("click",()=>{tablePage++;loadDataTable();});
+      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("click",(event)=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,event.target.closest(".tableEdit")!==null)));
+    } catch(error) { dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`; setDataStatus("Table failed"); }
+  };
+
+  const loadProgressPanel = async () => {
+    setDataStatus("Loading progress…");
+    try { const data=await apiFetch("/api/progress"); dataPanelEl.innerHTML=`<div class="progressGrid">${(data.individuals||[]).map((item)=>`<div class="progressCard"><h3>${escapeHtml(item.individualId)}</h3><div><b>${item.complete}</b> / ${item.total} analysed (${item.percentComplete}%)</div><div class="progressBar"><span style="width:${Math.max(0,Math.min(100,item.percentComplete))}%"></span></div><div class="muted">Unstarted: ${item.unstarted} • Draft: ${item.draft} • Review: ${item.needsReview}</div><div class="btnrow" style="margin-top:9px;"><button class="secondary tiny progressOpen" data-bird="${escapeHtml(item.individualId)}" data-status="unstarted" type="button">Unfinished</button><button class="secondary tiny progressContinue" data-bird="${escapeHtml(item.individualId)}" type="button">Continue</button></div></div>`).join("")}</div>`;setDataStatus(`${data.individuals?.length||0} individuals`);
+      dataPanelEl.querySelectorAll(".progressOpen").forEach((button)=>button.addEventListener("click",()=>{tableFilters={individualId:button.dataset.bird,status:"unstarted",search:""};tablePage=1;loadDataTable();}));
+      dataPanelEl.querySelectorAll(".progressContinue").forEach((button)=>button.addEventListener("click",async()=>{const result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(button.dataset.bird)}`);if(result.photo)openWorkspacePhoto(result.photo.id,result.photo.individual_id,true);else setDataStatus("No unfinished records for this bird.");}));
+    } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Progress failed");}
+  };
+
+  const loadUsersPanel = async () => {
+    if(authState.user?.role!=="admin")return loadDataTable(); setDataStatus("Loading users…");
+    try { const data=await apiFetch("/api/users"),birds=idsSorted(); dataPanelEl.innerHTML=`<div class="userGrid"><form class="userCard" id="createUserForm"><h3>Create user</h3><label>Name</label><input id="newUserName" required><label>Email</label><input id="newUserEmail" type="email" required><label>Role</label><select id="newUserRole"><option value="annotator">annotator</option><option value="coordinator">coordinator</option><option value="admin">admin</option></select><label>Assigned birds</label><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="newUserBird" type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(id)}</label>`).join("")}</div><button type="submit" style="margin-top:10px">Create / invite</button><div class="miniNote" id="newUserResult"></div></form><div><h3>Existing users</h3>${(data.users||[]).map((user)=>`<div class="userCard" data-user-id="${escapeHtml(user.id)}"><b>${escapeHtml(user.name)}</b><div class="muted">${escapeHtml(user.email)}</div><div class="dataControls" style="margin-top:8px"><select class="userRole"><option ${user.role==="annotator"?"selected":""}>annotator</option><option ${user.role==="coordinator"?"selected":""}>coordinator</option><option ${user.role==="admin"?"selected":""}>admin</option></select><label><input class="userActive" type="checkbox" ${user.isActive?"checked":""}> active</label></div><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="userBird" type="checkbox" value="${escapeHtml(id)}" ${(user.individualIds||[]).includes(id)?"checked":""}> ${escapeHtml(id)}</label>`).join("")}</div><div class="btnrow" style="margin-top:8px"><button class="secondary tiny saveUser" type="button">Save</button><button class="secondary tiny resetUser" type="button">Reset password</button></div><div class="miniNote userResult"></div></div>`).join("")}</div></div>`;setDataStatus(`${data.users?.length||0} users`);
+      el("createUserForm").addEventListener("submit",async(event)=>{event.preventDefault();const body={name:el("newUserName").value.trim(),email:el("newUserEmail").value.trim(),role:el("newUserRole").value,individualIds:[...dataPanelEl.querySelectorAll(".newUserBird:checked")].map((x)=>x.value)};try{const result=await apiFetch("/api/users",{method:"POST",body:JSON.stringify(body)});el("newUserResult").textContent=result.invite?.sent?"Invitation sent.":`Temporary password: ${result.invite?.temporaryPassword||"created"}`;setTimeout(loadUsersPanel,1800);}catch(error){el("newUserResult").textContent=error.message;}});
+      dataPanelEl.querySelectorAll(".userCard[data-user-id]").forEach((card)=>{card.querySelector(".saveUser").addEventListener("click",async()=>{try{await apiFetch(`/api/users/${encodeURIComponent(card.dataset.userId)}`,{method:"PATCH",body:JSON.stringify({role:card.querySelector(".userRole").value,isActive:card.querySelector(".userActive").checked,individualIds:[...card.querySelectorAll(".userBird:checked")].map((x)=>x.value)})});card.querySelector(".userResult").textContent="Saved.";}catch(error){card.querySelector(".userResult").textContent=error.message;}});card.querySelector(".resetUser").addEventListener("click",async()=>{try{const result=await apiFetch(`/api/users/${encodeURIComponent(card.dataset.userId)}/reset-password`,{method:"POST"});card.querySelector(".userResult").textContent=result.invite?.sent?"Reset email sent.":`Temporary password: ${result.invite?.temporaryPassword||"reset"}`;}catch(error){card.querySelector(".userResult").textContent=error.message;}});});
+    } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
+  };
+
+  tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
+  dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);
+  document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
+
+  const splitTsvLine = (line) => {
+    const values = [];
+    let value = "";
+    let quoted = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (quoted && line[i + 1] === '"') {
+          value += '"';
+          i++;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (ch === "\t" && !quoted) {
+        values.push(value);
+        value = "";
+      } else {
+        value += ch;
+      }
+    }
+    values.push(value);
+    return values;
+  };
+
+  const parseGpsDateTime = (value) => {
+    const s = String(value || "").trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?/);
+    if (!m) return null;
+    const ms = m[7] ? Math.round(Number("0." + m[7]) * 1000) : 0;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], ms));
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // data_clear30m.txt has an unlabelled leading row-number field: its header
+  // has 9 columns while every real data row has 10. Detecting that mismatch
+  // and dropping the first cell realigns id/time_agg/lon/lat/DateTime.
+  const parseGpsDataset = (text) => {
+    const lines = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/).filter(line => line.trim().length);
+    if (lines.length < 2) throw new Error("GPS TXT file is empty.");
+
+    const headers = splitTsvLine(lines[0]).map(x => x.trim());
+    const required = ["id", "time_agg", "countN", "lon", "lat", "DateTime", "Type"];
+    for (const name of required) {
+      if (!headers.includes(name)) throw new Error(`GPS TXT is missing column ${name}.`);
+    }
+
+    gpsTracksByBird.clear();
+    let pointCount = 0;
+    let shiftedRows = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      let cells = splitTsvLine(lines[i]);
+      if (cells.length === headers.length + 1) {
+        cells = cells.slice(1);
+        shiftedRows++;
+      }
+      if (cells.length < headers.length) continue;
+
+      const row = {};
+      headers.forEach((h, j) => { row[h] = cells[j]; });
+
+      const id = String(row.id || "").trim();
+      const lon = Number(row.lon);
+      const lat = Number(row.lat);
+      if (!id || !Number.isFinite(lon) || !Number.isFinite(lat) || Math.abs(lat) > 90 || Math.abs(lon) > 180) continue;
+
+      const dt = parseGpsDateTime(row.DateTime);
+      const timeAgg = Number(row.time_agg);
+      const countN = Number(row.countN);
+      const point = {
+        id,
+        lon,
+        lat,
+        dt,
+        dateTimeRaw: String(row.DateTime || "").trim(),
+        timeAgg: Number.isFinite(timeAgg) ? timeAgg : null,
+        countN: Number.isFinite(countN) ? countN : null,
+        type: String(row.Type || "").trim()
+      };
+
+      if (!gpsTracksByBird.has(id)) gpsTracksByBird.set(id, []);
+      gpsTracksByBird.get(id).push(point);
+      pointCount++;
+    }
+
+    for (const points of gpsTracksByBird.values()) {
+      points.sort((a, b) => {
+        const ta = a.dt ? a.dt.getTime() : (a.timeAgg != null ? a.timeAgg * 1000 : Infinity);
+        const tb = b.dt ? b.dt.getTime() : (b.timeAgg != null ? b.timeAgg * 1000 : Infinity);
+        return ta - tb;
+      });
+    }
+
+    if (!pointCount) throw new Error("No valid GPS points were found in the TXT file.");
+    return { pointCount, birdCount: gpsTracksByBird.size, shiftedRows };
+  };
+
+  const updateBackgroundDataStatus = () => {
+    if (backgroundDataStatusEl) {
+      backgroundDataStatusEl.textContent = `${gpsLoadSummary} • ${stopoverLoadSummary}`;
+    }
+  };
+
+  const formatMapDateTime = (value) => {
+    const raw = value instanceof Date ? value.toISOString() : String(value || "").trim();
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (!m) return "—";
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${m[3]} ${months[Number(m[2]) - 1]} ${m[1]} · ${m[4]}:${m[5]}`;
+  };
+
+  const stopoverDays = (props) => {
+    const start = Date.parse(props.time_start || "");
+    const end = Date.parse(props.time_end || "");
+    let days = (Number.isFinite(start) && Number.isFinite(end) && end >= start)
+      ? (end - start) / 86400000
+      : NaN;
+    if (!Number.isFinite(days)) {
+      const durationSeconds = Number(props.duration);
+      if (Number.isFinite(durationSeconds)) days = durationSeconds / 86400;
+    }
+    if (!Number.isFinite(days)) return "—";
+    const rounded = Math.round(days * 10) / 10;
+    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)} days`;
+  };
+
+  const gpsTooltipHtml = (p) => {
+    return `<div class="mapTip">` +
+      `<div class="mapTipTitle">GPS position</div>` +
+      `<div class="mapTipTime">${escapeHtml(formatMapDateTime(p.dateTimeRaw || p.dt))}</div>` +
+      `<div class="mapTipRow"><span class="mapTipLabel">Latitude</span><span class="mapTipValue">${p.lat.toFixed(6)}</span></div>` +
+      `<div class="mapTipRow"><span class="mapTipLabel">Longitude</span><span class="mapTipValue">${p.lon.toFixed(6)}</span></div>` +
+      `</div>`;
+  };
+
+  function stopoverTooltipHtml(feature) {
+    const props = feature && feature.properties ? feature.properties : {};
+    const start = formatMapDateTime(props.time_start);
+    const end = formatMapDateTime(props.time_end);
+    const days = stopoverDays(props);
+    return `<div class="mapTip">` +
+      `<div class="mapTipTitle">Stopover</div>` +
+      `<div class="mapTipRow"><span class="mapTipLabel">Start</span><span class="mapTipValue">${escapeHtml(start)}</span></div>` +
+      `<div class="mapTipRow"><span class="mapTipLabel">End</span><span class="mapTipValue">${escapeHtml(end)}</span></div>` +
+      `<div class="mapTipDuration">Duration: ${escapeHtml(days)}</div>` +
+      `</div>`;
+  }
+
+  const featureMatchesBird = (feature, id) => {
+    if (!feature || !feature.properties || !id) return false;
+    const target = String(id).trim().toLowerCase();
+    const entries = Object.entries(feature.properties);
+    const lower = new Map(entries.map(([k, v]) => [String(k).toLowerCase(), v]));
+    const preferred = ["id", "bird_id", "birdid", "individual_id", "individual", "animal_id", "name", "time_agg"];
+    for (const key of preferred) {
+      if (lower.has(key) && String(lower.get(key) ?? "").trim().toLowerCase() === target) return true;
+    }
+    return entries.some(([, value]) => {
+      if (value == null || typeof value === "object") return false;
+      return String(value).trim().toLowerCase() === target;
+    });
+  };
+
+  const refreshGpsHitLine = () => {
+    if (showGpsTrackEl.checked) gpsHitPoints = currentGpsPoints;
+    else if (showPhotoGpsSegmentEl.checked) gpsHitPoints = currentSegmentGpsPoints;
+    else gpsHitPoints = [];
+
+    gpsHitLine.setLatLngs(gpsHitPoints.map(p => [p.lat, p.lon]));
+    try { if (followMap.hasLayer(gpsHoverTooltip)) followMap.removeLayer(gpsHoverTooltip); } catch(e) {}
+  };
+
+  const updateCurrentGpsSegment = (index = segIndex) => {
+    currentSegmentGpsPoints = [];
+    if (!showPhotoGpsSegmentEl.checked || !birdId || track.length < 2) {
+      gpsSegmentFollowLine.setLatLngs([]);
+      gpsSegmentOverviewLine.setLatLngs([]);
+      refreshGpsHitLine();
+      return;
+    }
+
+    const i = Math.max(0, Math.min(index, track.length - 2));
+    const a = track[i];
+    const b = track[i + 1];
+    const gps = gpsTracksByBird.get(birdId) || [];
+
+    if (a.dt && b.dt) {
+      const lo = Math.min(a.dt.getTime(), b.dt.getTime());
+      const hi = Math.max(a.dt.getTime(), b.dt.getTime());
+      currentSegmentGpsPoints = gps.filter(p => p.dt && p.dt.getTime() >= lo && p.dt.getTime() <= hi);
+    }
+
+    // The highlighted segment must consist only of points from the repository
+    // GPS file. Do not fall back to a straight photo-to-photo line when the
+    // GitHub data has not loaded or the interval contains no GPS points.
+    const coords = currentSegmentGpsPoints.map(p => [p.lat, p.lon]);
+    const deduped = coords.filter((xy, pos, arr) => {
+      if (pos === 0) return true;
+      const prev = arr[pos - 1];
+      return xy[0] !== prev[0] || xy[1] !== prev[1];
+    });
+    const segmentLatLngs = deduped.length >= 2 ? deduped : [];
+    gpsSegmentFollowLine.setLatLngs(segmentLatLngs);
+    gpsSegmentOverviewLine.setLatLngs(segmentLatLngs);
+    refreshGpsHitLine();
+  };
+
+  const renderBackgroundLayers = (id) => {
+    currentGpsPoints = id ? (gpsTracksByBird.get(id) || []) : [];
+    const gpsLatLngs = currentGpsPoints.map(p => [p.lat, p.lon]);
+    // The overview always shows the complete GPS route, even if the full GPS
+    // layer is hidden on the main map.
+    gpsFullOverviewLine.setLatLngs(gpsLatLngs);
+    if (showGpsTrackEl.checked) {
+      gpsFullFollowLine.setLatLngs(gpsLatLngs);
+    } else {
+      gpsFullFollowLine.setLatLngs([]);
+    }
+
+    stopoverFollowLayer.clearLayers();
+    stopoverOverviewLayer.clearLayers();
+    const selectedStopovers = id ? stopoverFeatures.filter(feature => featureMatchesBird(feature, id)) : [];
+    if (showStopoversEl.checked && selectedStopovers.length) {
+      stopoverFollowLayer.addData(selectedStopovers);
+      stopoverOverviewLayer.addData(selectedStopovers);
+    }
+
+    if (backgroundDataStatusEl && id) {
+      backgroundDataStatusEl.textContent = `${gpsLoadSummary} • ${stopoverLoadSummary} • Selected ${id}: ${currentGpsPoints.length.toLocaleString()} GPS points / ${selectedStopovers.length} stopovers`;
+    } else {
+      updateBackgroundDataStatus();
+    }
+
+    updateCurrentGpsSegment(segIndex);
+    fitOverviewToFullRoute();
+  };
+
+  const nearestGpsPoint = (latlng, points) => {
+    if (!points.length) return null;
+    const cosLat = Math.cos(latlng.lat * Math.PI / 180);
+    let best = null;
+    let bestD2 = Infinity;
+    for (const p of points) {
+      let dx = p.lon - latlng.lng;
+      if (dx > 180) dx -= 360;
+      if (dx < -180) dx += 360;
+      dx *= cosLat;
+      const dy = p.lat - latlng.lat;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        best = p;
+      }
+    }
+    return best;
+  };
+
+  let lastGpsHoverAt = 0;
+  gpsHitLine.on("mousemove", (e) => {
+    const now = performance.now();
+    if (now - lastGpsHoverAt < 45) return;
+    lastGpsHoverAt = now;
+    const point = nearestGpsPoint(e.latlng, gpsHitPoints);
+    if (!point) return;
+    gpsHoverTooltip.setLatLng(e.latlng).setContent(gpsTooltipHtml(point));
+    if (!followMap.hasLayer(gpsHoverTooltip)) gpsHoverTooltip.addTo(followMap);
+  });
+  gpsHitLine.on("mouseout", () => {
+    try { if (followMap.hasLayer(gpsHoverTooltip)) followMap.removeLayer(gpsHoverTooltip); } catch(e) {}
+  });
+
+  const loadGpsDataset = async (id) => {
+    if (!id) return false;
+    try {
+      const data = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/route?detail=full&max=100000`, {}, { auth:false });
+      const points = (data.points || []).map((point, index) => ({
+        id, lon:Number(point.lon), lat:Number(point.lat), dt:point.time ? new Date(point.time) : null,
+        dateTimeRaw:point.time || "", timeAgg:index, countN:point.countN ?? null, type:point.type || ""
+      })).filter((point) => Number.isFinite(point.lon) && Number.isFinite(point.lat));
+      gpsTracksByBird.set(id, points);
+      gpsLoadSummary = `GPS: ${Number(data.total || points.length).toLocaleString()} points for ${id}${data.simplified ? " (overview simplified)" : ""}`;
+      updateBackgroundDataStatus(); renderBackgroundLayers(birdId); return true;
+    } catch (error) {
+      gpsLoadSummary = `GPS: failed (${error.message})`; updateBackgroundDataStatus(); console.error("GPS data load failed", error); return false;
+    }
+  };
+
+  const ensureGpsDatasetLoaded = (id) => {
+    if (!id) return Promise.resolve(false);
+    if (!gpsDatasetPromises.has(id)) gpsDatasetPromises.set(id, loadGpsDataset(id));
+    return gpsDatasetPromises.get(id);
+  };
+
+  const loadStopoverDataset = async (id) => {
+    if (!id) return false;
+    try {
+      const data = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/stopovers`, {}, { auth:false });
+      stopoverFeatures = (data.features || []).filter((feature) => String(feature.properties?.id || "") === String(id));
+      stopoverLoadSummary = `Stopovers: ${stopoverFeatures.length} polygons for ${id}`;
+      updateBackgroundDataStatus(); renderBackgroundLayers(birdId); return true;
+    } catch (error) {
+      stopoverLoadSummary = `Stopovers: failed (${error.message})`; updateBackgroundDataStatus(); console.error("Stopover data load failed", error); return false;
+    }
+  };
+
+  const loadBackgroundData = (id) => {
+    updateBackgroundDataStatus();
+    return { gps:ensureGpsDatasetLoaded(id), stopovers:loadStopoverDataset(id) };
+  };
+
+  showGpsTrackEl.addEventListener("change", () => renderBackgroundLayers(birdId));
+  showPhotoGpsSegmentEl.addEventListener("change", () => renderBackgroundLayers(birdId));
+  showStopoversEl.addEventListener("change", () => renderBackgroundLayers(birdId));
+
+  const ensureLibs = () => {
+    return (window.L && window.exifr);
+  };
+
+  const clearMaps = () => {
+    overviewLine.setLatLngs([]);
+    followLine.setLatLngs([]);
+    overviewMarker.setLatLng([0,0]);
+    followMarker.setLatLng([0,0]);
+    followFixed = [];
+  };
+
+  const refreshMapSizes = () => {
+    requestAnimationFrame(() => {
+      try { followMap.invalidateSize(); } catch(e) {}
+      try {
+        overviewMap.invalidateSize();
+        fitOverviewToFullRoute();
+      } catch(e) {}
+    });
+  };
+  window.addEventListener("resize", refreshMapSizes);
+  setTimeout(refreshMapSizes, 100);
+
+  const validPhotoShares = new Set(["40", "50", "60", "70"]);
+  try {
+    const savedPhotoShare = localStorage.getItem("storkViewerPhotoShare");
+    if (validPhotoShares.has(savedPhotoShare)) layoutSplitEl.value = savedPhotoShare;
+  } catch(e) {}
+
+  const applyLayoutSplit = ({ persist = true } = {}) => {
+    const photoShare = Number(layoutSplitEl.value) || 50;
+    const mapShare = 100 - photoShare;
+
+    // Desktop: split the screen width. Mobile: split the screen height.
+    wrapEl.style.gridTemplateColumns = `minmax(0, ${mapShare}fr) minmax(0, ${photoShare}fr)`;
+    document.documentElement.style.setProperty("--mobile-map-height", `${mapShare}dvh`);
+    document.documentElement.style.setProperty("--mobile-photo-height", `${photoShare}dvh`);
+
+    if (persist) {
+      try { localStorage.setItem("storkViewerPhotoShare", String(photoShare)); } catch(e) {}
+    }
+    refreshMapSizes();
+  };
+
+  layoutSplitEl.addEventListener("change", () => applyLayoutSplit());
+  applyLayoutSplit({ persist: false });
+
+  const stopAnim = () => {
+    playing = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    lastTs = null;
+  };
+
+  const currentPhotoIndex = () => {
+    if (!track.length) return -1;
+    if (track.length === 1) return 0;
+    const base = Math.max(0, Math.min(segIndex, track.length - 1));
+    return Math.min(track.length - 1, base + (segT >= 0.5 ? 1 : 0));
+  };
+
+  const updatePhotoNavButtons = (index = currentPhotoIndex()) => {
+    const hasPhotos = track.length > 0 && index >= 0;
+    prevPhotoBtn.disabled = !hasPhotos || index <= 0;
+    nextPhotoBtn.disabled = !hasPhotos || index >= track.length - 1;
+    editorModeBtn.disabled = !hasPhotos || !track[index]?.photoId || !editorHasConnection();
+    tableModeBtn.disabled = !editorHasConnection();
+    progressModeBtn.disabled = !editorHasConnection();
+  };
+
+  const showPhotoAtIndex = (requestedIndex) => {
+    if (!track.length) return;
+    const index = Math.max(0, Math.min(requestedIndex, track.length - 1));
+    const lastIndex = track.length - 1;
+    const point = track[index];
+    const next = index < lastIndex ? track[index + 1] : null;
+
+    stopAnim();
+    playBtn.disabled = track.length < 2;
+    pauseBtn.disabled = true;
+    syncSliderPlayPause();
+
+    segIndex = (index >= lastIndex && lastIndex > 0) ? lastIndex - 1 : index;
+    segT = (index >= lastIndex && lastIndex > 0) ? 1 : -1;
+    lastTs = null;
+    lastFollowMove = 0;
+
+    const hold = Math.max(0, parseFloat(holdSecondsEl.value || "1.0"));
+    const leg = Math.max(0.3, parseFloat(legSecondsEl.value || "3.0"));
+    currentProgress = index * (hold + leg);
+    const sliderMax = Number(timeSlider.max) || currentProgress;
+    timeSlider.value = Math.min(currentProgress, sliderMax);
+
+    const latlng = [point.lat, point.lon];
+    overviewMarker.setLatLng(latlng);
+    followMarker.setLatLng(latlng);
+    followFixed = track.slice(0, index + 1).map(p => [p.lat, p.lon]);
+    followLine.setLatLngs(followFixed);
+
+    imgA.src = point.url;
+    imgB.src = next ? next.url : "";
+    imgA.style.opacity = 1;
+    imgB.style.opacity = 0;
+
+    metaCoords.textContent = `Lat/Lon: ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
+    metaTime.textContent = `Time: ${fmtTime(point.dt)}`;
+    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(point.dt);
+
+    const segmentIndex = Math.min(index, Math.max(0, track.length - 2));
+    updateCurrentGpsSegment(segmentIndex);
+    updatePhotoNavButtons(index);
+
+    const zoom = followMap.getZoom();
+    followMap.setView(latlng, zoom, { animate: true, duration: 0.2 });
+    syncModalPhotos();
+  };
+
+  prevPhotoBtn.addEventListener("click", () => {
+    const index = currentPhotoIndex();
+    if (index > 0) showPhotoAtIndex(index - 1);
+  });
+  nextPhotoBtn.addEventListener("click", () => {
+    const index = currentPhotoIndex();
+    if (index >= 0 && index < track.length - 1) showPhotoAtIndex(index + 1);
+  });
+
+  // --- Editor mode: authenticated SQL-backed photo annotation ---
+  const editorFieldEls = Array.from(editorFormEl.querySelectorAll("[data-field]"));
+  let editorPhotoIndex = -1;
+  let editorDirty = false;
+  let editorSaving = false;
+  let editorLoadedRecord = null;
+  let editorLoadedVersion = null;
+  let editorLoadToken = 0;
+
+  const editorSetStatus = (message, type = "") => {
+    editorStatusEl.textContent = message;
+    editorStatusEl.classList.remove("ok", "error", "busy");
+    if (type) editorStatusEl.classList.add(type);
+  };
+
+  const editorHasConnection = () => !!authState.token && !!authState.user && !authState.user.mustChangePassword;
+
+  const editorApiGet = async ({ photoId }) => {
+    if (!editorHasConnection()) throw new Error("Log in to the editor account first.");
+    const result = await apiFetch(`/api/photos/${encodeURIComponent(photoId)}`);
+    const photo = result.photo || {};
+    return { ok:true, data:{ ...(photo.annotation || {}), FileName:photo.filename, Bird:photo.bird, Altitude_m:photo.altitudeM, GPS_time:photo.gpsTime, Latitude:photo.lat, Longitude:photo.lon, Elevation_m:photo.elevationM, Analysed:photo.status === "complete" ? "yes" : "no" }, version:photo.version, status:photo.status };
+  };
+
+  const editorApiPost = async ({ photoId, values, expectedVersion, status }) => {
+    if (!editorHasConnection()) throw new Error("Log in to the editor account first.");
+    const result = await apiFetch(`/api/photos/${encodeURIComponent(photoId)}/annotation`, { method:"PATCH", body:JSON.stringify({ values, expectedVersion, status }) });
+    return { ok:true, data:result.values, version:result.version, status:result.status };
+  };
+
+  const setEditorConnectionStatus = (message, ok = null) => {
+    editorConnectionStatusEl.textContent = message;
+    editorConnectionStatusEl.style.color = ok === true ? "#9af0c5" : ok === false ? "#ffb1b1" : "";
+  };
+
+  function updateAuthUi() {
+    const loggedIn = !!authState.token && !!authState.user;
+    const ready = loggedIn && !authState.user.mustChangePassword;
+    testEditorConnectionBtn.textContent = loggedIn ? "Logged in" : "Log in";
+    testEditorConnectionBtn.disabled = loggedIn;
+    editorLogoutBtn.disabled = !loggedIn;
+    passwordChangeFieldsEl.style.display = loggedIn ? "grid" : "none";
+    editorConnectionWarningEl.classList.toggle("show", !ready);
+    editorModeBtn.disabled = !ready || !track.length;
+    tableModeBtn.disabled = !ready;
+    progressModeBtn.disabled = !ready;
+    dataUsersTabBtn.style.display = ready && authState.user.role === "admin" ? "inline-flex" : "none";
+    document.querySelectorAll(".exportBtn").forEach((button) => { button.disabled = !ready || !["admin","coordinator"].includes(authState.user?.role); });
+    if (loggedIn) setEditorConnectionStatus(`${authState.user.name} • ${authState.user.role}${authState.user.mustChangePassword ? " • change password required" : ""}`, ready);
+    else setEditorConnectionStatus("Log in to edit descriptions, open the table and view progress.");
+  }
+
+  testEditorConnectionBtn.addEventListener("click", async () => {
+    const email = String(editorWebAppUrlEl.value || "").trim();
+    const password = String(editorSecretEl.value || "");
+    if (!email || !password) return setEditorConnectionStatus("Enter email and password.", false);
+    testEditorConnectionBtn.disabled = true;
+    setEditorConnectionStatus("Logging in…");
+    try {
+      const login = await apiFetch("/api/login", { method:"POST", body:JSON.stringify({ email, password }) }, { auth:false });
+      authState = { token:login.token, user:login.user, individualIds:[] }; saveAuth();
+      const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
+      updateAuthUi();
+    } catch(error) {
+      clearAuth(); setEditorConnectionStatus("Login failed: " + error.message, false);
+    } finally {
+      if (!authState.token) testEditorConnectionBtn.disabled = false;
+    }
+  });
+
+  editorLogoutBtn.addEventListener("click", () => { editorSecretEl.value = ""; editorNewPasswordEl.value = ""; clearAuth(); });
+  changeEditorPasswordBtn.addEventListener("click", async () => {
+    const currentPassword = String(editorSecretEl.value || ""), newPassword = String(editorNewPasswordEl.value || "");
+    if (!currentPassword || newPassword.length < 10) return setEditorConnectionStatus("Enter the current password and a new password of at least 10 characters.", false);
+    changeEditorPasswordBtn.disabled = true;
+    try {
+      await apiFetch("/api/me/change-password", { method:"POST", body:JSON.stringify({ currentPassword, newPassword }) });
+      const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
+      editorSecretEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true);
+    } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
+    finally { changeEditorPasswordBtn.disabled = false; }
+  });
+
+  const editorLookupFilename = (point) => String(point && point.name || "")
+    .replace(/\s*\(\d+\)(?=\.[^.]+$)/, "");
+
+  const editorSetBusy = (busy) => {
+    editorSaving = busy;
+    editorSaveDraftBtn.disabled = busy || !editorHasConnection();
+    editorSaveAnalysedBtn.disabled = busy || !editorHasConnection();
+    editorSaveNextBtn.disabled = busy || !editorHasConnection() || editorPhotoIndex >= track.length - 1;
+    editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
+    editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
+  };
+
+  const editorMarkDirty = () => {
+    if (editorSaving) return;
+    editorDirty = true;
+    if (!editorStatusEl.classList.contains("error")) {
+      editorSetStatus("Unsaved changes.", "busy");
+    }
+  };
+
+  const clearEditorInvalid = () => {
+    for (const field of editorFieldEls) field.classList.remove("editorInvalid");
+  };
+
+  const markEditorInvalid = (field) => {
+    if (field) field.classList.add("editorInvalid");
+  };
+
+  const editorSelectValue = (select, value) => {
+    const normalized = value === null || value === undefined ? "" : String(value).trim();
+    if (normalized && !Array.from(select.options).some(option => option.value === normalized)) {
+      const option = document.createElement("option");
+      option.value = normalized;
+      option.textContent = normalized + " (existing value)";
+      option.dataset.existingValue = "true";
+      select.appendChild(option);
+    }
+    select.value = normalized;
+  };
+
+  const editorUpdateDerived = () => {
+    const altitudeRaw = editorLoadedRecord && editorLoadedRecord.Altitude_m;
+    const altitudeM = altitudeRaw === null || altitudeRaw === undefined || altitudeRaw === ""
+      ? NaN
+      : Number(altitudeRaw);
+    const elevationRaw = editorElevationEl.value;
+    const elevation = elevationRaw === "" ? NaN : Number(elevationRaw);
+    editorAltitudeMEl.textContent = Number.isFinite(altitudeM) ? altitudeM.toFixed(2) : "—";
+
+    if (Number.isFinite(altitudeM) && Number.isFinite(elevation)) {
+      const above = Math.round((altitudeM - elevation) * 100) / 100;
+      const heightClass = Math.max(0, Math.floor(above / 100) * 100);
+      editorAboveGroundEl.textContent = above.toFixed(2);
+      editorHeightClassEl.textContent = String(heightClass);
+    } else {
+      const existingAboveRaw = editorLoadedRecord && editorLoadedRecord.Above_ground;
+      const existingClassRaw = editorLoadedRecord && editorLoadedRecord.Height_class_100m;
+      const existingAbove = existingAboveRaw === null || existingAboveRaw === undefined || existingAboveRaw === ""
+        ? NaN
+        : Number(existingAboveRaw);
+      const existingClass = existingClassRaw === null || existingClassRaw === undefined || existingClassRaw === ""
+        ? NaN
+        : Number(existingClassRaw);
+      editorAboveGroundEl.textContent = Number.isFinite(existingAbove) ? existingAbove.toFixed(2) : "—";
+      editorHeightClassEl.textContent = Number.isFinite(existingClass) ? String(existingClass) : "—";
+    }
+
+    const gpsTime = editorLoadedRecord && editorLoadedRecord.GPS_time;
+    const latitude = editorLoadedRecord && editorLoadedRecord.Latitude;
+    const longitude = editorLoadedRecord && editorLoadedRecord.Longitude;
+    const gpsParts = [];
+    if (gpsTime) gpsParts.push(String(gpsTime));
+    if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined) {
+      gpsParts.push(String(latitude) + ", " + String(longitude));
+    }
+    editorGpsRecordEl.textContent = gpsParts.join(" • ") || "—";
+  };
+
+  const editorApplyConditionalRules = () => {
+    const qualitySelected = editorQualityEl.value !== "no";
+    editorDetailedAnnotationsEl.hidden = !qualitySelected;
+    editorBehaviourSectionEl.hidden = !qualitySelected;
+    editorHabitatSectionEl.hidden = !qualitySelected;
+
+    const isNight = editorPeriodDayEl.value === "night";
+    editorArtificialLightsFieldEl.hidden = !isNight;
+    if (!isNight) editorArtificialLightsEl.checked = false;
+
+    const featherState = editorFeatherOccEl.value;
+    editorFeatherPercEl.disabled = featherState === "no";
+    if (featherState === "no") editorFeatherPercEl.value = "0";
+
+    const movement = editorFlyGroundEl.value;
+    const isFly = movement === "fly";
+    const isGround = movement === "ground";
+    const isUncertain = movement === "uncertain";
+
+    editorAltitudeFieldEl.hidden = !(isFly || isUncertain);
+    editorThermalFieldEl.hidden = !isFly;
+    editorAgricultureFieldEl.hidden = isFly || !movement;
+    editorActivityEl.disabled = isFly;
+    if (isFly) editorActivityEl.value = "fly";
+    if (!isFly && editorActivityEl.value === "fly") editorActivityEl.value = "";
+
+    const activity = editorActivityEl.value;
+    editorForagingFieldEl.hidden = !(isGround && activity === "foraging");
+    editorRoostFieldEl.hidden = !(isGround && (activity === "roosting" || activity === "night_roosting"));
+
+    editorUpdateDerived();
+    updateEditorCompletionHints();
+  };
+
+  const updateEditorCompletionHints = () => {
+    const required = new Set(["Quality_selected"]);
+    if (editorQualityEl.value !== "no") {
+      ["Pheno_period","Residence","Period_day","Feather_occ","Ciconia_num","Water_presence_class","Fly_ground"].forEach((key)=>required.add(key));
+      if (editorFeatherOccEl.value === "yes") required.add("Feather_perc");
+      if (editorFlyGroundEl.value === "fly") required.add("Altitude");
+      if (editorFlyGroundEl.value === "ground") {
+        required.add("Activity_class"); required.add("Agriculture_type");
+        if (editorActivityEl.value === "foraging") required.add("Foraging_habitat_group");
+        if (["roosting","night_roosting"].includes(editorActivityEl.value)) required.add("Roost_site_group");
+      }
+    }
+    for (const field of editorFieldEls) {
+      const wrapper = field.closest(".editorField"); if (!wrapper) continue;
+      const hasValue = field.type === "checkbox" ? field.checked : String(field.value ?? "").trim() !== "";
+      wrapper.classList.toggle("hasValue", hasValue);
+      wrapper.classList.toggle("missingValue", required.has(field.dataset.field) && !hasValue && !wrapper.hidden);
+    }
+  };
+
+  const loadEditorHelp = async () => {
+    try {
+      const schema = await apiFetch("/api/schema/annotation", {}, { auth:false });
+      for (const field of schema.fields || []) {
+        const input = editorFormEl.querySelector(`[data-field="${field.key}"]`), label = input?.closest(".editorField")?.querySelector("label");
+        if (!label || label.querySelector(".fieldHelp")) continue;
+        const help = document.createElement("span"); help.className = "fieldHelp"; help.textContent = "?"; help.title = field.help || field.label; help.setAttribute("aria-label", field.help || field.label); label.appendChild(help);
+      }
+    } catch(error) { console.warn("Field help could not be loaded", error); }
+  };
+
+  const populateEditorForm = (record = {}) => {
+    editorFormEl.reset();
+    clearEditorInvalid();
+
+    for (const field of editorFieldEls) {
+      const key = field.dataset.field;
+      let value = record[key];
+      if (key === "Pheno_period" && value !== null && value !== undefined) value = String(value).trim();
+      if (key === "Residence" && value !== null && value !== undefined) value = String(value).toLowerCase();
+      if (field.type === "checkbox") {
+        field.checked = String(value || "").toLowerCase() === "yes";
+      } else if (field.tagName === "SELECT") {
+        editorSelectValue(field, value);
+      } else {
+        field.value = value === null || value === undefined ? "" : value;
+      }
+    }
+
+    // Every completed record in the reference workbook is a selected photo.
+    // Use that as a convenience default only when this row is still blank.
+    if (!record.Quality_selected) editorQualityEl.value = "yes";
+
+    editorLoadedRecord = { ...record };
+    editorApplyConditionalRules();
+    updateEditorCompletionHints();
+    editorDirty = false;
+  };
+
+  const editorNormalizeValues = () => {
+    const values = {};
+    for (const field of editorFieldEls) {
+      const key = field.dataset.field;
+      if (field.type === "checkbox") {
+        values[key] = field.checked ? "yes" : null;
+      } else if (field.type === "number") {
+        values[key] = field.value === "" ? null : Number(field.value);
+      } else {
+        const value = String(field.value || "").trim();
+        values[key] = value || null;
+      }
+    }
+
+    if (values.Pheno_period) values.Pheno_period = String(values.Pheno_period).trim();
+    if (values.Feather_occ === "no") values.Feather_perc = 0;
+    if (values.Period_day !== "night") values.Artificial_lights = null;
+
+    if (values.Fly_ground === "fly") {
+      values.Activity_class = "fly";
+      values.Agriculture_type = null;
+      values.Foraging_habitat_group = null;
+      values.Roost_site_group = null;
+    } else if (values.Fly_ground === "ground") {
+      values.Altitude = null;
+      values.Thermal_updraft = null;
+      if (values.Activity_class === "foraging") {
+        values.Roost_site_group = null;
+      } else if (values.Activity_class === "roosting" || values.Activity_class === "night_roosting") {
+        values.Foraging_habitat_group = null;
+      } else {
+        values.Foraging_habitat_group = null;
+        values.Roost_site_group = null;
+      }
+    } else if (values.Fly_ground !== "uncertain") {
+      values.Altitude = null;
+      values.Thermal_updraft = null;
+    }
+
+    const altitudeRaw = editorLoadedRecord && editorLoadedRecord.Altitude_m;
+    const altitudeM = altitudeRaw === null || altitudeRaw === undefined || altitudeRaw === ""
+      ? NaN
+      : Number(altitudeRaw);
+    const elevation = values.Elevation_m;
+    if (Number.isFinite(altitudeM) && Number.isFinite(elevation)) {
+      values.Above_ground = Math.round((altitudeM - elevation) * 100) / 100;
+      values.Height_class_100m = Math.max(0, Math.floor(values.Above_ground / 100) * 100);
+    } else {
+      values.Above_ground = editorLoadedRecord && editorLoadedRecord.Above_ground !== undefined
+        ? editorLoadedRecord.Above_ground : null;
+      values.Height_class_100m = editorLoadedRecord && editorLoadedRecord.Height_class_100m !== undefined
+        ? editorLoadedRecord.Height_class_100m : null;
+    }
+
+    return values;
+  };
+
+  const validateEditorValues = (values, markAnalysed) => {
+    clearEditorInvalid();
+    const errors = [];
+    const requireValue = (key, field, label) => {
+      if (values[key] === null || values[key] === undefined || values[key] === "") {
+        errors.push(label + " is required.");
+        markEditorInvalid(field);
+      }
+    };
+    const requireInteger = (key, field, label, min = 0) => {
+      const value = values[key];
+      if (value === null || value === undefined || value === "" || !Number.isInteger(value) || value < min) {
+        errors.push(label + " must be a whole number of at least " + min + ".");
+        markEditorInvalid(field);
+      }
+    };
+
+    if (values.Feather_perc !== null && (!Number.isFinite(values.Feather_perc) || values.Feather_perc < 0 || values.Feather_perc > 100)) {
+      errors.push("Feather coverage must be between 0 and 100%.");
+      markEditorInvalid(editorFeatherPercEl);
+    }
+    for (const [nameKey, abundanceKey, nameField, abundanceField, label] of [
+      ["Spec1_name", "Spec1_abund", editorSpec1NameEl, editorSpec1AbundEl, "Species 1"],
+      ["Spec2_name", "Spec2_abund", editorSpec2NameEl, editorSpec2AbundEl, "Species 2"]
+    ]) {
+      const hasName = !!values[nameKey];
+      const hasAbundance = values[abundanceKey] !== null && values[abundanceKey] !== undefined;
+      if (hasName !== hasAbundance) {
+        errors.push(label + " name and abundance must be completed together.");
+        markEditorInvalid(hasName ? abundanceField : nameField);
+      } else if (hasAbundance && (!Number.isInteger(values[abundanceKey]) || values[abundanceKey] < 1)) {
+        errors.push(label + " abundance must be a whole number of at least 1.");
+        markEditorInvalid(abundanceField);
+      }
+    }
+
+    if (!markAnalysed) return errors;
+
+    requireValue("Quality_selected", editorQualityEl, "Quality selected");
+    if (values.Quality_selected === "no") return errors;
+
+    requireValue("Pheno_period", editorPhenoEl, "Phenological period");
+    requireValue("Residence", editorResidenceEl, "Residence");
+    requireValue("Period_day", editorPeriodDayEl, "Period of day");
+    requireValue("Feather_occ", editorFeatherOccEl, "Feathers visible");
+    requireInteger("Ciconia_num", editorCiconiaNumEl, "Visible White Storks", 0);
+    requireValue("Water_presence_class", editorWaterEl, "Water presence");
+    requireValue("Fly_ground", editorFlyGroundEl, "Flight state");
+
+    if (values.Feather_occ === "yes") {
+      requireValue("Feather_perc", editorFeatherPercEl, "Feather coverage");
+    }
+    if (values.Fly_ground === "fly") {
+      requireValue("Altitude", editorAltitudeEl, "Altitude class");
+    }
+    if (values.Fly_ground === "ground") {
+      requireValue("Activity_class", editorActivityEl, "Activity class");
+      requireValue("Agriculture_type", editorAgricultureEl, "Agriculture type");
+      if (values.Activity_class === "foraging") {
+        requireValue("Foraging_habitat_group", editorForagingEl, "Foraging habitat");
+      }
+      if (values.Activity_class === "roosting" || values.Activity_class === "night_roosting") {
+        requireValue("Roost_site_group", editorRoostEl, "Roost site");
+      }
+    }
+    return errors;
+  };
+
+  const editorLoadPhoto = async (index) => {
+    if (!track.length) return;
+    const token = ++editorLoadToken;
+    editorPhotoIndex = Math.max(0, Math.min(index, track.length - 1));
+    const point = track[editorPhotoIndex];
+    const filename = editorLookupFilename(point);
+
+    showPhotoAtIndex(editorPhotoIndex);
+    editorPhotoEl.src = point.url || "";
+    editorBirdBadgeEl.textContent = "Bird: " + (birdId || "—");
+    editorTimeBadgeEl.textContent = "Time: " + fmtTime(point.dt);
+    editorFileBadgeEl.textContent = "File: " + (filename || "—");
+    editorPhotoCounterEl.textContent = (editorPhotoIndex + 1) + " / " + track.length;
+    editorRecordLineEl.textContent = filename || "No filename";
+    editorLoadedRecord = { FileName:filename, Bird:birdId, Altitude_m:point.altitudeM ?? null, Elevation_m:point.elevationM ?? null, GPS_time:point.gpsTime ?? null, Latitude:point.lat, Longitude:point.lon };
+    editorLoadedVersion = null;
+    populateEditorForm(editorLoadedRecord);
+    editorSetBusy(false);
+
+    if (!editorHasConnection()) {
+      editorConnectionWarningEl.classList.add("show");
+      editorSetStatus("You are not logged in. Open Settings → Editor account.", "error");
+      editorSetBusy(false);
+      return;
+    }
+
+    editorConnectionWarningEl.classList.remove("show");
+    editorSetStatus("Loading the matching SQL record…", "busy");
+    editorSetBusy(true);
+    try {
+      const result = await editorApiGet({ photoId: point.photoId });
+      if (token !== editorLoadToken) return;
+      if (!result || result.ok === false) throw new Error((result && result.error) || "Photo row not found.");
+      populateEditorForm(result.data || {});
+      editorLoadedVersion = result.version ?? 0;
+      const analysed = String(result.data && result.data.Analysed || "").toLowerCase() === "yes";
+      editorRecordLineEl.textContent = filename;
+      editorSetStatus(analysed ? "Loaded. This photo is already analysed." : "Loaded. This photo still needs analysis.", analysed ? "ok" : "");
+    } catch(error) {
+      if (token !== editorLoadToken) return;
+      editorSetStatus("Could not load this row: " + error.message, "error");
+    } finally {
+      if (token === editorLoadToken) editorSetBusy(false);
+    }
+  };
+
+  const openEditorMode = async () => {
+    const index = currentPhotoIndex();
+    if (index < 0 || !track.length) {
+      setStatus("Load a bird and photo before opening Editor mode.");
+      return;
+    }
+    closeMobilePanel();
+    if (photoModal.classList.contains("open")) closePhoto();
+    wrapEl.insertBefore(editorPanelEl, sideEl);
+    editorPanelHeaderEl.appendChild(closeEditorModeBtn);
+    editorPanelHeaderEl.appendChild(editorVisualNavEl);
+    editorModeEl.setAttribute("aria-hidden", "true");
+    document.body.classList.add("editorOpen");
+    document.body.dataset.editorTab = "form";
+    refreshMapSizes();
+    await editorLoadPhoto(index);
+  };
+
+  const closeEditorMode = ({ force = false } = {}) => {
+    if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    editorWorkspaceEl.appendChild(editorPanelEl);
+    editorVisualTopEl.appendChild(closeEditorModeBtn);
+    editorVisualEl.appendChild(editorVisualNavEl);
+    editorModeEl.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("editorOpen");
+    delete document.body.dataset.editorTab;
+    editorDirty = false;
+    editorLoadToken++;
+    refreshMapSizes();
+    return true;
+  };
+
+  const moveEditorPhoto = async (delta, { force = false } = {}) => {
+    if (editorSaving) return;
+    if (!force && editorDirty && !window.confirm("Discard unsaved changes and move to another photo?")) return;
+    const nextIndex = Math.max(0, Math.min(editorPhotoIndex + delta, track.length - 1));
+    if (nextIndex === editorPhotoIndex) return;
+    await editorLoadPhoto(nextIndex);
+  };
+
+  const saveEditorRecord = async ({ markAnalysed, advance }) => {
+    if (editorSaving || editorPhotoIndex < 0) return false;
+    if (!editorHasConnection()) {
+      editorConnectionWarningEl.classList.add("show");
+      editorSetStatus("Log in under Settings → Editor account before saving.", "error");
+      editorSetBusy(false);
+      return false;
+    }
+
+    const point = track[editorPhotoIndex];
+    const filename = editorLookupFilename(point);
+    const values = editorNormalizeValues();
+    const existingAnalysed = String(editorLoadedRecord && editorLoadedRecord.Analysed || "").toLowerCase() === "yes";
+    values.Analysed = markAnalysed || existingAnalysed ? "yes" : "no";
+    const errors = validateEditorValues(values, markAnalysed || existingAnalysed);
+
+    if (errors.length) {
+      editorSetStatus(errors[0] + (errors.length > 1 ? " +" + (errors.length - 1) + " more." : ""), "error");
+      const firstInvalid = editorFormEl.querySelector(".editorInvalid");
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+
+    editorSetBusy(true);
+    editorSetStatus(markAnalysed ? "Saving completed analysis…" : "Saving draft…", "busy");
+    try {
+      const result = await editorApiPost({ photoId:point.photoId, values, expectedVersion:editorLoadedVersion ?? 0, status:markAnalysed ? "complete" : "draft" });
+      if (!result || result.ok === false) throw new Error((result && result.error) || "Server rejected the save.");
+      editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
+      editorLoadedVersion = result.version ?? editorLoadedVersion;
+      editorDirty = false;
+      editorRecordLineEl.textContent = filename;
+      editorSetStatus(values.Analysed === "yes" ? "Saved and marked as analysed." : "Draft saved.", "ok");
+      if (advance) {
+        const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);
+        const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;
+        if (nextIndex >= 0) await editorLoadPhoto(nextIndex);
+        else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");
+      }
+      return true;
+    } catch(error) {
+      editorSetStatus("Save failed: " + error.message, "error");
+      return false;
+    } finally {
+      editorSetBusy(false);
+    }
+  };
+
+  for (const field of editorFieldEls) {
+    field.addEventListener("input", () => {
+      field.classList.remove("editorInvalid");
+      editorApplyConditionalRules();
+      updateEditorCompletionHints();
+      editorMarkDirty();
+    });
+    field.addEventListener("change", () => {
+      field.classList.remove("editorInvalid");
+      editorApplyConditionalRules();
+      updateEditorCompletionHints();
+      editorMarkDirty();
+    });
+  }
+  editorElevationEl.addEventListener("input", editorUpdateDerived);
+
+  editorModeBtn.addEventListener("click", openEditorMode);
+  closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
+  editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
+  editorNextPhotoBtn.addEventListener("click", () => moveEditorPhoto(1));
+  editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
+  editorSaveAnalysedBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: false }));
+  editorSaveNextBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: true }));
+  document.querySelectorAll("[data-editor-tab]").forEach((button) => button.addEventListener("click", () => { document.body.dataset.editorTab = button.dataset.editorTab; refreshMapSizes(); }));
+
+  window.addEventListener("keydown", (event) => {
+    if (!document.body.classList.contains("editorOpen")) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeEditorMode();
+      return;
+    }
+    const tag = String(event.target && event.target.tagName || "").toLowerCase();
+    const isEditingText = tag === "input" || tag === "textarea" || tag === "select";
+    if (!isEditingText && event.key === "ArrowLeft") {
+      event.preventDefault();
+      moveEditorPhoto(-1);
+    } else if (!isEditingText && event.key === "ArrowRight") {
+      event.preventDefault();
+      moveEditorPhoto(1);
+    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      saveEditorRecord({ markAnalysed: false, advance: false });
+    }
+  });
+
+  editorSetBusy(false);
+
+  let photoNavHideTimer = null;
+  let touchControlsHideTimer = null;
+  const touchPhotoControlsMQ = window.matchMedia("(hover: none)");
+  const isTouchPhotoUI = () => touchPhotoControlsMQ.matches;
+  const revealPhotoNav = () => {
+    if (!photoStageEl || isTouchPhotoUI()) return;
+    if (photoNavHideTimer) clearTimeout(photoNavHideTimer);
+    photoNavHideTimer = null;
+    photoStageEl.classList.add("navControlsVisible");
+  };
+  const hidePhotoNavAfterDelay = () => {
+    if (!photoStageEl || isTouchPhotoUI()) return;
+    if (photoNavHideTimer) clearTimeout(photoNavHideTimer);
+    photoNavHideTimer = setTimeout(() => {
+      photoStageEl.classList.remove("navControlsVisible");
+      photoNavHideTimer = null;
+    }, 3000);
+  };
+  const revealTouchPhotoControls = () => {
+    if (!photoStageEl || !isTouchPhotoUI()) return;
+    if (touchControlsHideTimer) clearTimeout(touchControlsHideTimer);
+    photoStageEl.classList.add("touchControlsVisible");
+    touchControlsHideTimer = setTimeout(() => {
+      photoStageEl.classList.remove("touchControlsVisible");
+      touchControlsHideTimer = null;
+    }, 3000);
+  };
+  if (photoStageEl) {
+    photoStageEl.addEventListener("mouseenter", revealPhotoNav);
+    photoStageEl.addEventListener("mousemove", revealPhotoNav);
+    photoStageEl.addEventListener("mouseleave", hidePhotoNavAfterDelay);
+    photoStageEl.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "touch" || isTouchPhotoUI()) revealTouchPhotoControls();
+    });
+    photoStageEl.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "touch") revealTouchPhotoControls();
+    });
+  }
+
+  const idsSorted = () => Array.from(groupedFiles.keys()).sort();
+
+  const updateBirdSelectors = (ids = idsSorted()) => {
+    for (const select of [birdSelect, birdSelectOverlay]) {
+      select.replaceChildren(new Option(ids.length ? "— select —" : "—", ""));
+      for (const id of ids) {
+        const n = groupedFiles.get(id).length;
+        select.add(new Option(`${id} (${n} files)`, id));
+      }
+      select.disabled = ids.length === 0;
+    }
+  };
+
+  const setBirdSelection = (id) => {
+    birdSelect.value = id || "";
+    birdSelectOverlay.value = id || "";
+  };
+
+  const loadLocalFiles = () => {
+    const files = Array.from(folderInput.files || []);
+    const jpgs = files.filter(f => /\.(jpe?g)$/i.test(f.name));
+
+    if (!jpgs.length) {
+      updateBirdSelectors([]);
+      loadBtn.disabled = true;
+      setStatus("No JPG files selected.");
+      return;
+    }
+
+    for (const file of jpgs) {
+      const id = parseBirdId(file.name);
+      if (!id) continue;
+      const dt = parseDatetimeFromFilename(file.name);
+      if (!groupedFiles.has(id)) groupedFiles.set(id, []);
+      groupedFiles.get(id).push({ file, name: file.name, dt });
+    }
+
+    for (const [id, arr] of groupedFiles.entries()) {
+      arr.sort((a,b) => {
+        const ta = a.dt ? a.dt.getTime() : Infinity;
+        const tb = b.dt ? b.dt.getTime() : Infinity;
+        if (ta !== tb) return ta - tb;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    const ids = idsSorted();
+    updateBirdSelectors(ids);
+    loadBtn.disabled = true;
+    playBtn.disabled = true;
+    pauseBtn.disabled = true;
+    resetBtn.disabled = true;
+    syncSliderPlayPause();
+
+    setStatus(
+      `Selected folder contains:\n` +
+      `- JPG files: ${jpgs.length}\n` +
+      `- Individuals detected: ${ids.length}\n\n` +
+      `Pick an individual to load the track (EXIF GPS will be read only for that bird).`
+    );
+    refreshMapSizes();
+  };
+
+  folderInput.addEventListener("change", () => {
+    groupedFiles.clear();
+    trackCache.clear();
+
+    cleanupObjectURLs();
+    track = [];
+    updatePhotoNavButtons(-1);
+    birdId = null;
+    segIndex = 0; segT = 0;
+    clearMaps();
+    renderBackgroundLayers(null);
+
+    imgA.removeAttribute("src");
+    imgB.removeAttribute("src");
+    modalImgA.removeAttribute("src");
+    modalImgB.removeAttribute("src");
+
+    metaBird.textContent = "Bird: —";
+    metaTime.textContent = "Time: —";
+    if (mapTimeBadge) mapTimeBadge.textContent = "—";
+    metaCoords.textContent = "Lat/Lon: —";
+    metaInfo.textContent = "Photos used: —";
+
+    loadLocalFiles();
+  });
+
+  const readGpsFromFiles = async (files, onProgress = null) => {
+    const tmp = [];
+    let nextIndex = 0;
+    let completed = 0;
+    const workerCount = Math.min(6, files.length);
+
+    const worker = async () => {
+      while (nextIndex < files.length) {
+        const i = nextIndex++;
+        const { file, name, dt } = files[i];
+        try {
+          const gps = await window.exifr.gps(file);
+          if (gps && typeof gps.latitude === "number" && typeof gps.longitude === "number") {
+            tmp.push({ file, name, dt: dt || null, lat: gps.latitude, lon: gps.longitude });
+          }
+        } catch (e) {
+          // A damaged or temporarily unavailable photo should not block the rest.
+        } finally {
+          completed++;
+          if (onProgress && ((completed % 8) === 0 || completed === files.length)) {
+            onProgress(completed, tmp.length);
+          }
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    return tmp;
+  };
+
+  // Remote photos are positioned from the already-downloaded GPS timeline.
+  // This avoids fetching every JPG merely to read its EXIF block. The actual
+  // image bytes are therefore requested only when imgA/imgB display them.
+  const PHOTO_GPS_MAX_NEAREST_MS = 3 * 60 * 60 * 1000;
+  const PHOTO_GPS_MAX_INTERPOLATION_GAP_MS = 6 * 60 * 60 * 1000;
+
+  const estimatePhotoPosition = (timedGps, dt) => {
+    if (!dt || !timedGps.length) return null;
+    const target = dt.getTime();
+
+    let lo = 0;
+    let hi = timedGps.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (timedGps[mid].dt.getTime() < target) lo = mid + 1;
+      else hi = mid;
+    }
+
+    const before = lo > 0 ? timedGps[lo - 1] : null;
+    const after = lo < timedGps.length ? timedGps[lo] : null;
+
+    if (before && after) {
+      const t0 = before.dt.getTime();
+      const t1 = after.dt.getTime();
+      const gap = t1 - t0;
+      if (gap >= 0 && gap <= PHOTO_GPS_MAX_INTERPOLATION_GAP_MS) {
+        const ratio = gap === 0 ? 0 : Math.max(0, Math.min(1, (target - t0) / gap));
+        return {
+          lat: lerp(before.lat, after.lat, ratio),
+          lon: lerpLonShortest(before.lon, after.lon, ratio)
+        };
+      }
+    }
+
+    const nearest = !before ? after : !after ? before :
+      (target - before.dt.getTime() <= after.dt.getTime() - target ? before : after);
+    if (!nearest || Math.abs(nearest.dt.getTime() - target) > PHOTO_GPS_MAX_NEAREST_MS) return null;
+    return { lat: nearest.lat, lon: nearest.lon };
+  };
+
+  const buildRemoteTrackFromGps = (id, files) => {
+    const timedGps = (gpsTracksByBird.get(id) || []).filter(p => p.dt);
+    const points = [];
+    let skipped = 0;
+
+    for (const entry of files) {
+      const position = Number.isFinite(entry.lat) && Number.isFinite(entry.lon)
+        ? { lat:entry.lat, lon:entry.lon }
+        : estimatePhotoPosition(timedGps, entry.dt);
+      if (!position) {
+        skipped++;
+        continue;
+      }
+      points.push({
+        ...entry,
+        lat: position.lat,
+        lon: position.lon,
+        locationSource: "gps-timeline"
+      });
+    }
+
+    points.sort((a,b) => {
+      const ta = a.dt ? a.dt.getTime() : Infinity;
+      const tb = b.dt ? b.dt.getTime() : Infinity;
+      if (ta !== tb) return ta - tb;
+      return a.name.localeCompare(b.name);
+    });
+    return { points, skipped, gpsPointCount: timedGps.length };
+  };
+
+  const loadGithubFiles = async () => {
+    groupedFiles.clear();
+    trackCache.clear();
+    updateBirdSelectors([]);
+
+    cleanupObjectURLs();
+    track = [];
+    updatePhotoNavButtons(-1);
+    birdId = null;
+    segIndex = 0; segT = 0;
+    clearMaps();
+    renderBackgroundLayers(null);
+
+    imgA.removeAttribute("src");
+    imgB.removeAttribute("src");
+    modalImgA.removeAttribute("src");
+    modalImgB.removeAttribute("src");
+
+    metaBird.textContent = "Bird: —";
+    metaTime.textContent = "Time: —";
+    if (mapTimeBadge) mapTimeBadge.textContent = "—";
+    metaCoords.textContent = "Lat/Lon: —";
+    metaInfo.textContent = "Photos used: —";
+
+    setStatus("Loading individuals from server...");
+
+    try {
+      const data = await apiFetch("/api/public/individuals", {}, { auth:false });
+      let jpgCount = 0;
+      for (const individual of data.individuals || []) {
+        const placeholder = []; placeholder.serverPlaceholder = true;
+        groupedFiles.set(individual.id, placeholder); jpgCount += Number(individual.photoCount || 0);
+      }
+
+      const ids = idsSorted();
+      updateBirdSelectors(ids);
+      loadBtn.disabled = true;
+      playBtn.disabled = true;
+      pauseBtn.disabled = true;
+      resetBtn.disabled = true;
+    syncSliderPlayPause();
+
+      setStatus(
+        `Loaded from server:\n` +
+        `- Photos indexed: ${jpgCount}\n` +
+        `- Individuals detected: ${ids.length}\n\n` +
+        `Photos are downloaded on demand (current photo + one-photo buffer).`
+      );
+      refreshMapSizes();
+
+      if (ids.length > 0) {
+        const firstId = ids[0];
+        setBirdSelection(firstId);
+        await loadTrackFor(firstId, {autoplay: true});
+      }
+    } catch (err) {
+      setStatus("Failed to load from server: " + err.message);
+    }
+  };
+
+  loadGithubBtn.addEventListener("click", loadGithubFiles);
+
+  // Automatically load the lightweight individual list on page load.
+  window.addEventListener("load", async () => {
+    updateAuthUi();
+    if (authState.token) {
+      try { const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth(); updateAuthUi(); }
+      catch(error) { clearAuth(); }
+    }
+    loadEditorHelp();
+    await loadGithubFiles();
+  });
+
+  const handleBirdSelectionChange = async (sourceSelect) => {
+    const id = sourceSelect.value;
+    setBirdSelection(id);
+    loadBtn.disabled = !id;
+    if (id) {
+      await loadTrackFor(id, {autoplay: true});
+    }
+  };
+
+  birdSelect.addEventListener("change", () => handleBirdSelectionChange(birdSelect));
+  birdSelectOverlay.addEventListener("change", () => handleBirdSelectionChange(birdSelectOverlay));
+
+  const setLoadingUI = (loading) => {
+    loadBtn.disabled = loading || !birdSelect.value;
+    playBtn.disabled = true;
+    pauseBtn.disabled = true;
+    resetBtn.disabled = loading ? true : (track.length === 0);
+    if (loading) {
+      prevPhotoBtn.disabled = true;
+      nextPhotoBtn.disabled = true;
+      editorModeBtn.disabled = true;
+    } else {
+      updatePhotoNavButtons();
+    }
+    syncSliderPlayPause();
+  };
+
+  const activateTrack = (points) => {
+    cleanupObjectURLs();
+    track = points.map(p => ({...p, url: (p.file instanceof File ? URL.createObjectURL(p.file) : p.file)}));
+    applyAdaptiveTrackStyle(track.length);
+  };
+
+  const updateSliderMax = () => {
+    if (track.length < 2) return;
+    const hold = Math.max(0, parseFloat(holdSecondsEl.value || "1.0"));
+    const leg = Math.max(0.3, parseFloat(legSecondsEl.value || "3.0"));
+    const numLegs = track.length - 1;
+    const total = numLegs * leg + track.length * hold;
+    timeSlider.max = total;
+    timeSlider.step = 0.01;
+    currentProgress = Math.min(currentProgress, total);
+    timeSlider.value = currentProgress;
+  };
+
+  const loadTrackFor = async (id, {autoplay=false} = {}) => {
+    if (!ensureLibs()) {
+      setStatus("Leaflet or exifr failed to load. Check internet connection and refresh.");
+      return;
+    }
+    if (!id || !groupedFiles.has(id)) return;
+
+    stopAnim();
+    setLoadingUI(true);
+
+    birdId = id;
+    metaBird.textContent = `Bird: ${birdId}`;
+    clearMaps();
+    let files = groupedFiles.get(id);
+    if (files.serverPlaceholder) {
+      try {
+        const response = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/photos?limit=10000`, {}, { auth:false });
+        files = (response.photos || []).map((photo) => ({
+          file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
+          lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,
+          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime
+        }));
+        groupedFiles.set(id, files);
+      } catch(error) {
+        setStatus(`Failed to load photos for ${id}: ${error.message}`); setLoadingUI(false); return;
+      }
+    }
+    const remoteFiles = files.every(entry => typeof entry.file === "string");
+    const backgroundLoads = loadBackgroundData(id);
+
+    if (trackCache.has(id)) {
+      const cached = trackCache.get(id);
+      activateTrack(cached);
+      metaInfo.textContent = `Photos used: ${track.length}`;
+      setStatus(
+        remoteFiles
+          ? `Loaded bird ${id} from cache.\nPhotos indexed: ${track.length}.\nImage downloads: current photo + one-photo buffer.`
+          : `Loaded local bird ${id} from cache.\nUsable geotagged photos: ${track.length}`
+      );
+    } else {
+      let tmp = [];
+      let loadMessage = "";
+
+      if (remoteFiles) {
+        setStatus(`Preparing ${id} from lightweight GPS metadata…`);
+        await backgroundLoads.gps;
+        const matched = buildRemoteTrackFromGps(id, files);
+        tmp = matched.points;
+        loadMessage =
+          `Loaded bird ${id}.\n` +
+          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no matching GPS time)` : ""}.\n` +
+          `Image downloads: current photo + one-photo buffer.`;
+      } else {
+        setStatus(`Reading EXIF GPS for ${id}… (0 / ${files.length})`);
+        tmp = await readGpsFromFiles(files, (completed, kept) => {
+          setStatus(`Reading EXIF GPS for ${id}… (${completed} / ${files.length})\nKept points: ${kept}`);
+        });
+
+        tmp.sort((a,b) => {
+          const ta = a.dt ? a.dt.getTime() : Infinity;
+          const tb = b.dt ? b.dt.getTime() : Infinity;
+          if (ta !== tb) return ta - tb;
+          return a.name.localeCompare(b.name);
+        });
+        loadMessage = `Loaded local bird ${id}.\nUsable geotagged photos: ${tmp.length}`;
+      }
+
+      trackCache.set(id, tmp);
+      activateTrack(tmp);
+
+      metaInfo.textContent = `Photos used: ${track.length}`;
+      setStatus(loadMessage);
+    }
+
+    setBirdSelection(id);
+
+    segIndex = 0;
+    renderBackgroundLayers(id);
+
+    if (track.length < 1) {
+      playBtn.disabled = true;
+      pauseBtn.disabled = true;
+      resetBtn.disabled = false;
+      setStatus(
+        remoteFiles
+          ? `Loaded bird ${id}.\nUsable photos: 0\n\nNo photo times could be matched to this bird's GPS track.`
+          : `Loaded local bird ${id}.\nUsable photos: 0\n\nNo photos with EXIF GPS were found.`
+      );
+      setLoadingUI(false);
+      syncSliderPlayPause();
+      sliderOverlay.style.display = "none";
+      return;
+    }
+
+    const start = [track[0].lat, track[0].lon];
+    const latlngs = track.map(p => [p.lat, p.lon]);
+
+    overviewLine.setLatLngs(latlngs);
+    overviewMarker.setLatLng(start);
+    fitOverviewToFullRoute();
+
+    const z = Math.max(2, Math.min(18, parseInt(followZoomEl.value||"12",10)));
+    followMarker.setLatLng(start);
+    followFixed = [start];
+    followLine.setLatLngs([start]);
+    followMap.setView(start, z);
+
+    imgA.src = track[0].url;
+    imgB.src = (track[1] ? track[1].url : "");
+    imgA.style.opacity = 1;
+    imgB.style.opacity = 0;
+
+    segIndex = 0;
+    segT = -1;
+    lastTs = null;
+    lastFollowMove = 0;
+    currentProgress = 0;
+
+    metaCoords.textContent = `Lat/Lon: ${track[0].lat.toFixed(5)}, ${track[0].lon.toFixed(5)}`;
+    metaTime.textContent = `Time: ${fmtTime(track[0].dt)}`;
+    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(track[0].dt);
+
+    resetBtn.disabled = false;
+    playBtn.disabled = (track.length < 2);
+    pauseBtn.disabled = true;
+    setLoadingUI(false);
+    syncSliderPlayPause();
+
+    if (track.length >= 2) {
+      sliderOverlay.style.display = "block";
+      updateSliderMax();
+      timeSlider.value = 0;
+    } else {
+      sliderOverlay.style.display = "none";
+    }
+
+    revealTouchPhotoControls();
+    refreshMapSizes();
+
+    if (autoplay && track.length >= 2) startPlayback();
+  };
+
+  loadBtn.addEventListener("click", async () => {
+    const id = birdSelect.value;
+    await loadTrackFor(id, {autoplay:false});
+  });
+
+  const startPlayback = async () => {
+    if (!track || track.length < 2) return;
+    playing = true;
+    playBtn.disabled = true;
+    pauseBtn.disabled = false;
+    syncSliderPlayPause();
+    await tryStartMusic();
+    rafId = requestAnimationFrame(tick);
+  };
+
+  playBtn.addEventListener("click", startPlayback);
+
+  pauseBtn.addEventListener("click", () => {
+    stopAnim();
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    syncSliderPlayPause();
+  });
+
+  syncSliderPlayPause();
+
+  if (sliderPlayPauseBtn) sliderPlayPauseBtn.addEventListener("click", async () => {
+    if (playing) {
+      stopAnim();
+      playBtn.disabled = false;
+      pauseBtn.disabled = true;
+      syncSliderPlayPause();
+      return;
+    }
+    await startPlayback();
+    syncSliderPlayPause();
+  });
+
+  const restartCurrentBird = () => {
+    segIndex = 0;
+    segT = -1;
+    lastTs = null;
+    lastFollowMove = 0;
+    currentProgress = 0;
+    timeSlider.value = 0;
+
+    const start = [track[0].lat, track[0].lon];
+    overviewMarker.setLatLng(start);
+    followMarker.setLatLng(start);
+
+    followFixed = [start];
+    followLine.setLatLngs([start]);
+
+    imgA.src = track[0].url;
+    imgB.src = track[1] ? track[1].url : "";
+    imgA.style.opacity = 1;
+    imgB.style.opacity = 0;
+
+    metaCoords.textContent = `Lat/Lon: ${track[0].lat.toFixed(5)}, ${track[0].lon.toFixed(5)}`;
+    metaTime.textContent = `Time: ${fmtTime(track[0].dt)}`;
+    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(track[0].dt);
+
+    const z = Math.max(2, Math.min(18, parseInt(followZoomEl.value||"12",10)));
+    followMap.setView(start, z, {animate:false});
+    updateCurrentGpsSegment(0);
+    updatePhotoNavButtons(0);
+  };
+
+  resetBtn.addEventListener("click", () => {
+    stopAnim();
+    if (!track.length) return;
+    restartCurrentBird();
+    playBtn.disabled = (track.length < 2);
+    pauseBtn.disabled = true;
+    syncSliderPlayPause();
+  });
+
+  const maybeMoveFollowMap = (lat, lon, ts) => {
+    const minIntervalMs = 160;
+    if (ts - lastFollowMove < minIntervalMs) return;
+
+    const mode = followModeEl.value || "edge";
+    const z = userInteracted ? followMap.getZoom() : Math.max(2, Math.min(18, parseInt(followZoomEl.value||"12",10)));
+
+    if (mode === "always") {
+      followMap.setView([lat, lon], z, { animate: false });
+      lastFollowMove = ts;
+      return;
+    }
+
+    const padded = followMap.getBounds().pad(-0.25);
+    if (!padded.contains([lat, lon])) {
+      followMap.setView([lat, lon], z, { animate: false });
+      lastFollowMove = ts;
+    }
+  };
+
+  followMap.on('zoomstart dragstart', () => { userInteracted = true; });
+
+  const advanceToNextBirdAndPlay = async () => {
+    const ids = idsSorted();
+    if (!ids.length) return;
+
+    let idx = ids.indexOf(birdId);
+    if (idx < 0) idx = 0;
+    const nextId = ids[(idx + 1) % ids.length];
+
+    setStatus(`Finished ${birdId}. Switching to ${nextId}…`);
+    await loadTrackFor(nextId, {autoplay:true});
+  };
+
+  const tick = (ts) => {
+    if (!playing) return;
+
+    if (lastTs == null) lastTs = ts;
+    const dtMs = ts - lastTs;
+    lastTs = ts;
+
+    const speed = parseFloat(speedEl.value || "1");
+    const legSeconds = Math.max(0.3, parseFloat(legSecondsEl.value || "3.0"));
+    const holdSeconds = Math.max(0, parseFloat(holdSecondsEl.value || "1.0"));
+
+    currentProgress += (dtMs / 1000) * speed;
+    timeSlider.value = currentProgress;
+
+    if (segT < 0) {
+      if (holdSeconds <= 0.0001) segT = 0;
+      else {
+        segT += (dtMs/1000) * speed / holdSeconds;
+        if (segT >= 0) segT = 0;
+      }
+      renderFrame(segIndex, 0, ts);
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
+
+    segT += (dtMs/1000) * speed / legSeconds;
+
+    if (segT >= 1) {
+      renderFrame(segIndex, 1, ts);
+
+      const end = track[segIndex+1];
+      followFixed.push([end.lat, end.lon]);
+      followLine.setLatLngs(followFixed);
+
+      segIndex += 1;
+      segT = -1;
+      updatePhotoNavButtons(Math.min(segIndex, track.length - 1));
+
+      if (segIndex >= track.length - 1) {
+        if (loopAllEl.checked) {
+          stopAnim();
+          playBtn.disabled = true;
+          pauseBtn.disabled = true;
+          syncSliderPlayPause();
+          advanceToNextBirdAndPlay();
+          return;
+        }
+        if (loopCurrentEl.checked) {
+          setStatus(`Looping ${birdId}…`);
+          restartCurrentBird();
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+
+        stopAnim();
+        playBtn.disabled = false;
+        pauseBtn.disabled = true;
+        syncSliderPlayPause();
+        setStatus(`Finished animation for ${birdId}.`);
+        return;
+      }
+
+      updateCurrentGpsSegment(segIndex);
+
+      imgA.src = track[segIndex].url;
+      imgB.src = track[segIndex+1].url;
+      imgA.style.opacity = 1;
+      imgB.style.opacity = 0;
+
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
+
+    renderFrame(segIndex, segT, ts);
+    rafId = requestAnimationFrame(tick);
+  };
+
+  const syncModalPhotos = () => {
+    if (!photoModal.classList.contains("open")) return;
+    if (modalImgA.src !== imgA.src) modalImgA.src = imgA.src || "";
+    if (modalImgB.src !== imgB.src) modalImgB.src = imgB.src || "";
+    modalImgA.style.opacity = imgA.style.opacity || "1";
+    modalImgB.style.opacity = imgB.style.opacity || "0";
+    modalChip.textContent = `${metaBird.textContent} • ${metaTime.textContent}`;
+  };
+
+  const renderFrame = (i, t, ts) => {
+    const a = track[i];
+    const b = track[i+1] || track[i];
+
+    const lat = lerp(a.lat, b.lat, t);
+    const lon = lerpLonShortest(a.lon, b.lon, t);
+
+    overviewMarker.setLatLng([lat, lon]);
+    followMarker.setLatLng([lat, lon]);
+
+    followLine.setLatLngs(followFixed.concat([[lat, lon]]));
+
+    maybeMoveFollowMap(lat, lon, ts);
+
+    imgA.style.opacity = (1 - t).toFixed(3);
+    imgB.style.opacity = (t).toFixed(3);
+
+    let curTime = null;
+    if (a.dt && b.dt) {
+      const ta = a.dt.getTime();
+      const tb = b.dt.getTime();
+      curTime = new Date(ta + (tb - ta) * t);
+    } else if (a.dt) curTime = a.dt;
+
+    metaCoords.textContent = `Lat/Lon: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    metaTime.textContent = `Time: ${fmtTime(curTime)}`;
+    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(curTime);
+
+    syncModalPhotos();
+  };
+
+  holdSecondsEl.addEventListener("input", updateSliderMax);
+  legSecondsEl.addEventListener("input", updateSliderMax);
+
+  timeSlider.addEventListener("input", () => {
+    stopAnim();
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    syncSliderPlayPause();
+
+    const s = parseFloat(timeSlider.value);
+    const hold = Math.max(0, parseFloat(holdSecondsEl.value || "1.0"));
+    const leg = Math.max(0.3, parseFloat(legSecondsEl.value || "3.0"));
+    const phaseDur = hold + leg;
+    const numLegs = track.length - 1;
+    let phaseIndex = Math.min(numLegs - 1, Math.floor(s / phaseDur));
+    let remainder = s - phaseIndex * phaseDur;
+
+    let segTLocal;
+    if (remainder < hold) {
+      segTLocal = hold > 0 ? -1 + (remainder / hold) : 0;
+    } else {
+      segTLocal = (remainder - hold) / leg;
+    }
+
+    segIndex = phaseIndex;
+    segT = segTLocal;
+    updateCurrentGpsSegment(segIndex);
+
+    followFixed = track.slice(0, segIndex + 1).map(p => [p.lat, p.lon]);
+
+    const a = track[segIndex];
+    const b = track[segIndex + 1] || a;
+    const renderT = (segTLocal < 0 ? 0 : segTLocal);
+    updatePhotoNavButtons(Math.min(track.length - 1, segIndex + (renderT >= 0.5 ? 1 : 0)));
+    const lat = lerp(a.lat, b.lat, renderT);
+    const lon = lerpLonShortest(a.lon, b.lon, renderT);
+
+    overviewMarker.setLatLng([lat, lon]);
+    followMarker.setLatLng([lat, lon]);
+    followLine.setLatLngs([...followFixed, [lat, lon]]);
+
+    maybeMoveFollowMap(lat, lon, performance.now());
+
+    imgA.src = a.url;
+    imgB.src = b.url;
+    imgA.style.opacity = (1 - renderT).toFixed(3);
+    imgB.style.opacity = renderT.toFixed(3);
+
+    let curTime = null;
+    if (a.dt && b.dt) {
+      const ta = a.dt.getTime();
+      const tb = b.dt.getTime();
+      curTime = new Date(ta + (tb - ta) * renderT);
+    } else if (a.dt) curTime = a.dt;
+
+    metaTime.textContent = `Time: ${fmtTime(curTime)}`;
+    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(curTime);
+    metaCoords.textContent = `Lat/Lon: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+
+    syncModalPhotos();
+    currentProgress = s;
+  });
+
+  timeSlider.addEventListener("change", () => {
+    startPlayback();
+  });
+
+  if (!ensureLibs()) setStatus("Waiting for libraries… If this stays, check your internet connection.");
+  else setStatus("Select a folder with stork JPGs to begin.");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+.env
+node_modules/
+postgres-data/
+photo-data/
+import-data/
+import-reports/
+*.log
+.DS_Store
+
