@@ -32,6 +32,8 @@ GitHub stores only the application code. Scientific data is managed by an admini
 
 Each browser import has two explicit stages. **Analyse files** uploads to temporary staging and produces a report of new records, existing records, duplicates, missing media, empty placeholders that will be filled and edited annotations that will be preserved. It does not change the scientific tables. Only **Run import**, shown after that report, applies the batch. A `photos`-sheet row with `Analysed=yes` is imported as complete; `Analysed=no` remains unstarted. Excel may fill an empty `unstarted` placeholder created by an earlier photo-only import, but a genuinely edited annotation is never overwritten by the browser workflow. Every preview, completed batch, failure and cancellation is recorded in import history with the administrator and timestamp.
 
+All XLSX text cells are sanitized by removing only the invisible NUL character (`U+0000`). The dry-run report records every removal as `nul_characters_removed` with `sourceRow` and `field`; ordinary characters, including Polish letters, are unchanged. Annotation values are sanitized again immediately before PostgreSQL writes.
+
 The route GPS file and photo geotags are intentionally separate. A photo latitude/longitude is accepted only from that image's EXIF GPS block. Photos without a geotag are reported and are not positioned by matching their timestamp to the route.
 
 ## Repository layout

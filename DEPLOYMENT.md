@@ -121,6 +121,8 @@ An administrator opens **Table → Import data** and may upload any combination 
 
 The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers. `Analysed=yes` in the `photos` worksheet marks a record complete. An empty `unstarted` placeholder may be filled from Excel, while annotations containing user-entered data are preserved. The history identifies the administrator, time, sources and result of every batch.
 
+The XLSX reader removes only NUL (`U+0000`) from text values and reports the affected source row and field during dry run. A second sanitization runs directly before annotation values are sent to PostgreSQL.
+
 Photo coordinates come only from JPEG/PNG/WebP EXIF geotags. `data_clear30m.txt` supplies the independent route layer and is never used to infer a missing photo position from its timestamp. The report lists photos with and without EXIF GPS separately.
 
 The interface defaults to 125% typography. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
