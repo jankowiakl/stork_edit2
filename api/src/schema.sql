@@ -142,11 +142,35 @@ CREATE TABLE IF NOT EXISTS import_batches (
   id TEXT PRIMARY KEY,
   source_name TEXT NOT NULL,
   source_sha256 TEXT,
-  status TEXT NOT NULL CHECK (status IN ('started','completed','failed')),
+  status TEXT NOT NULL CHECK (status IN ('previewed','started','completed','failed','cancelled')),
   summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+  input_manifest JSONB NOT NULL DEFAULT '{}'::jsonb,
+  staging_path TEXT,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   finished_at TIMESTAMPTZ
 );
+
+-- Upgrade databases created by earlier releases without losing import history.
+ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS input_manifest JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS staging_path TEXT;
+ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS created_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+DO $$
+DECLARE constraint_name TEXT;
+BEGIN
+  SELECT conname INTO constraint_name
+  FROM pg_constraint
+  WHERE conrelid = 'import_batches'::regclass
+    AND contype = 'c'
+    AND pg_get_constraintdef(oid) LIKE '%status%';
+  IF constraint_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE import_batches DROP CONSTRAINT %I', constraint_name);
+  END IF;
+  ALTER TABLE import_batches ADD CONSTRAINT import_batches_status_check
+    CHECK (status IN ('previewed','started','completed','failed','cancelled'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_import_batches_created_at ON import_batches(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS import_issues (
   id BIGSERIAL PRIMARY KEY,
@@ -170,4 +194,3 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id, created_at DESC);
-

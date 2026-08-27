@@ -2,6 +2,8 @@
 
 The importer is dry-run-first. Without `--apply` it creates a report but does not change PostgreSQL or copy photographs. The original workbook is never modified.
 
+For normal operation, prefer the administrator browser workflow in **Table → Import data**. It uses the same dry-run/apply rules, preserves existing annotations and records import history. The commands below remain useful for the initial server migration and automation.
+
 ## 1. Prepare files
 
 Place them on the server as:
@@ -62,4 +64,3 @@ Existing annotations are not overwritten. Only an intentional replacement should
 5. Verify one photo and the full overview route for each individual.
 
 After verification, SQL becomes the source of truth. Keep the old Google Sheet as a read-only historical copy instead of editing two databases in parallel.
-

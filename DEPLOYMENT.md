@@ -20,6 +20,7 @@ Replace at least:
 - `JWT_SECRET` with at least 48 random characters;
 - `BOOTSTRAP_TOKEN` with a different random string of at least 24 characters;
 - `PUBLIC_API_URL` with the final HTTPS address of the API;
+- `MAX_IMPORT_FILE_MB` and `MAX_IMPORT_ENTRIES` if an archive may exceed the defaults;
 - SMTP values if invitations should be emailed automatically.
 
 Generate secrets on the server:
@@ -55,6 +56,8 @@ curl https://bielik.myqnapcloud.com:18444/health
 
 The response must contain `"ok":true`.
 
+For large browser imports, set the QNAP reverse proxy request-body limit and timeout high enough for the largest ZIP, then rebuild the API. The API default permits one import file up to 4096 MB and up to 10,000 ZIP entries.
+
 ## 4. Create the first administrator
 
 This endpoint works only while the users table is empty and requires the private `BOOTSTRAP_TOKEN` from `.env`:
@@ -67,6 +70,16 @@ curl -X POST https://bielik.myqnapcloud.com:18444/api/bootstrap-admin \
 ```
 
 Further accounts are managed inside **Table → Users**. Temporary passwords must be changed at first login.
+
+If the first administrator exists but its password is unknown, open **Settings → Editor account → Cannot log in?**. Enter the administrator email, a new password and the current `BOOTSTRAP_TOKEN` from the server `.env`. The token is checked only by the API over HTTPS and is not saved in the browser. You can also recover from the server shell:
+
+```sh
+curl -X POST https://bielik.myqnapcloud.com:18444/api/recover-admin \
+  -H "Content-Type: application/json" \
+  -d '{"email":"YOUR_EMAIL","bootstrapToken":"YOUR_BOOTSTRAP_TOKEN","newPassword":"A_NEW_LONG_UNIQUE_PASSWORD"}'
+```
+
+After recovery, log in normally. Repeated failed login or recovery attempts are limited for 15 minutes.
 
 ## 5. Configure and enable GitHub Pages
 
@@ -97,6 +110,17 @@ docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "
 tar -czf "backups/stork_photos_$(date +%F).tar.gz" photo-data
 ```
 
+## Browser imports
+
+An administrator opens **Table → Import data** and may upload any combination of:
+
+- photographs as files, a folder or a ZIP; photo-only folders use `Bird/FileName` paths;
+- `data_clear30m.txt` (or a later file with the same columns);
+- stopovers as `.gpkg` or GeoJSON;
+- descriptive/completed records as `.xlsx` with a `photos` sheet.
+
+The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers; existing annotations are preserved. The history identifies the administrator, time, sources and result of every batch.
+
 ## Updating
 
 ```sh
@@ -104,4 +128,3 @@ git pull --ff-only
 docker compose up -d --build
 curl https://bielik.myqnapcloud.com:18444/health
 ```
-

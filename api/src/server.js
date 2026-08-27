@@ -19,15 +19,16 @@ import {
 import { publicAnnotationSchema,ANNOTATION_DB_COLUMNS } from "./annotation-schema.js";
 import { normalizeAnnotationInput,validateAnnotation,toDbAnnotation,fromDbAnnotation } from "./validation.js";
 import { queryExportRows,rowToExport,sendCsv,sendXlsx,sendGeoJson,sendKml,sendZip } from "./export.js";
+import { stageBrowserImport,runStagedImport,removeStagedImport } from "./admin-import.js";
 
 assertAuthConfiguration();
 await migrate();
 
 const app=express(), port=Number(process.env.PORT||3000);
-const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=path.join(photoDir,".previews"), uploadDir=path.join(photoDir,".uploads");
+const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=path.join(photoDir,".previews"), uploadDir=path.join(photoDir,".uploads"), importStageDir=path.join(photoDir,".import-staging"), importUploadDir=path.join(photoDir,".import-uploads");
 const publicApiUrl=String(process.env.PUBLIC_API_URL||"").replace(/\/$/,"");
 const publicAppUrl=String(process.env.PUBLIC_APP_URL||"").replace(/\/$/,"")+"/";
-await Promise.all([photoDir,previewDir,uploadDir].map((dir)=>fsp.mkdir(dir,{recursive:true})));
+await Promise.all([photoDir,previewDir,uploadDir,importStageDir,importUploadDir].map((dir)=>fsp.mkdir(dir,{recursive:true})));
 
 if(String(process.env.TRUST_PROXY||"")==="1")app.set("trust proxy",1);
 app.use(helmet({crossOriginResourcePolicy:{policy:"cross-origin"}}));
@@ -39,6 +40,7 @@ app.use(express.json({limit:"3mb"})); app.use(express.urlencoded({extended:false
 const loginLimiter=rateLimit({windowMs:15*60*1000,limit:12,standardHeaders:true,legacyHeaders:false});
 const writeLimiter=rateLimit({windowMs:60*1000,limit:120,standardHeaders:true,legacyHeaders:false});
 const uploadPhoto=multer({dest:uploadDir,limits:{fileSize:Math.max(1,Number(process.env.MAX_PHOTO_MB||30))*1024*1024},fileFilter:(_req,file,cb)=>cb(null,/^image\/(jpeg|png|webp)$/i.test(file.mimetype))});
+const uploadImport=multer({dest:importUploadDir,limits:{fileSize:Math.max(1,Number(process.env.MAX_IMPORT_FILE_MB||4096))*1024*1024,files:6005,parts:6020}}).fields([{name:"workbook",maxCount:1},{name:"gps",maxCount:1},{name:"stopovers",maxCount:1},{name:"archive",maxCount:1},{name:"photos",maxCount:6000}]);
 
 const positiveInt=(value,fallback,max)=>{const n=Number.parseInt(value,10);return Number.isFinite(n)&&n>0?Math.min(n,max):fallback;};
 const iso=(value)=>{if(!value)return null;const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?null:date.toISOString();};
@@ -64,11 +66,20 @@ function mailTransport(){return process.env.SMTP_HOST?nodemailer.createTransport
 async function invite(user,password){const subject="Access to Stork Photo Editor",body=[`Hello ${user.name},`,"","You have been invited to Stork Photo Editor.",`Application: ${publicAppUrl}`,`Login: ${user.email}`,`Temporary password: ${password}`,"","Change the password immediately after logging in."].join("\n");const transport=mailTransport();if(transport){await transport.sendMail({from:process.env.MAIL_FROM,to:user.email,subject,text:body});return{sent:true};}return{sent:false,temporaryPassword:password,mailtoUrl:`mailto:${encodeURIComponent(user.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`};}
 
 app.get("/health",async(_req,res,next)=>{try{await db.query("SELECT 1");res.json({ok:true,time:new Date().toISOString(),app:"stork-edit-api"});}catch(e){next(e);}});
+app.get("/api/auth/status",async(_req,res,next)=>{try{res.json({ok:true,bootstrapCompleted:Number((await db.query("SELECT count(*) FROM users")).rows[0].count)>0,recoveryAvailable:String(process.env.BOOTSTRAP_TOKEN||"").length>=24});}catch(e){next(e);}});
 app.post("/api/bootstrap-admin",loginLimiter,async(req,res,next)=>{try{
   if(Number((await db.query("SELECT count(*) FROM users")).rows[0].count)>0)return res.status(409).json({error:"bootstrap_already_completed"});
   const expected=String(process.env.BOOTSTRAP_TOKEN||""),supplied=String(req.body.bootstrapToken||req.headers["x-bootstrap-token"]||"");if(expected.length<24||supplied!==expected)return res.status(403).json({error:"invalid_bootstrap_token"});
   const email=normalizeEmail(req.body.email),name=String(req.body.name||"").trim();if(!email||!name)return res.status(400).json({error:"email_and_name_required"});
   const user=(await db.query("INSERT INTO users(id,email,name,role,password_hash) VALUES($1,$2,$3,'admin',$4) RETURNING *",[randomId(),email,name,await hashPassword(req.body.password)])).rows[0];res.status(201).json({user:publicUser(user)});
+}catch(e){next(e);}});
+app.post("/api/recover-admin",loginLimiter,async(req,res,next)=>{try{
+  const expected=Buffer.from(String(process.env.BOOTSTRAP_TOKEN||"")),supplied=Buffer.from(String(req.body.bootstrapToken||req.headers["x-bootstrap-token"]||""));
+  if(expected.length<24||expected.length!==supplied.length||!crypto.timingSafeEqual(expected,supplied))return res.status(403).json({error:"invalid_recovery_credentials"});
+  const email=normalizeEmail(req.body.email),user=(await db.query("SELECT * FROM users WHERE lower(email)=lower($1) AND role='admin'",[email])).rows[0];
+  if(!user)return res.status(403).json({error:"invalid_recovery_credentials"});
+  const passwordHash=await hashPassword(req.body.newPassword);await db.query("UPDATE users SET password_hash=$1,is_active=true,must_change_password=false,updated_at=now() WHERE id=$2",[passwordHash,user.id]);
+  await audit(null,"admin_access_recovered","user",user.id,{email:user.email},req);res.json({ok:true});
 }catch(e){next(e);}});
 app.post("/api/login",loginLimiter,async(req,res,next)=>{try{const user=(await db.query("SELECT * FROM users WHERE lower(email)=lower($1)",[normalizeEmail(req.body.email)])).rows[0];if(!user||!user.is_active||!await verifyPassword(req.body.password,user.password_hash))return res.status(401).json({error:"invalid_credentials"});await db.query("UPDATE users SET last_login_at=now() WHERE id=$1",[user.id]);await audit(user,"login","user",user.id,{},req);res.json({token:signToken(user),user:publicUser({...user,last_login_at:new Date()})});}catch(e){next(e);}});
 app.get("/api/me",authenticateUser,async(req,res)=>res.json({user:publicUser(req.user),individualIds:await assignments(req.user.id)}));
@@ -117,9 +128,43 @@ app.patch("/api/photos/:id/annotation",authenticateUser,writeLimiter,async(req,r
 app.get("/api/next-unfinished",authenticateUser,async(req,res,next)=>{try{const access=accessSql(req.user,"p.individual_id",1),params=[...access.params],where=[access.sql,"COALESCE(a.status,'unstarted') <> 'complete'"];if(req.query.individualId){params.push(req.query.individualId);where.push(`p.individual_id=$${params.length}`);}if(req.query.after){params.push(req.query.after);where.push(`(p.capture_time,p.filename) > (SELECT capture_time,filename FROM photos WHERE id=$${params.length})`);}const result=await db.query(`SELECT p.id,p.individual_id,p.filename FROM photos p LEFT JOIN photo_annotations a ON a.photo_id=p.id WHERE ${where.join(" AND ")} ORDER BY p.capture_time NULLS LAST,p.filename LIMIT 1`,params);res.json({photo:result.rows[0]||null});}catch(e){next(e);}});
 app.get("/api/export",authenticateUser,requireRole("admin","coordinator"),async(req,res,next)=>{try{const source=await queryExportRows(db,req.user,{individualId:req.query.individualId||null,status:req.query.status||null,search:req.query.search||null}),rows=source.map((r)=>rowToExport(r,publicApiUrl)),format=String(req.query.format||"xlsx").toLowerCase();await audit(req.user,"data_exported","export",null,{format,count:rows.length},req);if(format==="csv")return sendCsv(res,rows);if(format==="json")return res.attachment("stork-photo-data.json").json(rows);if(format==="geojson")return sendGeoJson(res,rows);if(format==="kml")return sendKml(res,rows);if(format==="zip")return sendZip(res,source,rows,photoDir);return sendXlsx(res,rows);}catch(e){next(e);}});
 
+const publicImportBatch=(row)=>({id:row.id,sourceName:row.source_name,status:row.status,summary:row.summary||{},createdAt:iso(row.created_at),finishedAt:iso(row.finished_at),createdBy:row.created_by_name?{id:row.created_by,name:row.created_by_name}:null});
+const safeImportStage=(value)=>{if(!value)return null;const absolute=path.resolve(value),relative=path.relative(importStageDir,absolute);return relative&&!relative.startsWith("..")&&!path.isAbsolute(relative)?absolute:null;};
+
+app.get("/api/admin/imports",authenticateUser,requireRole("admin"),async(req,res,next)=>{try{
+  const result=await db.query("SELECT b.*,u.name created_by_name FROM import_batches b LEFT JOIN users u ON u.id=b.created_by ORDER BY b.created_at DESC LIMIT $1",[positiveInt(req.query.limit,30,100)]);
+  res.json({imports:result.rows.map(publicImportBatch)});
+}catch(e){next(e);}});
+app.get("/api/admin/imports/:id",authenticateUser,requireRole("admin"),async(req,res,next)=>{try{
+  const row=(await db.query("SELECT b.*,u.name created_by_name FROM import_batches b LEFT JOIN users u ON u.id=b.created_by WHERE b.id=$1",[req.params.id])).rows[0];if(!row)return res.status(404).json({error:"import_not_found"});
+  const issues=(await db.query("SELECT issue_type,source_row,source_key,details,created_at FROM import_issues WHERE batch_id=$1 ORDER BY id LIMIT 500",[row.id])).rows;
+  res.json({import:publicImportBatch(row),issues});
+}catch(e){next(e);}});
+app.post("/api/admin/imports/preview",authenticateUser,requireRole("admin"),writeLimiter,uploadImport,async(req,res,next)=>{const batchId=randomId();let staged=null;try{
+  const hasFiles=Object.values(req.files||{}).some((group)=>group?.length);if(!hasFiles)return res.status(400).json({error:"import_files_required"});
+  staged=await stageBrowserImport({batchId,files:req.files,body:req.body,stageRoot:importStageDir,maxEntries:positiveInt(process.env.MAX_IMPORT_ENTRIES,10000,25000)});
+  const reportPath=path.join(staged.stage,"report-preview.json"),report=await runStagedImport({batchId,createdBy:req.user.id,manifest:staged.manifest,reportPath});
+  await db.query("INSERT INTO import_batches(id,source_name,source_sha256,status,summary,input_manifest,staging_path,created_by) VALUES($1,$2,$3,'previewed',$4::jsonb,$5::jsonb,$6,$7)",[batchId,staged.manifest.sourceName,report.inputs?.workbookSha256||null,JSON.stringify(report.summary),JSON.stringify(staged.manifest),staged.stage,req.user.id]);
+  await audit(req.user,"import_previewed","import_batch",batchId,report.summary,req);res.status(201).json({import:{id:batchId,sourceName:staged.manifest.sourceName,status:"previewed",summary:report.summary,createdAt:new Date().toISOString(),createdBy:{id:req.user.id,name:req.user.name}},issues:report.issues.slice(0,500),issueCount:report.issues.length});
+}catch(e){
+  if(staged){await db.query("INSERT INTO import_batches(id,source_name,status,summary,staging_path,created_by,finished_at) VALUES($1,$2,'failed',$3::jsonb,$4,$5,now()) ON CONFLICT(id) DO UPDATE SET status='failed',summary=EXCLUDED.summary,finished_at=now()",[batchId,staged.manifest?.sourceName||"browser import",JSON.stringify({error:String(e.message||"preview_failed")}),staged.stage,req.user.id]).catch(()=>{});await removeStagedImport(staged.stage);}
+  next(e);
+}});
+app.post("/api/admin/imports/:id/apply",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{let row;try{
+  row=(await db.query("UPDATE import_batches SET status='started' WHERE id=$1 AND status='previewed' RETURNING *",[req.params.id])).rows[0];if(!row)return res.status(409).json({error:"import_not_ready"});
+  const stage=safeImportStage(row.staging_path);if(!stage||!fs.existsSync(stage))throw new Error("import_staging_missing");const reportPath=path.join(stage,"report-applied.json");
+  const report=await runStagedImport({batchId:row.id,createdBy:req.user.id,manifest:row.input_manifest,reportPath,apply:true,replaceAnnotations:false});
+  await audit(req.user,"import_completed","import_batch",row.id,report.summary,req);await removeStagedImport(stage);await db.query("UPDATE import_batches SET staging_path=NULL,input_manifest=$1::jsonb WHERE id=$2",[JSON.stringify({sourceName:row.source_name}),row.id]);
+  res.json({import:{id:row.id,sourceName:row.source_name,status:"completed",summary:report.summary,finishedAt:new Date().toISOString()},issues:report.issues.slice(0,500),issueCount:report.issues.length});
+}catch(e){if(row)await db.query("UPDATE import_batches SET status='failed',summary=summary||$1::jsonb,finished_at=now() WHERE id=$2",[JSON.stringify({error:String(e.message||"import_failed")}),row.id]).catch(()=>{});next(e);}});
+app.delete("/api/admin/imports/:id",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{try{
+  const row=(await db.query("SELECT * FROM import_batches WHERE id=$1",[req.params.id])).rows[0];if(!row)return res.status(404).json({error:"import_not_found"});if(!["previewed","failed"].includes(row.status))return res.status(409).json({error:"import_cannot_be_cancelled"});
+  const stage=safeImportStage(row.staging_path);if(stage)await removeStagedImport(stage);await db.query("UPDATE import_batches SET status='cancelled',staging_path=NULL,input_manifest='{}'::jsonb,finished_at=now() WHERE id=$1",[row.id]);await audit(req.user,"import_cancelled","import_batch",row.id,{},req);res.json({ok:true});
+}catch(e){next(e);}});
+
 app.post("/api/admin/photos",authenticateUser,requireRole("admin"),writeLimiter,uploadPhoto.single("photo"),async(req,res,next)=>{try{if(!req.file)return res.status(400).json({error:"photo_required"});const individualId=String(req.body.individualId||"").trim();if(!/^[A-Za-z0-9._-]+$/.test(individualId)||!(await db.query("SELECT 1 FROM individuals WHERE id=$1",[individualId])).rows[0]){await fsp.unlink(req.file.path).catch(()=>{});return res.status(400).json({error:"individual_not_found"});}const ext={"image/jpeg":".jpg","image/png":".png","image/webp":".webp"}[req.file.mimetype]||".jpg",dir=path.join(photoDir,individualId);await fsp.mkdir(dir,{recursive:true});const target=path.join(dir,`${randomId()}${ext}`);await fsp.rename(req.file.path,target);const bytes=await fsp.readFile(target),id=randomId(),result=await db.query("INSERT INTO photos(id,individual_id,filename,capture_time,storage_path,original_path,mime_type,size_bytes,sha256,latitude,longitude) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *",[id,individualId,req.body.filename||req.file.originalname,req.body.captureTime||null,path.relative(photoDir,target),req.file.originalname,req.file.mimetype,req.file.size,crypto.createHash("sha256").update(bytes).digest("hex"),req.body.latitude||null,req.body.longitude||null]);await audit(req.user,"photo_uploaded","photo",id,{individualId,filename:result.rows[0].filename},req);res.status(201).json({photo:photoPublic(result.rows[0])});}catch(e){if(req.file?.path)await fsp.unlink(req.file.path).catch(()=>{});next(e);}});
 
-app.use((error,_req,res,_next)=>{console.error(error);if(error.code==="23505")return res.status(409).json({error:"duplicate_value",detail:error.detail});if(error.code==="LIMIT_FILE_SIZE")return res.status(413).json({error:"photo_too_large"});if(String(error.message||"").includes("CORS"))return res.status(403).json({error:"cors_forbidden"});res.status(500).json({error:"server_error"});});
+app.use((error,_req,res,_next)=>{console.error(error);if(error.code==="23505")return res.status(409).json({error:"duplicate_value",detail:error.detail});if(error.code==="LIMIT_FILE_SIZE")return res.status(413).json({error:"file_too_large"});if(error.code==="LIMIT_FILE_COUNT")return res.status(413).json({error:"too_many_files"});if(["invalid_upload_path","archive_has_too_many_files"].includes(error.message))return res.status(400).json({error:error.message});if(String(error.message||"").includes("CORS"))return res.status(403).json({error:"cors_forbidden"});res.status(500).json({error:"server_error"});});
 const server=app.listen(port,()=>console.log(`Stork Edit API listening on port ${port}`));
 async function shutdown(signal){console.log(`${signal}: closing server`);server.close(async()=>{await db.end();process.exit(0);});}
 process.on("SIGTERM",()=>shutdown("SIGTERM"));process.on("SIGINT",()=>shutdown("SIGINT"));

@@ -776,6 +776,17 @@
     .progressBar span { display:block; height:100%; background:linear-gradient(90deg,#39d98a,#77d1ff); }
     .userGrid { display:grid; grid-template-columns:minmax(280px,.7fr) minmax(420px,1.3fr); gap:12px; }
     .userCard { padding:11px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; }
+    .importGrid { display:grid; grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr); gap:12px; }
+    .importCard { padding:14px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,.14); }
+    .importCard h3 { margin:0 0 10px; }
+    .importField { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); }
+    .importField:last-child { border-bottom:0; }
+    .importField input[type="file"] { width:100%; margin-top:5px; }
+    .importSummary { display:grid; grid-template-columns:minmax(180px,1fr) auto; gap:6px 14px; margin:12px 0; }
+    .importSummary div:nth-child(even) { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+    .importHistory { width:100%; border-collapse:collapse; font-size:12px; }
+    .importHistory th,.importHistory td { padding:7px 6px; text-align:left; border-bottom:1px solid rgba(255,255,255,.08); vertical-align:top; }
+    .importStatus-previewed { color:#ffd166; }.importStatus-completed { color:#79e2ae; }.importStatus-failed,.importStatus-cancelled { color:#ff9c9c; }
 
     .photoModal{
       position:fixed;
@@ -1090,7 +1101,7 @@
   body.editorOpen[data-editor-tab="photo"] .editorPanel, body.editorOpen[data-editor-tab="photo"] .mapStack { display:none; }
   body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { width:100%; height:100dvh; border-radius:0; }
   .dataWorkspace { padding:8px; }
-  .userGrid { grid-template-columns:1fr; }
+  .userGrid,.importGrid { grid-template-columns:1fr; }
 }
 
 @media (max-width: 560px) {
@@ -1221,6 +1232,18 @@
               <div class="editorField full"><button id="changeEditorPassword" class="secondary tiny" type="button">Change password</button></div>
             </div>
             <div class="miniNote" id="editorConnectionStatus">Log in to edit descriptions, open the table and view progress.</div>
+            <details class="subSettings" style="margin-top:10px;">
+              <summary>Cannot log in? <span style="font-weight:500; opacity:.72;">administrator recovery</span></summary>
+              <div class="subSettingsBody">
+                <p class="miniNote">Use the private BOOTSTRAP_TOKEN from the server's .env file. It is sent only to the API over HTTPS and is never stored in this browser.</p>
+                <div class="editorFields">
+                  <div class="editorField full"><label for="adminRecoveryToken">BOOTSTRAP_TOKEN</label><input id="adminRecoveryToken" type="password" autocomplete="off"></div>
+                  <div class="editorField full"><label for="adminRecoveryPassword">New administrator password</label><input id="adminRecoveryPassword" type="password" autocomplete="new-password" minlength="10"></div>
+                </div>
+                <button id="recoverAdminAccess" class="secondary tiny" type="button">Reset administrator password</button>
+                <div class="miniNote" id="adminRecoveryStatus"></div>
+              </div>
+            </details>
           </div>
         </details>
 
@@ -1647,7 +1670,7 @@
 
 <div class="dataWorkspace" id="dataWorkspace" aria-hidden="true">
   <div class="dataTopbar">
-    <div class="dataTabs"><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button><button class="secondary" id="dataUsersTab" type="button" style="display:none;">Users</button></div>
+    <div class="dataTabs"><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button><button class="secondary" id="dataUsersTab" type="button" style="display:none;">Users</button><button class="secondary" id="dataImportsTab" type="button" style="display:none;">Import data</button></div>
     <div class="dataActions"><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
   </div>
   <div class="dataPanel" id="dataPanel"></div>
@@ -1729,6 +1752,10 @@
   const passwordChangeFieldsEl = el("passwordChangeFields");
   const editorNewPasswordEl = el("editorNewPassword");
   const changeEditorPasswordBtn = el("changeEditorPassword");
+  const adminRecoveryTokenEl = el("adminRecoveryToken");
+  const adminRecoveryPasswordEl = el("adminRecoveryPassword");
+  const recoverAdminAccessBtn = el("recoverAdminAccess");
+  const adminRecoveryStatusEl = el("adminRecoveryStatus");
 
   const loopCurrentEl = el("loopCurrent");
   const loopAllEl     = el("loopAll");
@@ -1847,6 +1874,7 @@
   const dataTableTabBtn = el("dataTableTab");
   const dataProgressTabBtn = el("dataProgressTab");
   const dataUsersTabBtn = el("dataUsersTab");
+  const dataImportsTabBtn = el("dataImportsTab");
   const closeDataWorkspaceBtn = el("closeDataWorkspace");
 
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
@@ -2608,7 +2636,7 @@ loopCurrentEl.checked = false;
     if (!editorHasConnection()) { settingsGearBtn.click(); document.getElementById("editorConnectionDetails").open = true; return; }
     if (document.body.classList.contains("editorOpen") && !closeEditorMode()) return;
     dataWorkspaceEl.classList.add("open"); dataWorkspaceEl.setAttribute("aria-hidden","false");
-    if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else await loadDataTable();
+    if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else if (mode === "imports") await loadImportsPanel(); else await loadDataTable();
   };
   const openWorkspacePhoto = async (photoId, individualId, edit = false) => {
     closeDataWorkspace(); setBirdSelection(individualId); await loadTrackFor(individualId,{autoplay:false});
@@ -2649,8 +2677,37 @@ loopCurrentEl.checked = false;
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
   };
 
+  let importDroppedFiles=[];
+  const importNumber=(value)=>Number(value||0).toLocaleString();
+  const importSummaryHtml=(summary={})=>`<div class="importSummary">
+    <div>Photos found</div><div>${importNumber(summary.mediaFilesFound)}</div><div>New photos</div><div>${importNumber(summary.newMedia)}</div><div>Already stored</div><div>${importNumber(summary.existingMedia)}</div><div>Missing against Excel</div><div>${importNumber(summary.missingMedia)}</div>
+    <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
+    <div>Excel records</div><div>${importNumber(summary.workbookRows)}</div><div>New records</div><div>${importNumber(summary.newPhotoRecords)}</div><div>Already existing</div><div>${importNumber(summary.existingPhotoRecords)}</div><div>Annotations preserved</div><div>${importNumber(summary.annotationsToPreserve)}</div>
+    <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
+    <div>New GPS points</div><div>${importNumber(summary.newGpsPoints)}</div><div>GPS duplicates</div><div>${importNumber(summary.duplicateGpsPoints)}</div><div>New stopovers</div><div>${importNumber(summary.newStopovers)}</div><div>Existing stopovers</div><div>${importNumber(summary.existingStopovers)}</div>
+  </div>`;
+  const importHistoryHtml=(imports=[])=>`<h3 style="margin-top:18px">Import history</h3><table class="importHistory"><thead><tr><th>Date</th><th>Administrator</th><th>Source</th><th>Status</th><th>Result</th></tr></thead><tbody>${imports.map((item)=>`<tr><td>${escapeHtml(item.createdAt?new Date(item.createdAt).toLocaleString():"—")}</td><td>${escapeHtml(item.createdBy?.name||"—")}</td><td>${escapeHtml(item.sourceName)}</td><td class="importStatus-${escapeHtml(item.status)}">${escapeHtml(item.status)}</td><td>${importNumber(item.summary?.newPhotoRecords)} records / ${importNumber(item.summary?.newGpsPoints)} GPS / ${importNumber(item.summary?.newStopovers)} stopovers</td></tr>`).join("")||'<tr><td colspan="5" class="muted">No imports yet.</td></tr>'}</tbody></table>`;
+  const renderImportPreview=(result)=>{
+    const target=el("importPreview");target.innerHTML=`<h3>Import preview</h3>${importSummaryHtml(result.import.summary)}<div class="miniNote">Issues detected: ${importNumber(result.issueCount)}. Existing annotations will not be overwritten.</div><div class="btnrow" style="margin-top:14px"><button id="cancelImport" class="secondary" type="button">Cancel</button><button id="applyImport" class="primarySave" type="button">Run import</button></div>`;
+    el("cancelImport").addEventListener("click",async()=>{el("cancelImport").disabled=true;try{await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}`,{method:"DELETE"});await loadImportsPanel();}catch(error){setDataStatus(`Cancellation failed: ${error.message}`);el("cancelImport").disabled=false;}});
+    el("applyImport").addEventListener("click",async()=>{el("applyImport").disabled=true;el("cancelImport").disabled=true;setDataStatus("Import in progress. Keep this window open…");try{const applied=await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}/apply`,{method:"POST"});target.innerHTML=`<h3>Import completed</h3>${importSummaryHtml(applied.import.summary)}<div class="editorStatus ok">Data was saved. Existing annotations were preserved.</div>`;setDataStatus("Import completed");const history=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(history.imports);}catch(error){target.innerHTML+=`<div class="editorStatus error">Import failed: ${escapeHtml(error.message)}</div>`;setDataStatus("Import failed");}});
+  };
+  const loadImportsPanel=async()=>{
+    if(authState.user?.role!=="admin")return loadDataTable();setDataStatus("Loading imports…");
+    try{const history=await apiFetch("/api/admin/imports");dataPanelEl.innerHTML=`<div class="importGrid"><form class="importCard" id="importForm"><h3>Prepare data import</h3><div class="miniNote">Select any combination. For photo-only imports use folders or ZIP paths in the form <b>Bird/FileName</b>. Nothing is written to the scientific tables until you review the report and click Run import.</div>
+      <div class="importField"><label><b>Descriptive records / completed annotations (.xlsx)</b><input id="importWorkbook" type="file" accept=".xlsx"></label></div>
+      <div class="importField"><label><b>Photos (individual files)</b><input id="importPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><label><b>or complete photo folder</b><input id="importPhotoFolder" type="file" accept="image/jpeg,image/png,image/webp" webkitdirectory directory multiple></label><label><b>or ZIP archive</b><input id="importArchive" type="file" accept=".zip,application/zip"></label><div id="importDropZone" class="userCard" style="margin-top:8px;text-align:center;border-style:dashed">Drop photos or one ZIP here</div></div>
+      <div class="importField"><label><b>GPS (.txt)</b><input id="importGps" type="file" accept=".txt,text/plain"></label></div>
+      <div class="importField"><label><b>Stopovers (.gpkg, .geojson)</b><input id="importStopovers" type="file" accept=".gpkg,.geojson,.json"></label></div>
+      <button id="previewImport" type="submit">Analyse files</button><div class="miniNote" id="importFormStatus"></div></form><div><div class="importCard" id="importPreview"><h3>Import preview</h3><div class="muted">Choose files and click Analyse files. The report will show new items, duplicates, missing media, and annotations that will be preserved.</div></div><div id="importHistoryWrap">${importHistoryHtml(history.imports)}</div></div></div>`;
+      importDroppedFiles=[];const drop=el("importDropZone");drop.addEventListener("dragover",(event)=>{event.preventDefault();drop.style.borderColor="var(--accent)";});drop.addEventListener("dragleave",()=>{drop.style.borderColor="";});drop.addEventListener("drop",(event)=>{event.preventDefault();drop.style.borderColor="";importDroppedFiles=[...event.dataTransfer.files].filter((file)=>/\.(jpe?g|png|webp|zip)$/i.test(file.name));drop.textContent=`Dropped: ${importDroppedFiles.length} file(s)`;});
+      el("importForm").addEventListener("submit",async(event)=>{event.preventDefault();const formData=new FormData(),photos=[...el("importPhotos").files,...el("importPhotoFolder").files,...importDroppedFiles.filter((file)=>/\.(jpe?g|png|webp)$/i.test(file.name))],archive=el("importArchive").files[0]||importDroppedFiles.find((file)=>/\.zip$/i.test(file.name));const add=(field,input)=>{if(input?.files?.[0])formData.append(field,input.files[0]);};add("workbook",el("importWorkbook"));add("gps",el("importGps"));add("stopovers",el("importStopovers"));if(archive)formData.append("archive",archive);for(const file of photos)formData.append("photos",file,file.name);formData.append("photoPaths",JSON.stringify(photos.map((file)=>file.webkitRelativePath||file.name)));if(![...formData.keys()].some((key)=>key!=="photoPaths")){el("importFormStatus").textContent="Select at least one input file.";return;}el("previewImport").disabled=true;el("importFormStatus").textContent=`Uploading and analysing ${photos.length.toLocaleString()} photo file(s)…`;setDataStatus("Preparing dry-run report…");try{const result=await apiFetch("/api/admin/imports/preview",{method:"POST",body:formData});renderImportPreview(result);el("importFormStatus").textContent="Analysis complete. Review the report on the right.";setDataStatus("Preview ready — no data imported yet");const refreshed=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(refreshed.imports);}catch(error){el("importFormStatus").textContent=`Analysis failed: ${error.message}`;setDataStatus("Preview failed");}finally{el("previewImport").disabled=false;}});
+      setDataStatus(`${history.imports?.length||0} import batches`);
+    }catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Imports failed");}
+  };
+
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
-  dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);
+  dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
   const splitTsvLine = (line) => {
@@ -3141,6 +3198,7 @@ loopCurrentEl.checked = false;
     tableModeBtn.disabled = !ready;
     progressModeBtn.disabled = !ready;
     dataUsersTabBtn.style.display = ready && authState.user.role === "admin" ? "inline-flex" : "none";
+    dataImportsTabBtn.style.display = ready && authState.user.role === "admin" ? "inline-flex" : "none";
     document.querySelectorAll(".exportBtn").forEach((button) => { button.disabled = !ready || !["admin","coordinator"].includes(authState.user?.role); });
     if (loggedIn) setEditorConnectionStatus(`${authState.user.name} • ${authState.user.role}${authState.user.mustChangePassword ? " • change password required" : ""}`, ready);
     else setEditorConnectionStatus("Log in to edit descriptions, open the table and view progress.");
@@ -3158,7 +3216,9 @@ loopCurrentEl.checked = false;
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
       updateAuthUi();
     } catch(error) {
-      clearAuth(); setEditorConnectionStatus("Login failed: " + error.message, false);
+      clearAuth();
+      const message = error.status === 401 ? "Incorrect email or password. If this is the administrator account, use administrator recovery below." : error.status === 429 ? "Too many login attempts. Wait 15 minutes and try again." : `API connection failed (${error.message}).`;
+      setEditorConnectionStatus(message, false);
     } finally {
       if (!authState.token) testEditorConnectionBtn.disabled = false;
     }
@@ -3175,6 +3235,14 @@ loopCurrentEl.checked = false;
       editorSecretEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true);
     } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
     finally { changeEditorPasswordBtn.disabled = false; }
+  });
+  recoverAdminAccessBtn.addEventListener("click", async () => {
+    const email=String(editorWebAppUrlEl.value||"").trim(),bootstrapToken=String(adminRecoveryTokenEl.value||""),newPassword=String(adminRecoveryPasswordEl.value||"");
+    if(!email||bootstrapToken.length<24||newPassword.length<10){adminRecoveryStatusEl.textContent="Enter the administrator email, BOOTSTRAP_TOKEN (at least 24 characters) and a new password (at least 10 characters).";return;}
+    recoverAdminAccessBtn.disabled=true;adminRecoveryStatusEl.textContent="Resetting access…";
+    try{await apiFetch("/api/recover-admin",{method:"POST",body:JSON.stringify({email,bootstrapToken,newPassword})},{auth:false});editorSecretEl.value=newPassword;adminRecoveryTokenEl.value="";adminRecoveryPasswordEl.value="";adminRecoveryStatusEl.textContent="Password reset. The new password is now filled in above; click Log in.";}
+    catch(error){adminRecoveryStatusEl.textContent=error.status===403?"Recovery failed. Check the administrator email and BOOTSTRAP_TOKEN from the current server .env file.":`Recovery failed: ${error.message}`;}
+    finally{recoverAdminAccessBtn.disabled=false;}
   });
 
   const editorLookupFilename = (point) => String(point && point.name || "")

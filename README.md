@@ -16,11 +16,19 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - administrator, coordinator and annotator roles;
 - invitations, password reset and per-individual access;
 - PostgreSQL audit log and annotation history;
-- dry-run-first migration of the current workbook, photos, GPS and stopovers.
+- administrator-only, dry-run-first browser import of XLSX, photos/ZIP, GPS and stopovers;
+- import history showing who added what and when;
+- secure administrator password recovery with the private server bootstrap token.
 
 ## Storage model
 
 Photographs remain ordinary files under `photo-data/`. PostgreSQL stores metadata, GPS, annotations, user access and revision history. The browser never stores a shared editor secret; each editor uses an individual account and a server-issued token.
+
+## Administrator data workflow
+
+GitHub stores only the application code. Scientific data is managed by an administrator in **Table → Import data** and remains on the QNAP: PostgreSQL stores individuals, photo records, annotations, GPS and stopovers, while `photo-data/` stores the image files.
+
+Each browser import has two explicit stages. **Analyse files** uploads to temporary staging and produces a report of new records, existing records, duplicates, missing media and annotations that will be preserved. It does not change the scientific tables. Only **Run import**, shown after that report, applies the batch. Existing annotations are never overwritten by the browser workflow. Every preview, completed batch, failure and cancellation is recorded in import history with the administrator and timestamp.
 
 ## Repository layout
 
@@ -38,4 +46,3 @@ MIGRATION.md               data migration procedure
 ```
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) and [MIGRATION.md](MIGRATION.md).
-
