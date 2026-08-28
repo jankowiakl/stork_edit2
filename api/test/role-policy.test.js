@@ -17,6 +17,11 @@ test("annotator may edit own records but only view records entered by others",()
   assert.equal(canEditAnnotation({user:annotator,current:null,assigned:false}),false);
 });
 
+test("a coordinator or administrator can explicitly release another record to an annotator as a task",()=>{
+  const otherRecord={status:"complete",created_by:"other",updated_by:"other"};
+  assert.equal(canEditAnnotation({user:annotator,current:otherRecord,assigned:false,taskAssigned:true}),true);
+});
+
 test("coordinator and administrator may edit every annotation",()=>{
   const otherRecord={status:"complete",created_by:"other",updated_by:"other"};
   assert.equal(canEditAnnotation({user:coordinator,current:otherRecord,assigned:false}),true);

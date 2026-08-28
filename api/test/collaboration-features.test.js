@@ -22,9 +22,10 @@ test("manual invitations provide a Gmail compose link and role permissions",()=>
   assert.match(server,/gmailUrl/);
 });
 
-test("best pictures reuse the main viewer and ratings have a ranking table",()=>{
+test("best pictures and top rated reuse the main viewer and offer a table",()=>{
   assert.match(ui,/collectionBrowseState/);
-  assert.match(ui,/loadTrackFor\(ids\[0\],\{autoplay:false\}\)/);
+  assert.match(ui,/openPhotoCollection/);
+  assert.match(ui,/collectionTableMode/);
   assert.match(ui,/class="ratedTable"/);
   assert.match(ui,/method:"DELETE"/);
 });
@@ -54,4 +55,20 @@ test("category proposals and review requests keep an audit workflow",()=>{
   assert.match(schema,/status TEXT NOT NULL DEFAULT 'pending' CHECK \(status IN \('pending','resolved','rejected'\)\)/);
   assert.match(server,/category_reason_required/);
   assert.match(server,/\/api\/review-requests/);
+});
+
+test("photo media is private and restricted access is recorded per user and photo",()=>{
+  assert.match(server,/app\.get\("\/api\/public\/photos\/:id\/image",authenticateMediaUser,authorizeMediaAndServe\)/);
+  assert.match(server,/app\.get\("\/api\/photos\/:id\/image",authenticateUser,authorizeMediaAndServe\)/);
+  assert.match(server,/app\.get\("\/api\/public\/individuals\/:id\/photos",\(_req,res\)=>res\.status\(401\)/);
+  assert.match(schema,/CREATE TABLE IF NOT EXISTS user_photo_access/);
+  assert.match(schema,/PRIMARY KEY\(user_id,photo_id\)/);
+  assert.match(server,/x\.user_id=\$\$\{userParam\} AND x\.photo_id=p\.id\) media_granted/);
+});
+
+test("restricted tables do not preload media that has not been unlocked",()=>{
+  assert.match(ui,/restricted&&!photo\.mediaGranted\?`<button class="secondary tiny tablePreviewUnlock"/);
+  assert.match(ui,/restricted&&!photo\.mediaGranted\?`<button class="secondary tiny collectionOpenPhoto"/);
+  assert.match(ui,/deferInitialAccess:true/);
+  assert.match(ui,/if\(!deferInitialAccess\)void showPhotoAtIndex\(0\)/);
 });

@@ -1,11 +1,11 @@
 export const isManager=(user)=>["admin","coordinator"].includes(user?.role);
 
-export function canEditAnnotation({user,current=null,assigned=false}) {
+export function canEditAnnotation({user,current=null,assigned=false,taskAssigned=false}) {
   if(isManager(user))return true;
   if(!user||user.role!=="annotator")return false;
   const owns=!!current&&(current.created_by===user.id||current.updated_by===user.id);
   const available=!current||current.status==="unstarted";
-  return owns||(assigned&&available);
+  return owns||taskAssigned||(assigned&&available);
 }
 
 export function roleCapabilities(role) {

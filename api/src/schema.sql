@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users(lower(email));
 ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_sent_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS restricted_contributor BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS contribution_use_defaults BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS individuals (
   id TEXT PRIMARY KEY,
@@ -121,6 +124,10 @@ CREATE TABLE IF NOT EXISTS photo_annotations (
 );
 CREATE INDEX IF NOT EXISTS idx_annotations_status ON photo_annotations(status);
 ALTER TABLE photo_annotations DROP CONSTRAINT IF EXISTS photo_annotations_altitude_check;
+ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS completed_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+UPDATE photo_annotations SET completed_by=COALESCE(created_by,updated_by) WHERE status='complete' AND completed_by IS NULL;
 
 CREATE TABLE IF NOT EXISTS annotation_options (
   field_key TEXT NOT NULL,
@@ -171,6 +178,77 @@ CREATE TABLE IF NOT EXISTS annotation_review_requests (
   resolution_note TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_review_requests_status ON annotation_review_requests(status,created_at);
+
+CREATE TABLE IF NOT EXISTS contribution_settings (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id=1),
+  initial_browsing_allowance INTEGER NOT NULL DEFAULT 30 CHECK (initial_browsing_allowance>=0),
+  photos_per_completed INTEGER NOT NULL DEFAULT 5 CHECK (photos_per_completed>0),
+  best_pictures_threshold INTEGER NOT NULL DEFAULT 50 CHECK (best_pictures_threshold>0),
+  full_access_threshold INTEGER NOT NULL DEFAULT 400 CHECK (full_access_threshold>0),
+  acknowledgement_threshold INTEGER NOT NULL DEFAULT 600 CHECK (acknowledgement_threshold>0),
+  scientific_threshold INTEGER NOT NULL DEFAULT 1000 CHECK (scientific_threshold>0),
+  auto_promote_full_access BOOLEAN NOT NULL DEFAULT true,
+  scientific_message TEXT NOT NULL DEFAULT 'Your contribution qualifies you for individual consideration for co-authorship in publications substantially using your annotated data.',
+  level_names JSONB NOT NULL DEFAULT '{"nestling":"Nestling","fieldHelper":"Field Helper","fullContributor":"Full Contributor","acknowledgedContributor":"Acknowledged Contributor","scientificContributor":"Scientific Contributor"}'::jsonb,
+  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO contribution_settings(id) VALUES(1) ON CONFLICT(id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS user_contribution_overrides (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  initial_browsing_allowance INTEGER CHECK (initial_browsing_allowance IS NULL OR initial_browsing_allowance>=0),
+  photos_per_completed INTEGER CHECK (photos_per_completed IS NULL OR photos_per_completed>0),
+  best_pictures_threshold INTEGER CHECK (best_pictures_threshold IS NULL OR best_pictures_threshold>0),
+  full_access_threshold INTEGER CHECK (full_access_threshold IS NULL OR full_access_threshold>0),
+  acknowledgement_threshold INTEGER CHECK (acknowledgement_threshold IS NULL OR acknowledgement_threshold>0),
+  scientific_threshold INTEGER CHECK (scientific_threshold IS NULL OR scientific_threshold>0),
+  auto_promote_full_access BOOLEAN,
+  scientific_message TEXT,
+  level_names JSONB,
+  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS contribution_stats (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  completed_annotations INTEGER NOT NULL DEFAULT 0,
+  verified_annotations INTEGER NOT NULL DEFAULT 0,
+  browsed_photos INTEGER NOT NULL DEFAULT 0,
+  recalculated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS contribution_milestones (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  milestone_key TEXT NOT NULL,
+  reached_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at_reach INTEGER NOT NULL,
+  PRIMARY KEY(user_id,milestone_key)
+);
+
+CREATE TABLE IF NOT EXISTS user_photo_access (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  access_source TEXT NOT NULL CHECK(access_source IN ('browse','annotation','task','legacy','admin')),
+  counts_against_allowance BOOLEAN NOT NULL DEFAULT true,
+  first_accessed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_accessed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(user_id,photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_photo_access_allowance ON user_photo_access(user_id,counts_against_allowance);
+
+CREATE TABLE IF NOT EXISTS annotation_tasks (
+  id TEXT PRIMARY KEY,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  assigned_to TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'assigned' CHECK(status IN ('assigned','completed','cancelled')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_annotation_tasks_user_status ON annotation_tasks(assigned_to,status,created_at DESC);
 
 CREATE TABLE IF NOT EXISTS annotation_history (
   id BIGSERIAL PRIMARY KEY,

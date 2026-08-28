@@ -30,6 +30,9 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - import history showing who added what and when;
 - secure administrator password recovery with the private server bootstrap token.
 - installable mobile PWA with a manifest, stork icons, service-worker updates and in-application Android/iPhone instructions.
+- backend-enforced private media access: signed photo-specific URLs, no anonymous thumbnails/full images and a restricted-contributor allowance that cannot be bypassed with filters or direct IDs;
+- five contribution levels, completed/verified counters, milestone dates, Best pictures/full-access unlocks, private progress boxes and administrator-only contributor statistics;
+- administrator-configurable global thresholds and per-user overrides, plus annotation tasks and verification requests linked directly from the user's account.
 
 Completed records require an environment description except when `Fly_ground=fly`. Verification requests accept a schema key, database column, visible field label or a short custom subject, so a user can request review of e.g. a species without receiving `invalid_review_field`.
 

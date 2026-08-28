@@ -64,3 +64,11 @@ Existing annotations are not overwritten. Only an intentional replacement should
 5. Verify one photo and the full overview route for each individual.
 
 After verification, SQL becomes the source of truth. Keep the old Google Sheet as a read-only historical copy instead of editing two databases in parallel.
+
+## Contribution access migration
+
+The API runs `schema.sql` at startup. This migration only adds columns with safe defaults and new tables; it does not delete or rewrite photos, GPS, stopovers, annotation values or history. Existing accounts remain standard accounts because `restricted_contributor` defaults to `false`.
+
+Existing complete annotations are attributed to their original `created_by`/`updated_by` user where possible. Future progress is calculated from the current annotation state, so moving a record from `complete` to `needs_review` immediately removes it from completed and verified counters. Administrators can enable restricted mode per user after deployment and configure global or per-user limits in **Contributors**.
+
+Restricted media access is recorded per user and photo. Media URLs are short-lived and bound to one user and one photo; direct ID changes therefore cannot bypass the backend allowance. Annotation access is stored separately as a non-counting grant after the API confirms that the user can edit that record.
