@@ -130,6 +130,8 @@ Photo coordinates prefer JPEG/PNG/WebP EXIF geotags. If EXIF GPS is absent, the 
 
 The interface defaults to 125% typography. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
 
+Normal browsing and editing both have draggable blue pane dividers. The data table exposes all stored photo and annotation fields with horizontal scrolling, filters and a locally saved column layout. User-confirmed custom categories are shared through PostgreSQL; the automatic migration creates `annotation_options` and relaxes the extensible altitude-category constraint.
+
 ## Updating
 
 ```sh

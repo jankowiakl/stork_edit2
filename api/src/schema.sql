@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS photo_annotations (
   ciconia_num INTEGER CHECK (ciconia_num IS NULL OR ciconia_num >= 0),
   env_desc_en TEXT,
   remarks TEXT,
-  altitude TEXT CHECK (altitude IS NULL OR altitude IN ('low','medium','high')),
+  altitude TEXT,
   fly_ground TEXT CHECK (fly_ground IS NULL OR fly_ground IN ('ground','fly','uncertain')),
   above_ground DOUBLE PRECISION,
   height_class_100m INTEGER,
@@ -118,6 +118,16 @@ CREATE TABLE IF NOT EXISTS photo_annotations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_annotations_status ON photo_annotations(status);
+ALTER TABLE photo_annotations DROP CONSTRAINT IF EXISTS photo_annotations_altitude_check;
+
+CREATE TABLE IF NOT EXISTS annotation_options (
+  field_key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (field_key,value)
+);
+CREATE INDEX IF NOT EXISTS idx_annotation_options_field ON annotation_options(field_key,value);
 
 CREATE TABLE IF NOT EXISTS annotation_history (
   id BIGSERIAL PRIMARY KEY,

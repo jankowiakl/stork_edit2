@@ -49,7 +49,7 @@
 
     .wrap {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) 9px minmax(0, 1fr);
       gap: 14px;
       padding: 14px;
       height: calc(100vh - 62px);
@@ -651,6 +651,11 @@
       padding: 14px 16px 11px;
       border-bottom: 1px solid rgba(255,255,255,.10);
     }
+    .editorPanelHeaderBar { display:flex; align-items:center; gap:7px; min-width:0; }
+    .editorPanelHeaderBar h2 { flex:1; min-width:0; }
+    .editorPanelHeader.compact { padding:6px 8px; }
+    .editorPanelHeader.compact .editorHeaderDetails { display:none; }
+    .editorPanelHeader.compact .editorPanelHeaderBar h2 { font-size:12px; margin:0; }
     .editorPanelHeader h2 { margin: 0 0 3px; font-size: 16px; }
     .editorPaneHint { margin:0 0 5px; color:var(--muted); font-size:10px; }
     .editorRecordLine { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
@@ -765,6 +770,11 @@
     .editorMobileTabs { display:none; gap:5px; margin-top:8px; }
     .editorMobileTabs button { flex:1; }
     .editorPaneDivider { display:none; min-width:0; touch-action:none; user-select:none; }
+    body:not(.editorOpen) #editorMapDivider { display:grid; grid-column:2; grid-row:1; place-items:center; position:relative; cursor:col-resize; outline:none; }
+    body:not(.editorOpen) #editorMapDivider::after { content:""; width:3px; height:54px; border-radius:999px; background:rgba(119,209,255,.24); }
+    body:not(.editorOpen) #editorMapDivider:hover::after, body:not(.editorOpen) #editorMapDivider.dragging::after { height:88px; background:var(--accent); }
+    body:not(.editorOpen) .mapStack { grid-column:1; grid-row:1; }
+    body:not(.editorOpen) .side { grid-column:3; grid-row:1; }
     body.editorOpen header { display:none; }
     body.editorOpen .wrap { grid-template-columns:minmax(180px,var(--editor-map-pane,18fr)) 9px minmax(360px,var(--editor-form-pane,30fr)) 9px minmax(320px,var(--editor-photo-pane,52fr)); grid-template-rows:minmax(0,1fr); align-items:stretch; gap:0; padding:10px; height:100dvh; }
     body.editorOpen .mapStack { grid-column:1; grid-row:1; height:100%; min-height:0; }
@@ -775,11 +785,17 @@
     body.editorOpen #editorMapDivider { grid-column:2; grid-row:1; }
     body.editorOpen .editorPanel { grid-column:3; grid-row:1; height:100%; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
     body.editorOpen #editorPhotoDivider { grid-column:4; grid-row:1; }
-    body.editorOpen .side { grid-column:5; grid-row:1; display:grid; height:100%; min-width:0; min-height:0; grid-template-rows:minmax(0,1fr); overflow:hidden; }
-    body.editorOpen .side #settingsCard, body.editorOpen .side .metaCard { display:none !important; }
+    body.editorOpen .side { grid-column:5; grid-row:1; display:grid; height:100%; min-width:0; min-height:0; grid-template-rows:minmax(0,1fr) auto; overflow:hidden; }
+    body.editorOpen .side #settingsCard { display:none !important; }
+    body.editorOpen .side .metaCard { display:block !important; grid-row:2; padding:8px 10px; }
+    body.editorOpen .side .metaGrid { display:grid; grid-template-columns:1fr; gap:2px; }
+    body.editorOpen .side #metaBird, body.editorOpen .side #metaInfo { display:none; }
+    body.editorOpen .side #metaTime, body.editorOpen .side #metaCoords { font-size:var(--ui-font-label); }
     body.editorOpen .side .photoCard, body.editorOpen .side .photoStage { grid-row:1; width:100%; height:100%; min-height:0; }
-    body.editorOpen .editorPanelHeader > #closeEditorMode { float:right; margin-top:-25px; }
-    body.editorOpen .editorPanelHeader .editorVisualNav { position:static; transform:none; margin-top:8px; justify-content:center; background:rgba(0,0,0,.18); }
+    body.editorOpen .editorPanelHeaderBar > #closeEditorMode { margin:0; padding:5px 7px; }
+    body.editorOpen .editorPanelHeaderBar .editorVisualNav { position:static; transform:none; margin:0; padding:3px; justify-content:center; background:rgba(0,0,0,.18); }
+    body.editorOpen .editorPanelHeaderBar .editorVisualNav button { padding:4px 7px; }
+    body.editorOpen .editorPanelHeaderBar .editorCounter { min-width:54px; font-size:10px; }
     .dataWorkspace { position:fixed; inset:0; z-index:6800; display:none; background:#070b14; padding:14px; box-sizing:border-box; }
     .dataWorkspace.open { display:grid; grid-template-rows:auto minmax(0,1fr); gap:10px; }
     .dataTopbar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
@@ -787,9 +803,17 @@
     .dataPanel { min-height:0; overflow:auto; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.035); padding:12px; }
     .dataControls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
     .dataControls input,.dataControls select { width:auto; min-width:150px; }
-    .dataTable { width:100%; border-collapse:collapse; font-size:12px; }
-    .dataTable th,.dataTable td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; }
+    .dataTableWrap { width:100%; max-height:calc(100dvh - 235px); overflow:auto; border:1px solid var(--border); border-radius:10px; }
+    .dataTable { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; font-size:12px; }
+    .dataTable th,.dataTable td { box-sizing:border-box; padding:7px 8px; border-right:1px solid rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .dataTable th { position:sticky; top:0; z-index:2; background:#101827; }
+    .dataTable th .columnResize { position:absolute; top:0; right:-3px; width:7px; height:100%; cursor:col-resize; z-index:3; }
+    .tableColumnManager { margin-bottom:9px; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,.14); }
+    .tableColumnManager summary { cursor:pointer; font-weight:700; }
+    .tableColumnGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:6px; margin-top:8px; }
+    .tableColumnItem { display:grid; grid-template-columns:minmax(0,1fr) auto auto auto; align-items:center; gap:5px; padding:5px; border:1px solid rgba(255,255,255,.07); border-radius:8px; }
+    .tableColumnItem label { display:flex; align-items:center; gap:6px; margin:0; overflow:hidden; }
+    .tableColumnItem input[type="number"] { width:68px; padding:5px; }
     .dataTable tr { cursor:pointer; }
     .dataTable tr:hover { background:rgba(119,209,255,.08); }
     .dataThumb { width:68px; height:48px; object-fit:cover; border-radius:7px; background:#02040a; }
@@ -923,6 +947,7 @@
     min-height: calc(100dvh - 62px);
     overflow: auto;
   }
+  body:not(.editorOpen) #editorMapDivider { display:none; }
 
   /* Map takes the top portion */
   .mapStack { height: 26dvh; min-height: 160px; }
@@ -1262,6 +1287,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
               <option value="50" selected>Equal halves (50% photo)</option>
               <option value="60">Larger photo (60% photo)</option>
               <option value="70">Maximum photo (70% photo)</option>
+              <option value="custom" hidden>Custom split</option>
             </select>
           </div>
         </div>
@@ -1478,11 +1504,11 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
     </section>
 
     <aside class="editorPanel">
-      <div class="editorPanelHeader">
-        <h2>Photo editor</h2>
-        <div class="editorPaneHint">Drag the blue dividers to resize map, form and photo. Double-click a divider to reset.</div>
+      <div class="editorPanelHeader compact">
+        <div class="editorPanelHeaderBar"><h2>Photo editor</h2><button id="toggleEditorHeader" class="secondary tiny" type="button" aria-expanded="false">Details</button></div>
+        <div class="editorHeaderDetails"><div class="editorPaneHint">Drag the blue dividers to resize map, form and photo. Double-click a divider to reset.</div>
         <div class="editorRecordLine" id="editorRecordLine">No photo selected.</div>
-        <div class="editorStatus" id="editorStatus">Log in and open a photo to load its SQL record.</div>
+        <div class="editorStatus" id="editorStatus">Log in and open a photo to load its SQL record.</div></div>
         <div class="editorMobileTabs"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
       </div>
 
@@ -1689,24 +1715,24 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
           </div>
         </details>
 
-        <details class="editorSection">
+        <details class="editorSection" open>
           <summary>Derived height and telemetry</summary>
           <div class="editorFields">
             <div class="editorField">
               <label for="editorElevation">Ground elevation (m)</label>
-              <input id="editorElevation" data-field="Elevation_m" type="number" step="1">
+              <input id="editorElevation" data-field="Elevation_m" type="number" step="0.01" readonly>
             </div>
             <div class="editorField">
               <label>GPS altitude (m)</label>
               <div class="editorDerived" id="editorAltitudeM">—</div>
             </div>
             <div class="editorField">
-              <label>Above ground (m)</label>
-              <div class="editorDerived" id="editorAboveGround">—</div>
+              <label for="editorAboveGround">Above ground (m)</label>
+              <input id="editorAboveGround" data-field="Above_ground" type="number" step="0.01">
             </div>
             <div class="editorField">
-              <label>100-m height class</label>
-              <div class="editorDerived" id="editorHeightClass">—</div>
+              <label for="editorHeightClass">100-m height class</label>
+              <input id="editorHeightClass" data-field="Height_class_100m" type="number" min="0" step="100">
             </div>
             <div class="editorField full">
               <label>Photo location</label>
@@ -1924,6 +1950,8 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const editorPanelEl = document.querySelector(".editorPanel");
   const editorWorkspaceEl = document.querySelector(".editorWorkspace");
   const editorPanelHeaderEl = document.querySelector(".editorPanelHeader");
+  const editorPanelHeaderBarEl = document.querySelector(".editorPanelHeaderBar");
+  const toggleEditorHeaderBtn = el("toggleEditorHeader");
   const editorVisualNavEl = document.querySelector(".editorVisualNav");
   const editorVisualEl = document.querySelector(".editorVisual");
   const editorVisualTopEl = document.querySelector(".editorVisualTop");
@@ -2690,7 +2718,19 @@ loopCurrentEl.checked = false;
     .replace(/'/g, "&#039;");
 
   let tablePage = 1;
-  let tableFilters = { individualId:"", status:"", search:"" };
+  let tableFilters = { individualId:"",status:"",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:"50" };
+  const tableColumnDefs=[
+    ["Photo","Photo",86],["ID","Photo ID",210],["Bird","Bird",125],["Lat/Lon","Lat/Lon",170],["FileName","FileName",330],["Address","Address",220],["Country","Country",110],["Close_city","Close city",150],["Geo_desc","Geo description",240],["FilePath","File path",260],["Date_time","Date/time",175],["Location_source","Location source",125],
+    ["Quality_selected","Quality selected",125],["Pheno_period","Phenological period",150],["Residence","Residence",100],["Feather_perc","Feather %",95],["Feather_occ","Feathers visible",120],["Ciconia_num","White storks",105],["Env_desc_en","Environment description",260],["Remarks","Remarks",300],["Altitude","Altitude class",110],["Fly_ground","Flight state",110],["Above_ground","Above ground",110],["Height_class_100m","Height class",105],["Thermal_updraft","Thermal updraft",125],["Activity_class","Activity class",140],["Agriculture_type","Agriculture type",220],["Foraging_habitat_group","Foraging habitat",220],["Roost_site_group","Roost site",190],["Period_day","Period day",100],["Artificial_lights","Artificial lights",115],["Water_presence_class","Water presence",165],["Spec1_abund","Species 1 abundance",130],["Spec1_name","Species 1",180],["Spec2_abund","Species 2 abundance",130],["Spec2_name","Species 2",180],["Altitude_m","GPS altitude",105],["GPS_time","GPS time",175],["Latitude","Latitude",115],["Longitude","Longitude",115],["Elevation_m","Ground elevation",125],["Analysed","Analysed",95],["Status","Status",110],["Version","Version",80],["Updated_by","Updated by",150],["Annotation_updated_at","Annotation updated",175],["Mime_type","MIME type",120],["Size_bytes","Size bytes",110],["SHA256","SHA-256",310],["Media_status","Media status",105],["Source_row","Source row",95],["Photo_created_at","Photo created",175],["Photo_updated_at","Photo updated",175],["Actions","Actions",155]
+  ].map(([key,label,width])=>({key,label,width}));
+  let tableColumnConfig={order:tableColumnDefs.map((column)=>column.key),hidden:[],widths:{}};
+  try{const saved=JSON.parse(localStorage.getItem("storkDataTableColumnsV1")||"null");if(saved&&Array.isArray(saved.order)&&Array.isArray(saved.hidden)&&saved.widths)tableColumnConfig={...tableColumnConfig,...saved};}catch(e){}
+  const saveTableColumnConfig=()=>{try{localStorage.setItem("storkDataTableColumnsV1",JSON.stringify(tableColumnConfig));}catch(e){}};
+  const orderedTableColumns=()=>{const byKey=new Map(tableColumnDefs.map((column)=>[column.key,column])),known=tableColumnConfig.order.map((key)=>byKey.get(key)).filter(Boolean),used=new Set(known.map((column)=>column.key));return[...known,...tableColumnDefs.filter((column)=>!used.has(column.key))];};
+  const tablePhotoRecord=(photo)=>{const annotation=photo.annotation||{};return{Photo:photo.previewUrl,ID:photo.id,Bird:photo.bird,"Lat/Lon":photo.lat==null||photo.lon==null?null:`${Number(photo.lat).toFixed(6)}, ${Number(photo.lon).toFixed(6)}`,FileName:photo.filename,Address:photo.address,Country:photo.country,Close_city:photo.closeCity,Geo_desc:photo.geoDescription,FilePath:photo.filePath,Date_time:photo.captureTime,Location_source:photo.locationSource,...annotation,Altitude_m:photo.altitudeM,GPS_time:photo.gpsTime,Latitude:photo.lat,Longitude:photo.lon,Elevation_m:photo.elevationM,Analysed:photo.status==="complete"?"yes":"no",Status:photo.status,Version:photo.version,Updated_by:photo.updatedBy?.name||null,Annotation_updated_at:photo.updatedAt,Mime_type:photo.mimeType,Size_bytes:photo.sizeBytes,SHA256:photo.sha256,Media_status:photo.mediaStatus,Source_row:photo.sourceRow,Photo_created_at:photo.photoCreatedAt,Photo_updated_at:photo.photoUpdatedAt,Actions:null};};
+  const tableDisplayValue=(key,value)=>{if(value===null||value===undefined||value==="")return"—";if(["Date_time","GPS_time","Annotation_updated_at","Photo_created_at","Photo_updated_at"].includes(key)){const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString();}return String(value);};
+  const optionList=(values,current,allLabel)=>`<option value="">${escapeHtml(allLabel)}</option>${(values||[]).map((value)=>`<option value="${escapeHtml(value)}" ${String(current)===String(value)?"selected":""}>${escapeHtml(value)}</option>`).join("")}`;
+  const tableColumnManagerHtml=()=>`<details class="tableColumnManager"><summary>Columns: visibility, order and width</summary><div class="btnrow"><button id="tableShowAllColumns" class="secondary tiny" type="button">Show all</button><button id="tableResetColumns" class="secondary tiny" type="button">Reset layout</button></div><div class="tableColumnGrid">${orderedTableColumns().map((column,index)=>`<div class="tableColumnItem" data-column-key="${escapeHtml(column.key)}"><label><input class="tableColumnVisible" type="checkbox" ${tableColumnConfig.hidden.includes(column.key)?"":"checked"}> <span>${escapeHtml(column.label)}</span></label><button class="secondary tiny tableColumnUp" type="button" ${index===0?"disabled":""}>↑</button><button class="secondary tiny tableColumnDown" type="button" ${index===tableColumnDefs.length-1?"disabled":""}>↓</button><input class="tableColumnWidth" type="number" min="60" max="600" step="10" value="${Number(tableColumnConfig.widths[column.key]||column.width)}" title="Width in pixels"></div>`).join("")}</div></details>`;
   const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
   const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true"); };
   const openDataWorkspace = async (mode = "table") => {
@@ -2705,28 +2745,32 @@ loopCurrentEl.checked = false;
     if (edit && index >= 0) await openEditorMode();
   };
 
-  const tableOptions = () => `<option value="">All birds</option>${idsSorted().map((id)=>`<option value="${escapeHtml(id)}" ${tableFilters.individualId===id?"selected":""}>${escapeHtml(id)} (${birdPhotoCount(id).toLocaleString()} photos)</option>`).join("")}`;
   const loadDataTable = async () => {
     setDataStatus("Loading table…");
-    const query = new URLSearchParams({page:String(tablePage),pageSize:"50"});
-    Object.entries(tableFilters).forEach(([key,value])=>{if(value)query.set(key,value);});
+    const query = new URLSearchParams({page:String(tablePage),pageSize:String(tableFilters.pageSize||50)});
+    Object.entries(tableFilters).forEach(([key,value])=>{if(value&&key!=="pageSize")query.set(key,value);});
     try {
-      const data = await apiFetch(`/api/photos?${query}`);
-      dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${tableOptions()}</select><select id="tableStatusFilter"><option value="">All statuses</option>${["unstarted","draft","needs_review","complete"].map((s)=>`<option value="${s}" ${tableFilters.status===s?"selected":""}>${s}</option>`).join("")}</select><input id="tableSearch" type="search" placeholder="Filename or remarks" value="${escapeHtml(tableFilters.search)}"><button id="tableApply" class="secondary" type="button">Apply</button></div>
-      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Photo location</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td>${photo.locationSource==="exif"?`EXIF geotag<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:photo.locationSource==="track"?`GPS track (matched by time)<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:photo.locationSource==="import"?`Imported coordinates<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:'<span class="muted">No location match</span>'}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button>${authState.user?.role==="admin"?' <button class="danger tiny tableDelete" type="button">Delete</button>':""}</td></tr>`).join("")}</tbody></table>
+      const [data,filterOptions]=await Promise.all([apiFetch(`/api/photos?${query}`),apiFetch("/api/photos/filter-options")]),columns=orderedTableColumns().filter((column)=>!tableColumnConfig.hidden.includes(column.key));
+      dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${optionList(filterOptions.individuals,tableFilters.individualId,"All birds")}</select><select id="tableStatusFilter">${optionList(["unstarted","draft","needs_review","complete"],tableFilters.status,"All statuses")}</select><select id="tablePhenoFilter">${optionList(filterOptions.phenoPeriods,tableFilters.phenoPeriod,"All phenological periods")}</select><select id="tablePeriodDayFilter">${optionList(filterOptions.periodDays,tableFilters.periodDay,"All day periods")}</select><select id="tableResidenceFilter">${optionList(filterOptions.residences,tableFilters.residence,"All residence states")}</select><select id="tableActivityFilter">${optionList(filterOptions.activityClasses,tableFilters.activityClass,"All activities")}</select><select id="tableCountryFilter">${optionList(filterOptions.countries,tableFilters.country,"All countries")}</select><input id="tableDateFrom" type="date" value="${escapeHtml(tableFilters.dateFrom)}" title="From date"><input id="tableDateTo" type="date" value="${escapeHtml(tableFilters.dateTo)}" title="To date"><input id="tableSearch" type="search" placeholder="Filename, environment or remarks" value="${escapeHtml(tableFilters.search)}"><select id="tablePageSize"><option ${tableFilters.pageSize==="50"?"selected":""}>50</option><option ${tableFilters.pageSize==="100"?"selected":""}>100</option><option ${tableFilters.pageSize==="250"?"selected":""}>250</option><option ${tableFilters.pageSize==="500"?"selected":""}>500</option></select><button id="tableApply" class="secondary" type="button">Apply filters</button><button id="tableClear" class="secondary" type="button">Clear</button></div>${tableColumnManagerHtml()}
+      <div class="dataTableWrap"><table class="dataTable"><thead><tr>${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width);return`<th data-column="${escapeHtml(column.key)}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${escapeHtml(column.label)}<span class="columnResize" aria-hidden="true"></span></th>`;}).join("")}</tr></thead><tbody>${(data.photos||[]).map((photo)=>{const record=tablePhotoRecord(photo);return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}" data-filename="${escapeHtml(photo.filename)}">${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width),content=column.key==="Photo"?`<img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`:column.key==="Actions"?`<button class="secondary tiny tableEdit" type="button">Edit</button>${authState.user?.role==="admin"?' <button class="danger tiny tableDelete" type="button">Delete</button>':""}`:escapeHtml(tableDisplayValue(column.key,record[column.key]));return`<td data-column="${escapeHtml(column.key)}" title="${column.key==="Photo"||column.key==="Actions"?"":escapeHtml(tableDisplayValue(column.key,record[column.key]))}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${content}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div>
       <div class="btnrow" style="margin-top:10px;"><button id="tablePrev" class="secondary tiny" type="button" ${data.page<=1?"disabled":""}>Previous</button><span class="muted">Page ${data.page} • ${data.total} records</span><button id="tableNext" class="secondary tiny" type="button" ${data.page*data.pageSize>=data.total?"disabled":""}>Next</button></div>`;
       setDataStatus(`${data.total} records`);
-      el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,search:el("tableSearch").value.trim()};tablePage=1;loadDataTable();});
+      el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,phenoPeriod:el("tablePhenoFilter").value,periodDay:el("tablePeriodDayFilter").value,residence:el("tableResidenceFilter").value,activityClass:el("tableActivityFilter").value,country:el("tableCountryFilter").value,dateFrom:el("tableDateFrom").value,dateTo:el("tableDateTo").value,search:el("tableSearch").value.trim(),pageSize:el("tablePageSize").value};tablePage=1;loadDataTable();});
+      el("tableClear").addEventListener("click",()=>{tableFilters={individualId:"",status:"",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();});
       el("tablePrev").addEventListener("click",()=>{tablePage=Math.max(1,tablePage-1);loadDataTable();}); el("tableNext").addEventListener("click",()=>{tablePage++;loadDataTable();});
-      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("click",(event)=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,event.target.closest(".tableEdit")!==null)));
-      dataPanelEl.querySelectorAll(".tableDelete").forEach((button)=>button.addEventListener("click",async(event)=>{event.stopPropagation();const row=button.closest("tr"),filename=row.children[2]?.textContent||row.dataset.photoId;if(!window.confirm(`Delete photo ${filename} and its annotation/history? GPS track and stopovers will remain on the map.`))return;button.disabled=true;try{await apiFetch(`/api/admin/photos/${encodeURIComponent(row.dataset.photoId)}`,{method:"DELETE"});await loadGithubFiles();await loadDataTable();}catch(error){button.disabled=false;setDataStatus(`Delete failed: ${error.message}`);}}));
+      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("dblclick",()=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,false)));
+      dataPanelEl.querySelectorAll(".tableEdit").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true);}));
+      dataPanelEl.querySelectorAll(".tableDelete").forEach((button)=>button.addEventListener("click",async(event)=>{event.stopPropagation();const row=button.closest("tr"),filename=row.dataset.filename||row.dataset.photoId;if(!window.confirm(`Delete photo ${filename} and its annotation/history? GPS track and stopovers will remain on the map.`))return;button.disabled=true;try{await apiFetch(`/api/admin/photos/${encodeURIComponent(row.dataset.photoId)}`,{method:"DELETE"});await loadGithubFiles();await loadDataTable();}catch(error){button.disabled=false;setDataStatus(`Delete failed: ${error.message}`);}}));
+      dataPanelEl.querySelectorAll(".tableColumnItem").forEach((item)=>{const key=item.dataset.columnKey;item.querySelector(".tableColumnVisible").addEventListener("change",(event)=>{const hidden=new Set(tableColumnConfig.hidden);event.target.checked?hidden.delete(key):hidden.add(key);tableColumnConfig.hidden=[...hidden];saveTableColumnConfig();loadDataTable();});item.querySelector(".tableColumnWidth").addEventListener("change",(event)=>{tableColumnConfig.widths[key]=Math.max(60,Math.min(600,Number(event.target.value)||100));saveTableColumnConfig();loadDataTable();});const move=(direction)=>{const order=orderedTableColumns().map((column)=>column.key),index=order.indexOf(key),target=index+direction;if(target<0||target>=order.length)return;[order[index],order[target]]=[order[target],order[index]];tableColumnConfig.order=order;saveTableColumnConfig();loadDataTable();};item.querySelector(".tableColumnUp").addEventListener("click",()=>move(-1));item.querySelector(".tableColumnDown").addEventListener("click",()=>move(1));});
+      el("tableShowAllColumns").addEventListener("click",()=>{tableColumnConfig.hidden=[];saveTableColumnConfig();loadDataTable();});el("tableResetColumns").addEventListener("click",()=>{tableColumnConfig={order:tableColumnDefs.map((column)=>column.key),hidden:[],widths:{}};saveTableColumnConfig();loadDataTable();});
+      dataPanelEl.querySelectorAll("th[data-column] .columnResize").forEach((handle)=>handle.addEventListener("pointerdown",(event)=>{event.preventDefault();event.stopPropagation();const th=handle.parentElement,key=th.dataset.column,startX=event.clientX,startWidth=th.getBoundingClientRect().width;handle.setPointerCapture?.(event.pointerId);const move=(moveEvent)=>{const width=Math.max(60,Math.min(600,Math.round(startWidth+moveEvent.clientX-startX)));tableColumnConfig.widths[key]=width;dataPanelEl.querySelectorAll(`[data-column="${CSS.escape(key)}"]`).forEach((cell)=>{cell.style.width=`${width}px`;cell.style.minWidth=`${width}px`;cell.style.maxWidth=`${width}px`;});};const finish=()=>{window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);saveTableColumnConfig();};window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);}));
     } catch(error) { dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`; setDataStatus("Table failed"); }
   };
 
   const loadProgressPanel = async () => {
     setDataStatus("Loading progress…");
     try { const data=await apiFetch("/api/progress"); dataPanelEl.innerHTML=`<div class="progressGrid">${(data.individuals||[]).map((item)=>`<div class="progressCard"><h3>${escapeHtml(item.individualId)}</h3><div><b>${item.complete}</b> / ${item.total} analysed (${item.percentComplete}%)</div><div class="progressBar"><span style="width:${Math.max(0,Math.min(100,item.percentComplete))}%"></span></div><div class="muted">Unstarted: ${item.unstarted} • Draft: ${item.draft} • Review: ${item.needsReview}</div><div class="btnrow" style="margin-top:9px;"><button class="secondary tiny progressOpen" data-bird="${escapeHtml(item.individualId)}" data-status="unstarted" type="button">Unfinished</button><button class="secondary tiny progressContinue" data-bird="${escapeHtml(item.individualId)}" type="button">Continue</button></div></div>`).join("")}</div>`;setDataStatus(`${data.individuals?.length||0} individuals`);
-      dataPanelEl.querySelectorAll(".progressOpen").forEach((button)=>button.addEventListener("click",()=>{tableFilters={individualId:button.dataset.bird,status:"unstarted",search:""};tablePage=1;loadDataTable();}));
+      dataPanelEl.querySelectorAll(".progressOpen").forEach((button)=>button.addEventListener("click",()=>{tableFilters={individualId:button.dataset.bird,status:"unstarted",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();}));
       dataPanelEl.querySelectorAll(".progressContinue").forEach((button)=>button.addEventListener("click",async()=>{const result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(button.dataset.bird)}`);if(result.photo)openWorkspacePhoto(result.photo.id,result.photo.individual_id,true);else setDataStatus("No unfinished records for this bird.");}));
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Progress failed");}
   };
@@ -3116,9 +3160,10 @@ loopCurrentEl.checked = false;
 
   const validPhotoShares = new Set(["40", "50", "60", "70"]);
   const validFontScales = new Set(["1", "1.15", "1.25", "1.4", "1.6"]);
+  let viewerPhotoShare=50;
   try {
     const savedPhotoShare = localStorage.getItem("storkViewerPhotoShare");
-    if (validPhotoShares.has(savedPhotoShare)) layoutSplitEl.value = savedPhotoShare;
+    const parsedPhotoShare=Number(savedPhotoShare);if(Number.isFinite(parsedPhotoShare)&&parsedPhotoShare>=20&&parsedPhotoShare<=80){viewerPhotoShare=parsedPhotoShare;if(validPhotoShares.has(String(parsedPhotoShare)))layoutSplitEl.value=String(parsedPhotoShare);else{const custom=layoutSplitEl.querySelector('option[value="custom"]');custom.hidden=false;custom.textContent=`Custom (${Math.round(parsedPhotoShare)}% photo)`;layoutSplitEl.value="custom";}}
     const savedFontScale = localStorage.getItem("storkViewerFontScale");
     if (validFontScales.has(savedFontScale)) fontScaleEl.value = savedFontScale;
   } catch(e) {}
@@ -3140,11 +3185,12 @@ loopCurrentEl.checked = false;
   };
 
   const applyLayoutSplit = ({ persist = true } = {}) => {
-    const photoShare = Number(layoutSplitEl.value) || 50;
+    const selected=Number(layoutSplitEl.value);if(Number.isFinite(selected))viewerPhotoShare=selected;
+    const photoShare = Math.max(20,Math.min(80,viewerPhotoShare));
     const mapShare = 100 - photoShare;
 
     // Desktop: split the screen width. Mobile: split the screen height.
-    if (!document.body.classList.contains("editorOpen")) wrapEl.style.gridTemplateColumns = `minmax(0, ${mapShare}fr) minmax(0, ${photoShare}fr)`;
+    if (!document.body.classList.contains("editorOpen")) wrapEl.style.gridTemplateColumns = `minmax(180px, ${mapShare}fr) 9px minmax(260px, ${photoShare}fr)`;
     document.documentElement.style.setProperty("--mobile-map-height", `${mapShare}dvh`);
     document.documentElement.style.setProperty("--mobile-photo-height", `${photoShare}dvh`);
 
@@ -3230,10 +3276,12 @@ loopCurrentEl.checked = false;
   };
 
   prevPhotoBtn.addEventListener("click", () => {
+    if(document.body.classList.contains("editorOpen")){moveEditorPhoto(-1);return;}
     const index = currentPhotoIndex();
     if (index > 0) showPhotoAtIndex(index - 1);
   });
   nextPhotoBtn.addEventListener("click", () => {
+    if(document.body.classList.contains("editorOpen")){moveEditorPhoto(1);return;}
     const index = currentPhotoIndex();
     if (index >= 0 && index < track.length - 1) showPhotoAtIndex(index + 1);
   });
@@ -3246,6 +3294,7 @@ loopCurrentEl.checked = false;
   let editorLoadedRecord = null;
   let editorLoadedVersion = null;
   let editorLoadToken = 0;
+  let editorHeightClassManual = false;
   const defaultEditorPaneRatios = [0.18,0.30,0.52];
   let editorPaneRatios = [...defaultEditorPaneRatios];
   try {
@@ -3274,7 +3323,13 @@ loopCurrentEl.checked = false;
   };
 
   const startEditorPaneResize = (boundary,divider,event) => {
-    if(!document.body.classList.contains("editorOpen")||window.innerWidth<=980)return;event.preventDefault();const startX=event.clientX;let previous=0;divider.classList.add("dragging");divider.setPointerCapture?.(event.pointerId);
+    if(window.innerWidth<=980)return;
+    if(!document.body.classList.contains("editorOpen")){
+      if(boundary!=="map")return;event.preventDefault();const rect=wrapEl.getBoundingClientRect();divider.classList.add("dragging");divider.setPointerCapture?.(event.pointerId);
+      const move=(moveEvent)=>{const mapWidth=Math.max(rect.width*.2,Math.min(rect.width*.8,moveEvent.clientX-rect.left)),photoShare=100-mapWidth*100/rect.width;viewerPhotoShare=photoShare;layoutSplitEl.value=validPhotoShares.has(String(Math.round(photoShare)))?String(Math.round(photoShare)):"custom";const custom=layoutSplitEl.querySelector('option[value="custom"]');custom.hidden=false;custom.textContent=`Custom (${Math.round(photoShare)}% photo)`;applyLayoutSplit({persist:false});};
+      const finish=()=>{divider.classList.remove("dragging");window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",finish);applyLayoutSplit({persist:true});};window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",finish);return;
+    }
+    event.preventDefault();const startX=event.clientX;let previous=0;divider.classList.add("dragging");divider.setPointerCapture?.(event.pointerId);
     const move=(moveEvent)=>{const current=moveEvent.clientX-startX,delta=current-previous;previous=current;resizeEditorPaneBoundary(boundary,delta);};
     const finish=()=>{divider.classList.remove("dragging");window.removeEventListener("pointermove",move);window.removeEventListener("pointerup",finish);window.removeEventListener("pointercancel",finish);applyEditorPaneRatios({persist:true});};
     window.addEventListener("pointermove",move);window.addEventListener("pointerup",finish);window.addEventListener("pointercancel",finish);
@@ -3282,14 +3337,15 @@ loopCurrentEl.checked = false;
   editorMapDividerEl.addEventListener("pointerdown",(event)=>startEditorPaneResize("map",editorMapDividerEl,event));
   editorPhotoDividerEl.addEventListener("pointerdown",(event)=>startEditorPaneResize("photo",editorPhotoDividerEl,event));
   for(const [divider,boundary] of [[editorMapDividerEl,"map"],[editorPhotoDividerEl,"photo"]]){
-    divider.addEventListener("keydown",(event)=>{if(!["ArrowLeft","ArrowRight"].includes(event.key))return;event.preventDefault();resizeEditorPaneBoundary(boundary,event.key==="ArrowLeft"?-24:24);applyEditorPaneRatios({persist:true});});
-    divider.addEventListener("dblclick",()=>{editorPaneRatios=[...defaultEditorPaneRatios];applyEditorPaneRatios({persist:true});});
+    divider.addEventListener("keydown",(event)=>{if(!["ArrowLeft","ArrowRight"].includes(event.key))return;event.preventDefault();if(!document.body.classList.contains("editorOpen")&&boundary==="map"){viewerPhotoShare=Math.max(20,Math.min(80,viewerPhotoShare+(event.key==="ArrowLeft"?2:-2)));layoutSplitEl.value="custom";applyLayoutSplit({persist:true});return;}resizeEditorPaneBoundary(boundary,event.key==="ArrowLeft"?-24:24);applyEditorPaneRatios({persist:true});});
+    divider.addEventListener("dblclick",()=>{if(!document.body.classList.contains("editorOpen")&&boundary==="map"){viewerPhotoShare=50;layoutSplitEl.value="50";applyLayoutSplit({persist:true});return;}editorPaneRatios=[...defaultEditorPaneRatios];applyEditorPaneRatios({persist:true});});
   }
 
   const editorSetStatus = (message, type = "") => {
     editorStatusEl.textContent = message;
     editorStatusEl.classList.remove("ok", "error", "busy");
     if (type) editorStatusEl.classList.add(type);
+    if(type==="error"){editorPanelHeaderEl.classList.remove("compact");toggleEditorHeaderBtn.textContent="Hide";toggleEditorHeaderBtn.setAttribute("aria-expanded","true");}
   };
 
   const editorHasConnection = () => !!authState.token && !!authState.user && !authState.user.mustChangePassword;
@@ -3411,32 +3467,18 @@ loopCurrentEl.checked = false;
     select.value = normalized;
   };
 
-  const editorUpdateDerived = () => {
+  const heightClass100m=(above,movement)=>movement==="ground"?0:(!Number.isFinite(above)||above<=50?0:Math.max(0,Math.ceil((above-50)/100)*100));
+  const editorUpdateDerived = ({forceClass=false}={}) => {
     const altitudeRaw = editorLoadedRecord && editorLoadedRecord.Altitude_m;
     const altitudeM = altitudeRaw === null || altitudeRaw === undefined || altitudeRaw === ""
       ? NaN
       : Number(altitudeRaw);
-    const elevationRaw = editorElevationEl.value;
-    const elevation = elevationRaw === "" ? NaN : Number(elevationRaw);
+    let elevationRaw = editorElevationEl.value,elevation=elevationRaw === "" ? NaN : Number(elevationRaw),aboveRaw=editorAboveGroundEl.value,above=aboveRaw===""?NaN:Number(aboveRaw);const movement=editorFlyGroundEl.value;
     editorAltitudeMEl.textContent = Number.isFinite(altitudeM) ? altitudeM.toFixed(2) : "—";
-
-    if (Number.isFinite(altitudeM) && Number.isFinite(elevation)) {
-      const above = Math.round((altitudeM - elevation) * 100) / 100;
-      const heightClass = Math.max(0, Math.floor(above / 100) * 100);
-      editorAboveGroundEl.textContent = above.toFixed(2);
-      editorHeightClassEl.textContent = String(heightClass);
-    } else {
-      const existingAboveRaw = editorLoadedRecord && editorLoadedRecord.Above_ground;
-      const existingClassRaw = editorLoadedRecord && editorLoadedRecord.Height_class_100m;
-      const existingAbove = existingAboveRaw === null || existingAboveRaw === undefined || existingAboveRaw === ""
-        ? NaN
-        : Number(existingAboveRaw);
-      const existingClass = existingClassRaw === null || existingClassRaw === undefined || existingClassRaw === ""
-        ? NaN
-        : Number(existingClassRaw);
-      editorAboveGroundEl.textContent = Number.isFinite(existingAbove) ? existingAbove.toFixed(2) : "—";
-      editorHeightClassEl.textContent = Number.isFinite(existingClass) ? String(existingClass) : "—";
-    }
+    if(movement==="ground"){above=0;editorAboveGroundEl.value="0";if(Number.isFinite(altitudeM)){elevation=altitudeM;editorElevationEl.value=altitudeM.toFixed(2);}}
+    else if(!Number.isFinite(above)&&Number.isFinite(altitudeM)&&Number.isFinite(elevation)){above=Math.round((altitudeM-elevation)*100)/100;editorAboveGroundEl.value=String(above);}
+    if(Number.isFinite(altitudeM)&&Number.isFinite(above)){elevation=Math.round((altitudeM-above)*100)/100;editorElevationEl.value=String(elevation);}else if(!Number.isFinite(elevation))editorElevationEl.value="";
+    if(forceClass||!editorHeightClassManual||movement==="ground")editorHeightClassEl.value=Number.isFinite(above)?String(heightClass100m(above,movement)):"";
 
     const gpsTime = editorLoadedRecord && editorLoadedRecord.GPS_time;
     const latitude = editorLoadedRecord && editorLoadedRecord.Latitude;
@@ -3520,8 +3562,13 @@ loopCurrentEl.checked = false;
       const schema = await apiFetch("/api/schema/annotation", {}, { auth:false });
       for (const field of schema.fields || []) {
         const input = editorFormEl.querySelector(`[data-field="${field.key}"]`), label = input?.closest(".editorField")?.querySelector("label");
-        if (!label || label.querySelector(".fieldHelp")) continue;
-        const help = document.createElement("button");help.type="button";help.className="fieldHelp";help.textContent="?";help.title=field.help||field.label;help.setAttribute("aria-label",`Information about ${field.label}`);help.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();if(fieldHelpPopoverEl.classList.contains("open")&&help.getAttribute("aria-expanded")==="true"){closeFieldHelp();help.setAttribute("aria-expanded","false");return;}document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));help.setAttribute("aria-expanded","true");showFieldHelp(field,help);});label.appendChild(help);
+        if (!label) continue;
+        if(!label.querySelector(".fieldHelp")){const help = document.createElement("button");help.type="button";help.className="fieldHelp";help.textContent="?";help.title=field.help||field.label;help.setAttribute("aria-label",`Information about ${field.label}`);help.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();if(fieldHelpPopoverEl.classList.contains("open")&&help.getAttribute("aria-expanded")==="true"){closeFieldHelp();help.setAttribute("aria-expanded","false");return;}document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));help.setAttribute("aria-expanded","true");showFieldHelp(field,help);});label.appendChild(help);}
+        if(input?.tagName==="SELECT"&&field.extensible){
+          for(const value of field.options||[])if(value&&!Array.from(input.options).some((option)=>option.value===value))input.add(new Option(value,value));
+          if(!input.querySelector('option[value="__add_category__"]'))input.add(new Option("＋ Add new category…","__add_category__"));
+          if(!input.dataset.extensibleReady){input.dataset.extensibleReady="true";input.addEventListener("focus",()=>{if(input.value!=="__add_category__")input.dataset.previousValue=input.value;});input.addEventListener("change",async()=>{if(input.value!=="__add_category__")return;const previous=input.dataset.previousValue||"",candidate=window.prompt(`New category for ${field.label}:`,"")?.replaceAll("\0","").trim();if(!candidate||!window.confirm(`Add the new category “${candidate}” for all users?`)){input.value=previous;return;}try{const result=await apiFetch("/api/annotation-options",{method:"POST",body:JSON.stringify({fieldKey:field.key,value:candidate})}),sentinel=input.querySelector('option[value="__add_category__"]');if(!Array.from(input.options).some((option)=>option.value===result.value))input.insertBefore(new Option(result.value,result.value),sentinel);input.value=result.value;input.dataset.previousValue=result.value;input.dispatchEvent(new Event("change",{bubbles:true}));editorSetStatus(`Added category “${result.value}”. It is now available to all users.`,"ok");}catch(error){input.value=previous;editorSetStatus(`Could not add category: ${error.message}`,"error");}});}
+        }
       }
     } catch(error) { console.warn("Field help could not be loaded", error); }
   };
@@ -3548,8 +3595,9 @@ loopCurrentEl.checked = false;
     // Use that as a convenience default only when this row is still blank.
     if (!record.Quality_selected) editorQualityEl.value = "yes";
 
-    editorLoadedRecord = { ...record };
+    editorLoadedRecord = { ...record };editorHeightClassManual=record.Height_class_100m!==null&&record.Height_class_100m!==undefined&&record.Height_class_100m!=="";
     editorApplyConditionalRules();
+    editorUpdateDerived({forceClass:!editorHeightClassManual});
     updateEditorCompletionHints();
     editorDirty = false;
   };
@@ -3597,16 +3645,9 @@ loopCurrentEl.checked = false;
     const altitudeM = altitudeRaw === null || altitudeRaw === undefined || altitudeRaw === ""
       ? NaN
       : Number(altitudeRaw);
-    const elevation = values.Elevation_m;
-    if (Number.isFinite(altitudeM) && Number.isFinite(elevation)) {
-      values.Above_ground = Math.round((altitudeM - elevation) * 100) / 100;
-      values.Height_class_100m = Math.max(0, Math.floor(values.Above_ground / 100) * 100);
-    } else {
-      values.Above_ground = editorLoadedRecord && editorLoadedRecord.Above_ground !== undefined
-        ? editorLoadedRecord.Above_ground : null;
-      values.Height_class_100m = editorLoadedRecord && editorLoadedRecord.Height_class_100m !== undefined
-        ? editorLoadedRecord.Height_class_100m : null;
-    }
+    if(values.Fly_ground==="ground"){values.Above_ground=0;values.Height_class_100m=0;values.Elevation_m=Number.isFinite(altitudeM)?altitudeM:values.Elevation_m;}
+    else if(Number.isFinite(altitudeM)&&Number.isFinite(values.Above_ground))values.Elevation_m=Math.round((altitudeM-values.Above_ground)*100)/100;
+    if((values.Height_class_100m===null||values.Height_class_100m===undefined)&&Number.isFinite(values.Above_ground))values.Height_class_100m=heightClass100m(values.Above_ground,values.Fly_ground);
 
     return values;
   };
@@ -3632,6 +3673,7 @@ loopCurrentEl.checked = false;
       errors.push("Feather coverage must be between 0 and 100%.");
       markEditorInvalid(editorFeatherPercEl);
     }
+    if(values.Height_class_100m!==null&&(!Number.isInteger(values.Height_class_100m)||values.Height_class_100m<0||values.Height_class_100m%100!==0)){errors.push("100-m height class must be 0 or a non-negative multiple of 100.");markEditorInvalid(editorHeightClassEl);}
     for (const [nameKey, abundanceKey, nameField, abundanceField, label] of [
       ["Spec1_name", "Spec1_abund", editorSpec1NameEl, editorSpec1AbundEl, "Species 1"],
       ["Spec2_name", "Spec2_abund", editorSpec2NameEl, editorSpec2AbundEl, "Species 2"]
@@ -3737,11 +3779,13 @@ loopCurrentEl.checked = false;
     wrapEl.insertBefore(editorMapDividerEl, sideEl);
     wrapEl.insertBefore(editorPanelEl, sideEl);
     wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
-    editorPanelHeaderEl.appendChild(closeEditorModeBtn);
-    editorPanelHeaderEl.appendChild(editorVisualNavEl);
+    editorPanelHeaderEl.classList.add("compact");toggleEditorHeaderBtn.textContent="Details";toggleEditorHeaderBtn.setAttribute("aria-expanded","false");
+    editorPanelHeaderBarEl.appendChild(editorVisualNavEl);
+    editorPanelHeaderBarEl.appendChild(closeEditorModeBtn);
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.add("editorOpen");
     document.body.dataset.editorTab = "form";
+    loadEditorHelp();
     applyEditorPaneRatios();
     requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
     await editorLoadPhoto(index);
@@ -3820,23 +3864,27 @@ loopCurrentEl.checked = false;
     }
   };
 
+  editorAboveGroundEl.addEventListener("input",()=>{editorHeightClassManual=false;editorUpdateDerived({forceClass:true});});
+  editorHeightClassEl.addEventListener("input",()=>{editorHeightClassManual=editorHeightClassEl.value!=="";});
   for (const field of editorFieldEls) {
     field.addEventListener("input", () => {
+      if(field.value==="__add_category__")return;
       field.classList.remove("editorInvalid");
       editorApplyConditionalRules();
       updateEditorCompletionHints();
       editorMarkDirty();
     });
     field.addEventListener("change", () => {
+      if(field.value==="__add_category__")return;
       field.classList.remove("editorInvalid");
       editorApplyConditionalRules();
       updateEditorCompletionHints();
       editorMarkDirty();
     });
   }
-  editorElevationEl.addEventListener("input", editorUpdateDerived);
 
   editorModeBtn.addEventListener("click", openEditorMode);
+  toggleEditorHeaderBtn.addEventListener("click",()=>{const compact=editorPanelHeaderEl.classList.toggle("compact");toggleEditorHeaderBtn.textContent=compact?"Details":"Hide";toggleEditorHeaderBtn.setAttribute("aria-expanded",String(!compact));});
   closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
   editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
   editorNextPhotoBtn.addEventListener("click", () => moveEditorPhoto(1));

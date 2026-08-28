@@ -9,10 +9,13 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - photo positions prefer embedded EXIF geotags and otherwise use the nearest route point matched from the UTC timestamp in the filename;
 - browser-persisted interface font scaling from 100% to 160%;
 - three-column desktop editor: map / form / photo;
+- synchronized photo navigation, a compact-by-default editor header and visible photo time/coordinates;
+- draggable map/photo divider in normal browsing as well as draggable map/form/photo dividers in editing;
 - mobile Map / Form / Photo editor tabs;
 - field help, conditional controls and missing-value indicators;
 - drafts, completed records and optimistic version locking;
 - table view with search, filters, paging and direct editing;
+- full-width data-browser table with every photo/annotation field, horizontal scrolling, date/category filters and persistent column visibility, order and widths;
 - progress per individual and navigation to unfinished records;
 - XLSX, CSV, JSON, GeoJSON, KML and optional photo ZIP exports;
 - administrator, coordinator and annotator roles;
@@ -37,6 +40,10 @@ All XLSX/CSV/TXT text cells are sanitized by removing only the invisible NUL cha
 Composite `Bird + FileName` keys use NUL only inside process-local maps. Reports use the safe `Bird | FileName` representation and separate `bird` / `filename` fields. Every import issue is deep-sanitized again before both `source_key` and `details` JSONB are inserted. Run the PostgreSQL duplicate-row integration test against an isolated test database with `TEST_DATABASE_URL=... npm run test:integration`.
 
 On desktop, annotation mode keeps the map on the left, the form in the centre and gives the photograph the largest pane on the right. Drag either blue divider to resize adjacent panes; the proportions are saved in the browser. Double-click a divider to restore the default 18% / 30% / 52% proportions. Each `?` button opens the complete data type, unit, source/role and definition copied from the workbook's `info` sheet.
+
+The height section is open by default. GPS altitude and editable height above ground determine ground elevation (`GPS altitude - above ground`). The preliminary 100-m class uses 0 through 50 m as class 0, then 100-m classes above each 50-m boundary; users may replace that preliminary class with another non-negative multiple of 100. `Fly_ground=ground` always forces height above ground and height class to 0.
+
+Extensible categorical selectors offer **Add new category…**. After entering a value, the user must confirm it; the API stores it in `annotation_options`, so it is available to every user. Binary/control fields remain closed lists to preserve editor rules.
 
 The route and stopovers remain independent map data. Photo positioning uses this priority: image EXIF geotag; nearest route point within `PHOTO_GPS_MAX_OFFSET_MINUTES` (90 minutes by default) using the UTC timestamp parsed from the filename; imported latitude/longitude as a final round-trip fallback. Reimporting the same `Bird + FileName` never creates a duplicate. If the stored image has no EXIF position and the reimported version has one, the file and metadata are upgraded while its existing annotation remains attached to the same photo row.
 
