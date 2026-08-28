@@ -47,13 +47,15 @@ export function requireRole(...roles) {
   return (req, res, next) => roles.includes(req.user?.role) ? next() : res.status(403).json({ error:"forbidden" });
 }
 export async function canAccessIndividual(user, individualId, client = db) {
+  return !!user&&!!individualId;
+}
+export async function canAnnotateIndividual(user, individualId, client = db) {
   if (["admin","coordinator"].includes(user?.role)) return true;
   const result = await client.query("SELECT 1 FROM user_individual_access WHERE user_id=$1 AND individual_id=$2", [user.id, individualId]);
   return !!result.rows[0];
 }
 export function accessSql(user, column = "p.individual_id", index = 1) {
-  if (["admin","coordinator"].includes(user.role)) return { sql:"TRUE", params:[] };
-  return { sql:`EXISTS (SELECT 1 FROM user_individual_access ua WHERE ua.user_id=$${index} AND ua.individual_id=${column})`, params:[user.id] };
+  return { sql:"TRUE", params:[] };
 }
 export async function audit(user, action, entityType, entityId, payload = {}, req = null, client = db) {
   await client.query(

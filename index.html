@@ -745,6 +745,8 @@
       line-height: 1.4;
     }
     .editorConnectionWarning.show { display: block; }
+    .editorForm.readOnly { background:linear-gradient(180deg,rgba(119,209,255,.025),transparent); }
+    .editorForm.readOnly input,.editorForm.readOnly select,.editorForm.readOnly textarea { opacity:.78; cursor:not-allowed; }
     .editorFooter {
       padding: 11px 14px;
       border-top: 1px solid rgba(255,255,255,.10);
@@ -770,7 +772,6 @@
     .editorMobileTabs { display:none; position:fixed; z-index:6750; top:8px; left:50%; transform:translateX(-50%); width:min(390px,calc(100vw - 110px)); gap:5px; padding:5px; border:1px solid rgba(119,209,255,.28); border-radius:13px; background:rgba(8,14,25,.84); box-shadow:0 10px 30px rgba(0,0,0,.32); backdrop-filter:blur(14px); }
     .editorMobileTabs button { flex:1; opacity:.72; transition:background .2s ease,color .2s ease,opacity .2s ease,transform .2s ease; }
     .editorMobileTabs button.active { opacity:1; color:#fff; border-color:rgba(119,209,255,.62); background:rgba(52,161,255,.30); transform:translateY(-1px); }
-    body.editorOpen .editorMobileTabs { display:flex; }
     .photoSocialControls { position:absolute; z-index:45; right:10px; top:10px; display:flex; align-items:center; gap:6px; padding:5px 7px; border:1px solid rgba(255,255,255,.18); border-radius:999px; background:rgba(5,10,18,.68); backdrop-filter:blur(10px); }
     .photoSocialControls[hidden],.accountCollections[hidden] { display:none !important; }
     .favoritePhotoBtn { color:#ffe18a; min-width:34px; }
@@ -834,6 +835,7 @@
     .tableColumnItem input[type="number"] { width:68px; padding:5px; }
     .dataTable tr { cursor:pointer; }
     .dataTable tr:hover { background:rgba(119,209,255,.08); }
+    .dataTable tr.myRecord { background:rgba(57,217,138,.055); }
     .dataThumb { width:68px; height:48px; object-fit:cover; border-radius:7px; background:#02040a; }
     .statusPill { display:inline-block; padding:3px 7px; border-radius:999px; background:rgba(255,255,255,.08); }
     .progressGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
@@ -1162,19 +1164,23 @@
   .editorStatus { margin-top: 6px; padding: 6px 8px; }
   .editorForm { padding: 9px 10px 18px; }
   .editorFooter { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
-  body.editorOpen .wrap { display:block; height:100dvh; padding:0; }
+  body.editorOpen .wrap { display:block; height:100dvh; padding:52px 0 0; box-sizing:border-box; }
   body.editorOpen .editorPaneDivider { display:none; }
   body.editorOpen header, body.editorOpen #mobilePanelBtn { display:none; }
   body.editorOpen .editorMobileTabs { display:flex; }
   body.editorOpen[data-editor-tab="form"] .mapStack, body.editorOpen[data-editor-tab="form"] .side { display:none; }
   body.editorOpen[data-editor-tab="map"] .editorPanel, body.editorOpen[data-editor-tab="map"] .side { display:none; }
   body.editorOpen[data-editor-tab="photo"] .editorPanel, body.editorOpen[data-editor-tab="photo"] .mapStack { display:none; }
-  body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { width:100%; height:100dvh; border-radius:0; }
+  body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { width:100%; height:calc(100dvh - 52px); border-radius:0; }
   body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { animation:editorPaneIn .26s cubic-bezier(.2,.8,.2,1); }
-  .editorMobileTabs { top:max(6px,env(safe-area-inset-top)); width:min(360px,calc(100vw - 72px)); }
+  .editorMobileTabs { top:max(6px,env(safe-area-inset-top)); width:min(360px,calc(100vw - 96px)); }
   .photoSocialControls { top:52px; }
   .collectionViewer.open { grid-template-columns:1fr; grid-template-rows:38dvh 62dvh; }
-  .dataWorkspace { padding:8px; }
+  .dataWorkspace { padding:6px; }
+  .dataWorkspace.open { grid-template-rows:auto minmax(0,1fr); }
+  .dataTopbar { position:sticky; top:0; z-index:20; padding:6px; border:1px solid rgba(119,209,255,.18); border-radius:12px; background:rgba(7,11,20,.96); }
+  .dataActions { width:100%; order:-1; justify-content:space-between; }
+  .dataActions #dataWorkspaceStatus { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .userGrid,.importGrid { grid-template-columns:1fr; }
 }
 @keyframes editorPaneIn { from { opacity:.25; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
@@ -1213,11 +1219,13 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavTile strong { font-size:var(--ui-font-title); }
 .appNavTile small { color:var(--muted); font-size:var(--ui-font-small); line-height:1.2; }
 .appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
-.appNavHandle { position:fixed; z-index:6960; left:0; top:50%; width:22px; height:68px; padding:0 !important; display:grid; place-items:center; transform:translateY(-50%); border-left:0; border-radius:0 12px 12px 0; color:rgba(255,255,255,.76); background:rgba(12,22,38,.48); border-color:rgba(119,209,255,.28); backdrop-filter:blur(8px); opacity:.72; transition:left .24s ease,opacity .2s ease,background .2s ease; }
+.appNavHandle { position:fixed; z-index:6960; left:0; top:92px; width:32px; height:78px; padding:0 !important; display:grid; place-items:center; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
 .appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
 .appNavDrawer.open + .appNavHandle { left:min(330px,calc(100vw - 42px)); }
 .appNavHandle span { transition:transform .2s ease; }
 .appNavDrawer.open + .appNavHandle span { transform:rotate(180deg); }
+.quickLogin { position:fixed; z-index:6940; top:12px; right:12px; padding:9px 14px !important; border-color:rgba(119,209,255,.58); background:rgba(9,28,48,.88); color:#fff; box-shadow:0 8px 26px rgba(0,0,0,.34); backdrop-filter:blur(10px); }
+.quickLogin[hidden] { display:none !important; }
 .appPanelWorkspace { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:18px; box-sizing:border-box; background:rgba(3,7,14,.68); backdrop-filter:blur(9px); }
 .appPanelWorkspace.open { display:grid; }
 .appPanelCard { width:min(720px,100%); max-height:calc(100dvh - 36px); overflow:auto; box-sizing:border-box; padding:16px; border:1px solid rgba(119,209,255,.28); border-radius:18px; background:rgba(10,17,29,.94); box-shadow:0 24px 70px rgba(0,0,0,.55); }
@@ -1239,7 +1247,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .dataTabGroup { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:4px 6px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(0,0,0,.12); }
 .dataTabGroupLabel { color:var(--muted); font-size:var(--ui-font-small); padding:0 3px; }
 body.appPanelOpen { overflow:hidden; }
-@media (max-width:700px){.appNavDrawer{inset:8px auto 8px 0;width:min(88vw,330px)}.appNavDrawer.open + .appNavHandle{left:min(88vw,330px)}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}}
+@media (max-width:700px){.appNavDrawer{inset:6px auto 6px 0;width:min(91vw,350px)}.appNavDrawer.open + .appNavHandle{left:min(91vw,350px)}.appNavHandle{top:max(86px,calc(env(safe-area-inset-top) + 72px));width:36px;height:82px}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}.quickLogin{top:max(8px,env(safe-area-inset-top));right:8px}}
 @media (hover:none){.appNavDrawer{background:rgba(8,14,25,.94)}}
 
 
@@ -1263,11 +1271,12 @@ body.appPanelOpen { overflow:hidden; }
     <button class="appNavTile" type="button" data-app-nav="users" data-role="admin"><span class="appNavIcon">♙</span><strong>Users</strong><small>Accounts, roles and invitations</small></button>
     <button class="appNavTile" type="button" data-app-nav="imports" data-role="admin"><span class="appNavIcon">⇧</span><strong>Import data</strong><small>Photos, descriptions and map layers</small></button>
     <button class="appNavTile" type="button" data-app-nav="reviews" data-role="coordinator,admin"><span class="appNavIcon">?</span><strong>Verification</strong><small>Records submitted for expert review</small></button>
-    <button class="appNavTile" type="button" data-app-nav="categories" data-role="admin"><span class="appNavIcon">≡</span><strong>Categories</strong><small>Approve and merge proposals</small></button>
+    <button class="appNavTile" type="button" data-app-nav="categories" data-role="coordinator,admin"><span class="appNavIcon">≡</span><strong>Categories</strong><small>Approve and merge proposals</small></button>
   </div>
   <div class="appNavFooter"><span class="miniNote" id="appNavAccess">Public access</span><button class="danger tiny" id="appNavLogout" type="button" hidden>Log out</button></div>
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span>›</span></button>
+<button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
 <div class="wrap">
@@ -1846,7 +1855,7 @@ body.appPanelOpen { overflow:hidden; }
 <div class="dataWorkspace" id="dataWorkspace" aria-hidden="true">
   <div class="dataTopbar">
     <div class="dataTabs"><div class="dataTabGroup"><span class="dataTabGroupLabel">Scientific data</span><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button></div><div class="dataTabGroup" id="adminDataTabs" style="display:none;"><span class="dataTabGroupLabel">Administration</span><button class="secondary" id="dataUsersTab" type="button">Users</button><button class="secondary" id="dataImportsTab" type="button">Import data</button></div></div>
-    <div class="dataActions"><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
+    <div class="dataActions"><button class="secondary tiny" id="returnToMain" type="button">← Map &amp; photos</button><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
   </div>
   <div class="dataPanel" id="dataPanel"></div>
 </div>
@@ -2084,9 +2093,11 @@ body.appPanelOpen { overflow:hidden; }
   const dataImportsTabBtn = el("dataImportsTab");
   const adminDataTabsEl = el("adminDataTabs");
   const closeDataWorkspaceBtn = el("closeDataWorkspace");
+  const returnToMainBtn = el("returnToMain");
   const appNavDrawerEl = el("appNavDrawer");
   const appNavHandleEl = el("appNavHandle");
   const closeAppNavBtn = el("closeAppNav");
+  const quickLoginBtn = el("quickLogin");
   const appNavUserEl = el("appNavUser");
   const appNavAccessEl = el("appNavAccess");
   const appNavAccountLabelEl = el("appNavAccountLabel");
@@ -2157,11 +2168,12 @@ body.appPanelOpen { overflow:hidden; }
   const scheduleAppNavigationClose=()=>{if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
   appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
   appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
+  quickLoginBtn.addEventListener("click",openAccountWorkspace);
   closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);
   for(const workspace of [accountWorkspaceEl,exportWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;workspace===accountWorkspaceEl?closeAccountWorkspace():closeExportWorkspace();});
   window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(collectionViewerEl.classList.contains("open")){closePhotoCollection();return;}if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
 
-  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public";appNavUserEl.textContent=user?`${user.name} • ${role}${user.mustChangePassword?" • password change required":""}`:"Public photo viewer • not logged in";appNavAccessEl.textContent=ready?(["admin","coordinator"].includes(role)?"Access to all individuals":`${authState.individualIds.length} assigned individual(s)`):"Public access";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"]').forEach((item)=>item.hidden=!ready);accountCollectionsEl.hidden=!ready;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${role}${user.mustChangePassword?" • change password now":""}`:"Public photo viewer";accountEmailEl.textContent=user?user.email:"Log in to edit descriptions and use data tools.";};
+  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public";appNavUserEl.textContent=user?`${user.name} • ${role}${user.mustChangePassword?" • password change required":""}`:"Public photo viewer • not logged in";appNavAccessEl.textContent=ready?(["admin","coordinator"].includes(role)?"Browse and edit all records":`Browse all records • edit own and ${authState.individualIds.length} assigned bird(s)`):"Public access";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"]').forEach((item)=>item.hidden=!ready);accountCollectionsEl.hidden=!ready;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${role}${user.mustChangePassword?" • change password now":""}`:"Public photo viewer";accountEmailEl.textContent=user?user.email:"Log in to edit descriptions and use data tools.";};
 
   // Remember settings panel state when toggling the photo modal
   let prevSettingsCollapsed = false;
@@ -2925,14 +2937,14 @@ loopCurrentEl.checked = false;
     try {
       const [data,filterOptions]=await Promise.all([apiFetch(`/api/photos?${query}`),apiFetch("/api/photos/filter-options")]),columns=orderedTableColumns().filter((column)=>!tableColumnConfig.hidden.includes(column.key));
       dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${optionList(filterOptions.individuals,tableFilters.individualId,"All birds")}</select><select id="tableStatusFilter">${optionList(["unstarted","draft","needs_review","complete"],tableFilters.status,"All statuses")}</select><select id="tablePhenoFilter">${optionList(filterOptions.phenoPeriods,tableFilters.phenoPeriod,"All phenological periods")}</select><select id="tablePeriodDayFilter">${optionList(filterOptions.periodDays,tableFilters.periodDay,"All day periods")}</select><select id="tableResidenceFilter">${optionList(filterOptions.residences,tableFilters.residence,"All residence states")}</select><select id="tableActivityFilter">${optionList(filterOptions.activityClasses,tableFilters.activityClass,"All activities")}</select><select id="tableCountryFilter">${optionList(filterOptions.countries,tableFilters.country,"All countries")}</select><input id="tableDateFrom" type="date" value="${escapeHtml(tableFilters.dateFrom)}" title="From date"><input id="tableDateTo" type="date" value="${escapeHtml(tableFilters.dateTo)}" title="To date"><input id="tableSearch" type="search" placeholder="Filename, environment or remarks" value="${escapeHtml(tableFilters.search)}"><select id="tablePageSize"><option ${tableFilters.pageSize==="50"?"selected":""}>50</option><option ${tableFilters.pageSize==="100"?"selected":""}>100</option><option ${tableFilters.pageSize==="250"?"selected":""}>250</option><option ${tableFilters.pageSize==="500"?"selected":""}>500</option></select><button id="tableApply" class="secondary" type="button">Apply filters</button><button id="tableClear" class="secondary" type="button">Clear</button></div>${tableColumnManagerHtml()}
-      <div class="dataTableWrap"><table class="dataTable"><thead><tr>${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width);return`<th data-column="${escapeHtml(column.key)}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${escapeHtml(column.label)}<span class="columnResize" aria-hidden="true"></span></th>`;}).join("")}</tr></thead><tbody>${(data.photos||[]).map((photo)=>{const record=tablePhotoRecord(photo);return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}" data-filename="${escapeHtml(photo.filename)}">${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width),content=column.key==="Photo"?`<img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`:column.key==="Actions"?`<button class="secondary tiny tableEdit" type="button">Edit</button>${authState.user?.role==="admin"?' <button class="danger tiny tableDelete" type="button">Delete</button>':""}`:escapeHtml(tableDisplayValue(column.key,record[column.key]));return`<td data-column="${escapeHtml(column.key)}" title="${column.key==="Photo"||column.key==="Actions"?"":escapeHtml(tableDisplayValue(column.key,record[column.key]))}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${content}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div>
+      <div class="dataTableWrap"><table class="dataTable"><thead><tr>${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width);return`<th data-column="${escapeHtml(column.key)}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${escapeHtml(column.label)}<span class="columnResize" aria-hidden="true"></span></th>`;}).join("")}</tr></thead><tbody>${(data.photos||[]).map((photo)=>{const record=tablePhotoRecord(photo);return`<tr class="${photo.isMine?"myRecord":""}" data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}" data-filename="${escapeHtml(photo.filename)}">${columns.map((column)=>{const width=Number(tableColumnConfig.widths[column.key]||column.width),content=column.key==="Photo"?`<img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`:column.key==="Actions"?`<button class="secondary tiny tableOpen" type="button">${photo.canEdit?"Edit":"View form"}</button>${authState.user?.role==="admin"?' <button class="danger tiny tableDelete" type="button">Delete</button>':""}`:escapeHtml(tableDisplayValue(column.key,record[column.key]));return`<td data-column="${escapeHtml(column.key)}" title="${column.key==="Photo"||column.key==="Actions"?"":escapeHtml(tableDisplayValue(column.key,record[column.key]))}" style="width:${width}px;min-width:${width}px;max-width:${width}px">${content}</td>`;}).join("")}</tr>`;}).join("")}</tbody></table></div>
       <div class="btnrow" style="margin-top:10px;"><button id="tablePrev" class="secondary tiny" type="button" ${data.page<=1?"disabled":""}>Previous</button><span class="muted">Page ${data.page} • ${data.total} records</span><button id="tableNext" class="secondary tiny" type="button" ${data.page*data.pageSize>=data.total?"disabled":""}>Next</button></div>`;
-      setDataStatus(`${data.total} records`);
+      setDataStatus(`${data.total} records${authState.user?.role==="annotator"?" • your records are listed first":""}`);
       el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,phenoPeriod:el("tablePhenoFilter").value,periodDay:el("tablePeriodDayFilter").value,residence:el("tableResidenceFilter").value,activityClass:el("tableActivityFilter").value,country:el("tableCountryFilter").value,dateFrom:el("tableDateFrom").value,dateTo:el("tableDateTo").value,search:el("tableSearch").value.trim(),pageSize:el("tablePageSize").value};tablePage=1;loadDataTable();});
       el("tableClear").addEventListener("click",()=>{tableFilters={individualId:"",status:"",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();});
       el("tablePrev").addEventListener("click",()=>{tablePage=Math.max(1,tablePage-1);loadDataTable();}); el("tableNext").addEventListener("click",()=>{tablePage++;loadDataTable();});
-      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("dblclick",()=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,false)));
-      dataPanelEl.querySelectorAll(".tableEdit").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true);}));
+      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("dblclick",()=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true)));
+      dataPanelEl.querySelectorAll(".tableOpen").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true);}));
       dataPanelEl.querySelectorAll(".tableDelete").forEach((button)=>button.addEventListener("click",async(event)=>{event.stopPropagation();const row=button.closest("tr"),filename=row.dataset.filename||row.dataset.photoId;if(!window.confirm(`Delete photo ${filename} and its annotation/history? GPS track and stopovers will remain on the map.`))return;button.disabled=true;try{await apiFetch(`/api/admin/photos/${encodeURIComponent(row.dataset.photoId)}`,{method:"DELETE"});await loadGithubFiles();await loadDataTable();}catch(error){button.disabled=false;setDataStatus(`Delete failed: ${error.message}`);}}));
       dataPanelEl.querySelectorAll(".tableColumnItem").forEach((item)=>{const key=item.dataset.columnKey;item.querySelector(".tableColumnVisible").addEventListener("change",(event)=>{const hidden=new Set(tableColumnConfig.hidden);event.target.checked?hidden.delete(key):hidden.add(key);tableColumnConfig.hidden=[...hidden];saveTableColumnConfig();loadDataTable();});item.querySelector(".tableColumnWidth").addEventListener("change",(event)=>{tableColumnConfig.widths[key]=Math.max(60,Math.min(600,Number(event.target.value)||100));saveTableColumnConfig();loadDataTable();});const move=(direction)=>{const order=orderedTableColumns().map((column)=>column.key),index=order.indexOf(key),target=index+direction;if(target<0||target>=order.length)return;[order[index],order[target]]=[order[target],order[index]];tableColumnConfig.order=order;saveTableColumnConfig();loadDataTable();};item.querySelector(".tableColumnUp").addEventListener("click",()=>move(-1));item.querySelector(".tableColumnDown").addEventListener("click",()=>move(1));});
       el("tableShowAllColumns").addEventListener("click",()=>{tableColumnConfig.hidden=[];saveTableColumnConfig();loadDataTable();});el("tableResetColumns").addEventListener("click",()=>{tableColumnConfig={order:tableColumnDefs.map((column)=>column.key),hidden:[],widths:{}};saveTableColumnConfig();loadDataTable();});
@@ -2968,7 +2980,7 @@ loopCurrentEl.checked = false;
 
   const loadReviewRequestsPanel=async()=>{if(!["admin","coordinator"].includes(authState.user?.role))return loadDataTable();setDataStatus("Loading verification requests…");try{const result=await apiFetch("/api/review-requests?status=pending");dataPanelEl.innerHTML=`<h3>Records awaiting verification</h3>${(result.requests||[]).map((item)=>`<div class="userCard" data-review-id="${escapeHtml(item.id)}"><b>${escapeHtml(item.bird)} • ${escapeHtml(item.filename)}</b><div class="muted">${escapeHtml(item.fieldKey||"Whole record")} • requested by ${escapeHtml(item.createdBy?.name||"unknown")}</div><p>${escapeHtml(item.reason)}</p><div class="btnrow"><button class="secondary tiny openReviewPhoto" type="button">Open in editor</button><button class="primarySave tiny resolveReview" type="button">Resolve</button><button class="danger tiny rejectReview" type="button">Reject</button></div></div>`).join("")||'<p class="muted">No pending verification requests.</p>'}`;for(const card of dataPanelEl.querySelectorAll("[data-review-id]")){const item=result.requests.find((entry)=>entry.id===card.dataset.reviewId);card.querySelector(".openReviewPhoto").addEventListener("click",()=>openWorkspacePhoto(item.photoId,item.bird,true));const finish=async(status)=>{const note=window.prompt(status==="resolved"?"Resolution note (optional):":"Reason for rejection (optional):","");if(note===null)return;await apiFetch(`/api/review-requests/${encodeURIComponent(item.id)}`,{method:"PATCH",body:JSON.stringify({status,resolutionNote:note})});loadReviewRequestsPanel();};card.querySelector(".resolveReview").addEventListener("click",()=>finish("resolved"));card.querySelector(".rejectReview").addEventListener("click",()=>finish("rejected"));}setDataStatus(`${result.requests?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Verification queue failed");}};
 
-  const loadCategoryModerationPanel=async()=>{if(authState.user?.role!=="admin")return loadDataTable();setDataStatus("Loading category proposals…");try{const result=await apiFetch("/api/admin/annotation-options?status=pending");dataPanelEl.innerHTML=`<h3>Temporary category proposals</h3><p class="muted">Accept a proposal, reject it, rename it, or merge every occurrence into an existing category.</p>${(result.options||[]).map((item)=>`<div class="userCard" data-field="${escapeHtml(item.fieldKey)}" data-value="${escapeHtml(item.value)}"><b>${escapeHtml(item.fieldKey)}: ${escapeHtml(item.value)}</b><div class="muted">${escapeHtml(item.createdBy?.name||"unknown user")}</div><p>${escapeHtml(item.reason||"No reason supplied")}</p><div class="btnrow"><button class="primarySave tiny categoryAction" data-action="approve" type="button">Approve</button><button class="secondary tiny categoryAction" data-action="rename" type="button">Rename</button><button class="secondary tiny categoryAction" data-action="merge" type="button">Merge</button><button class="danger tiny categoryAction" data-action="reject" type="button">Reject</button><button class="danger tiny categoryAction" data-action="delete" type="button">Delete</button></div></div>`).join("")||'<p class="muted">No pending category proposals.</p>'}`;dataPanelEl.querySelectorAll(".categoryAction").forEach((button)=>button.addEventListener("click",async()=>{const card=button.closest("[data-field]"),action=button.dataset.action;let replacementValue="";if(["rename","merge"].includes(action)){replacementValue=window.prompt(action==="merge"?"Existing category to use for all records:":"New category name:",card.dataset.value)||"";if(!replacementValue.trim())return;}if(!window.confirm(`Confirm ${action} for “${card.dataset.value}”?`))return;await apiFetch("/api/admin/annotation-options",{method:"PATCH",body:JSON.stringify({fieldKey:card.dataset.field,value:card.dataset.value,action,replacementValue})});loadCategoryModerationPanel();}));setDataStatus(`${result.options?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Category queue failed");}};
+  const loadCategoryModerationPanel=async()=>{if(!["admin","coordinator"].includes(authState.user?.role))return loadDataTable();setDataStatus("Loading category proposals…");try{const result=await apiFetch("/api/admin/annotation-options?status=pending");dataPanelEl.innerHTML=`<h3>Temporary category proposals</h3><p class="muted">Accept a proposal, reject it, rename it, or merge every occurrence into an existing category.</p>${(result.options||[]).map((item)=>`<div class="userCard" data-field="${escapeHtml(item.fieldKey)}" data-value="${escapeHtml(item.value)}"><b>${escapeHtml(item.fieldKey)}: ${escapeHtml(item.value)}</b><div class="muted">${escapeHtml(item.createdBy?.name||"unknown user")}</div><p>${escapeHtml(item.reason||"No reason supplied")}</p><div class="btnrow"><button class="primarySave tiny categoryAction" data-action="approve" type="button">Approve</button><button class="secondary tiny categoryAction" data-action="rename" type="button">Rename</button><button class="secondary tiny categoryAction" data-action="merge" type="button">Merge</button><button class="danger tiny categoryAction" data-action="reject" type="button">Reject</button><button class="danger tiny categoryAction" data-action="delete" type="button">Delete</button></div></div>`).join("")||'<p class="muted">No pending category proposals.</p>'}`;dataPanelEl.querySelectorAll(".categoryAction").forEach((button)=>button.addEventListener("click",async()=>{const card=button.closest("[data-field]"),action=button.dataset.action;let replacementValue="";if(["rename","merge"].includes(action)){replacementValue=window.prompt(action==="merge"?"Existing category to use for all records:":"New category name:",card.dataset.value)||"";if(!replacementValue.trim())return;}if(!window.confirm(`Confirm ${action} for “${card.dataset.value}”?`))return;await apiFetch("/api/admin/annotation-options",{method:"PATCH",body:JSON.stringify({fieldKey:card.dataset.field,value:card.dataset.value,action,replacementValue})});loadCategoryModerationPanel();}));setDataStatus(`${result.options?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Category queue failed");}};
 
   let importDroppedFiles=[];
   const importableColumns=["Bird","Lat/Lon","FileName","Address","Country","Close_city","Geo_desc","FilePath","Date_time","Quality_selected","Pheno_period","Residence","Feather_perc","Feather_occ","Ciconia_num","Env_desc_en","Remarks","Altitude","Fly_ground","Above_ground","Height_class_100m","Thermal_updraft","Activity_class","Agriculture_type","Foraging_habitat_group","Roost_site_group","Period_day","Artificial_lights","Water_presence_class","Spec1_abund","Spec1_name","Spec2_abund","Spec2_name","Altitude_m","GPS_time","Latitude","Longitude","Elevation_m","Analysed"];
@@ -3004,7 +3016,7 @@ loopCurrentEl.checked = false;
   };
 
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
-  dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);
+  dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);returnToMainBtn.addEventListener("click",closeDataWorkspace);
   document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"||action==="rated"){await openPhotoCollection(action);return;}if(action==="export"){openExportWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closePhotoCollection();if(document.body.classList.contains("editorOpen"))closeEditorMode();return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode())return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}await openEditorMode();return;}if(["table","progress","users","imports","reviews","categories"].includes(action))await openDataWorkspace(action);}));
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
@@ -3282,7 +3294,7 @@ loopCurrentEl.checked = false;
   const loadGpsDataset = async (id) => {
     if (!id) return false;
     try {
-      const data = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/route?detail=full&max=100000`, {}, { auth:false });
+      const authenticated=editorHasConnection(),base=authenticated?"/api/individuals":"/api/public/individuals",data = await apiFetch(`${base}/${encodeURIComponent(id)}/route?detail=full&max=100000`, {}, { auth:authenticated });
       const points = (data.points || []).map((point, index) => ({
         id, lon:Number(point.lon), lat:Number(point.lat), dt:point.time ? new Date(point.time) : null,
         dateTimeRaw:point.time || "", timeAgg:index, countN:point.countN ?? null, type:point.type || ""
@@ -3304,7 +3316,7 @@ loopCurrentEl.checked = false;
   const loadStopoverDataset = async (id) => {
     if (!id) return false;
     try {
-      const data = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/stopovers`, {}, { auth:false });
+      const authenticated=editorHasConnection(),base=authenticated?"/api/individuals":"/api/public/individuals",data = await apiFetch(`${base}/${encodeURIComponent(id)}/stopovers`, {}, { auth:authenticated });
       stopoverFeatures = (data.features || []).filter((feature) => String(feature.properties?.id || "") === String(id));
       stopoverLoadSummary = `Stopovers: ${stopoverFeatures.length} polygons for ${id}`;
       updateBackgroundDataStatus(); renderBackgroundLayers(birdId); return true;
@@ -3495,6 +3507,7 @@ loopCurrentEl.checked = false;
   let editorSaving = false;
   let editorLoadedRecord = null;
   let editorLoadedVersion = null;
+  let editorCanEdit = false;
   let editorLoadToken = 0;
   let editorHeightClassManual = false;
   const defaultEditorPaneRatios = [0.18,0.30,0.52];
@@ -3556,7 +3569,7 @@ loopCurrentEl.checked = false;
     if (!editorHasConnection()) throw new Error("Log in to the editor account first.");
     const result = await apiFetch(`/api/photos/${encodeURIComponent(photoId)}`);
     const photo = result.photo || {};
-    return { ok:true, data:{ ...(photo.annotation || {}), FileName:photo.filename, Bird:photo.bird, Altitude_m:photo.altitudeM, GPS_time:photo.gpsTime, GPS_source:photo.locationSource, Latitude:photo.lat, Longitude:photo.lon, Elevation_m:photo.elevationM, Analysed:photo.status === "complete" ? "yes" : "no" }, version:photo.version, status:photo.status };
+    return { ok:true, data:{ ...(photo.annotation || {}), FileName:photo.filename, Bird:photo.bird, Altitude_m:photo.altitudeM, GPS_time:photo.gpsTime, GPS_source:photo.locationSource, Latitude:photo.lat, Longitude:photo.lon, Elevation_m:photo.elevationM, Analysed:photo.status === "complete" ? "yes" : "no" }, version:photo.version, status:photo.status, canEdit:!!photo.canEdit, isMine:!!photo.isMine };
   };
 
   const editorApiPost = async ({ photoId, values, expectedVersion, status }) => {
@@ -3586,6 +3599,7 @@ loopCurrentEl.checked = false;
     editorModeBtn.disabled = !ready || !track.length;
     tableModeBtn.disabled = !ready;
     progressModeBtn.disabled = !ready;
+    quickLoginBtn.hidden=loggedIn;
     adminDataTabsEl.style.display = ready && authState.user.role === "admin" ? "flex" : "none";
     document.querySelectorAll(".exportBtn").forEach((button) => { button.disabled = !ready || !["admin","coordinator"].includes(authState.user?.role); });
     if (loggedIn) setEditorConnectionStatus(`${authState.user.name} • ${authState.user.role}${authState.user.mustChangePassword ? " • change password required" : ""}`, ready);
@@ -3606,7 +3620,10 @@ loopCurrentEl.checked = false;
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
       updateAuthUi();
       editorSecretEl.value="";
-      if(!authState.user.mustChangePassword)setTimeout(closeAccountWorkspace,350);
+      if(!authState.user.mustChangePassword){
+        closeAccountWorkspace();
+        await loadGithubFiles();
+      }
     } catch(error) {
       clearAuth();
       const message = error.status === 401 ? "Incorrect email or password. If this is the administrator account, use administrator recovery below." : error.status === 429 ? "Too many login attempts. Wait 15 minutes and try again." : `API connection failed (${error.message}).`;
@@ -3616,7 +3633,7 @@ loopCurrentEl.checked = false;
     }
   });
 
-  editorLogoutBtn.addEventListener("click", () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();clearAuth();openAccountWorkspace(); });
+  editorLogoutBtn.addEventListener("click", async () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();clearAuth();await loadGithubFiles();openAccountWorkspace(); });
   appNavLogoutBtn.addEventListener("click",()=>editorLogoutBtn.click());
   for(const input of [editorWebAppUrlEl,editorSecretEl])input.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();testEditorConnectionBtn.click();}});
   changeEditorPasswordBtn.addEventListener("click", async () => {
@@ -3626,7 +3643,7 @@ loopCurrentEl.checked = false;
     try {
       await apiFetch("/api/me/change-password", { method:"POST", body:JSON.stringify({ currentPassword, newPassword }) });
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
-      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true);
+      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true); await loadGithubFiles();
     } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
     finally { changeEditorPasswordBtn.disabled = false; }
   });
@@ -3644,18 +3661,26 @@ loopCurrentEl.checked = false;
 
   const editorSetBusy = (busy) => {
     editorSaving = busy;
-    editorSaveDraftBtn.disabled = busy || !editorHasConnection();
-    editorSaveAnalysedBtn.disabled = busy || !editorHasConnection();
-    editorSaveNextBtn.disabled = busy || !editorHasConnection() || editorPhotoIndex >= track.length - 1;
+    editorSaveDraftBtn.disabled = busy || !editorHasConnection() || !editorCanEdit;
+    editorSaveAnalysedBtn.disabled = busy || !editorHasConnection() || !editorCanEdit;
+    editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || editorPhotoIndex >= track.length - 1;
     editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
     editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
-    editorCopyPreviousBtn.disabled=busy||editorPhotoIndex<=0;
+    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||editorPhotoIndex<=0;
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
   };
 
+  const editorSetEditable=(editable)=>{
+    editorCanEdit=!!editable;
+    editorFormEl.classList.toggle("readOnly",!editorCanEdit);
+    for(const field of editorFieldEls)field.disabled=!editorCanEdit;
+    if(editorCanEdit)editorApplyConditionalRules();
+    editorSetBusy(editorSaving);
+  };
+
   const editorMarkDirty = () => {
-    if (editorSaving) return;
+    if (editorSaving||!editorCanEdit) return;
     if(playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus("Playback stopped while you edit this record.");}
     editorDirty = true;
     if (!editorStatusEl.classList.contains("error")) {
@@ -3783,7 +3808,7 @@ loopCurrentEl.checked = false;
         if(input?.tagName==="SELECT"&&field.extensible){
           for(const value of field.options||[])if(value&&!Array.from(input.options).some((option)=>option.value===value))input.add(new Option(value,value));
           if(!input.querySelector('option[value="__add_category__"]'))input.add(new Option("＋ Add new category…","__add_category__"));
-          if(!input.dataset.extensibleReady){input.dataset.extensibleReady="true";input.addEventListener("focus",()=>{if(input.value!=="__add_category__")input.dataset.previousValue=input.value;});input.addEventListener("change",async()=>{if(input.value!=="__add_category__")return;const previous=input.dataset.previousValue||"",candidate=window.prompt(`New category for ${field.label}:`,"")?.replaceAll("\0","").trim();if(!candidate){input.value=previous;return;}const reason=authState.user?.role==="admin"?"Added directly by administrator":window.prompt("Why is a new category needed? This explanation will be sent to the administrator.","")?.replaceAll("\0","").trim();if(!reason||!window.confirm(`Submit the temporary category “${candidate}” for administrator approval?`)){input.value=previous;return;}try{const result=await apiFetch("/api/annotation-options",{method:"POST",body:JSON.stringify({fieldKey:field.key,value:candidate,reason})}),sentinel=input.querySelector('option[value="__add_category__"]');if(!Array.from(input.options).some((option)=>option.value===result.value))input.insertBefore(new Option(result.value,result.status==="pending"?`${result.value} (temporary — awaiting approval)`:result.value),sentinel);input.value=result.value;input.dataset.previousValue=result.value;input.dispatchEvent(new Event("change",{bubbles:true}));editorSetStatus(result.status==="pending"?`Temporary category “${result.value}” was sent to the administrator.`:`Added category “${result.value}”.`,"ok");}catch(error){input.value=previous;editorSetStatus(`Could not add category: ${error.message}`,"error");}});}
+          if(!input.dataset.extensibleReady){input.dataset.extensibleReady="true";input.addEventListener("focus",()=>{if(input.value!=="__add_category__")input.dataset.previousValue=input.value;});input.addEventListener("change",async()=>{if(input.value!=="__add_category__")return;const previous=input.dataset.previousValue||"",candidate=window.prompt(`New category for ${field.label}:`,"")?.replaceAll("\0","").trim();if(!candidate){input.value=previous;return;}const manager=["admin","coordinator"].includes(authState.user?.role),reason=manager?`Added directly by ${authState.user.role}`:window.prompt("Why is a new category needed? This explanation will be sent to a coordinator or administrator.","")?.replaceAll("\0","").trim();if(!reason||!window.confirm(manager?`Add the category “${candidate}” for all users?`:`Submit the temporary category “${candidate}” for approval?`)){input.value=previous;return;}try{const result=await apiFetch("/api/annotation-options",{method:"POST",body:JSON.stringify({fieldKey:field.key,value:candidate,reason})}),sentinel=input.querySelector('option[value="__add_category__"]');if(!Array.from(input.options).some((option)=>option.value===result.value))input.insertBefore(new Option(result.value,result.status==="pending"?`${result.value} (temporary — awaiting approval)`:result.value),sentinel);input.value=result.value;input.dataset.previousValue=result.value;input.dispatchEvent(new Event("change",{bubbles:true}));editorSetStatus(result.status==="pending"?`Temporary category “${result.value}” was sent for approval.`:`Added category “${result.value}”.`,"ok");}catch(error){input.value=previous;editorSetStatus(`Could not add category: ${error.message}`,"error");}});}
         }
       }
     } catch(error) { console.warn("Field help could not be loaded", error); }
@@ -3956,6 +3981,7 @@ loopCurrentEl.checked = false;
     editorLoadedRecord = { FileName:filename, Bird:birdId, Altitude_m:point.altitudeM ?? null, Elevation_m:point.elevationM ?? null, GPS_time:point.gpsTime ?? null, Latitude:point.lat, Longitude:point.lon };
     editorLoadedVersion = null;
     populateEditorForm(editorLoadedRecord);
+    editorSetEditable(false);
     editorSetBusy(false);
 
     if (!editorHasConnection()) {
@@ -3974,9 +4000,10 @@ loopCurrentEl.checked = false;
       if (!result || result.ok === false) throw new Error((result && result.error) || "Photo row not found.");
       populateEditorForm(result.data || {});
       editorLoadedVersion = result.version ?? 0;
+      editorSetEditable(result.canEdit);
       const analysed = String(result.data && result.data.Analysed || "").toLowerCase() === "yes";
       editorRecordLineEl.textContent = filename;
-      editorSetStatus(analysed ? "Loaded. This photo is already analysed." : "Loaded. This photo still needs analysis.", analysed ? "ok" : "");
+      editorSetStatus(result.canEdit?(analysed ? "Loaded. This photo is already analysed and you may edit it." : "Loaded. You may edit this record."):(analysed?"Read-only. This record was entered by another user.":"Read-only. This record is not assigned to you."),result.canEdit&&analysed?"ok":"");
     } catch(error) {
       if (token !== editorLoadToken) return;
       editorSetStatus("Could not load this row: " + error.message, "error");
@@ -4038,6 +4065,7 @@ loopCurrentEl.checked = false;
 
   const saveEditorRecord = async ({ markAnalysed, advance, automatic=false }) => {
     if (editorSaving || editorPhotoIndex < 0) return false;
+    if(!editorCanEdit){editorSetStatus("This record is read-only. You may view it, rate the photo, save it in Best pictures or request verification.","error");return false;}
     if (!editorHasConnection()) {
       editorConnectionWarningEl.classList.add("show");
       editorSetStatus("Log in under Settings → Editor account before saving.", "error");
@@ -4357,7 +4385,7 @@ loopCurrentEl.checked = false;
     setStatus("Loading individuals from server...");
 
     try {
-      const data = await apiFetch("/api/public/individuals", {}, { auth:false });
+      const authenticated=editorHasConnection(),data = await apiFetch(authenticated?"/api/individuals":"/api/public/individuals", {}, { auth:authenticated });
       let jpgCount = 0;
       for (const individual of data.individuals || []) {
         const placeholder = []; placeholder.serverPlaceholder = true; placeholder.serverPhotoCount=Number(individual.photoCount||individual.photo_count||0);
@@ -4465,7 +4493,7 @@ loopCurrentEl.checked = false;
     let files = groupedFiles.get(id);
     if (files.serverPlaceholder) {
       try {
-        const response = await apiFetch(`/api/public/individuals/${encodeURIComponent(id)}/photos?limit=10000`, {}, { auth:false });
+        const authenticated=editorHasConnection(),base=authenticated?"/api/individuals":"/api/public/individuals",response = await apiFetch(`${base}/${encodeURIComponent(id)}/photos?limit=10000`, {}, { auth:authenticated });
         files = (response.photos || []).map((photo) => ({
           file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
           lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,

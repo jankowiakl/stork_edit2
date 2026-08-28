@@ -96,9 +96,9 @@ No password, database credential or API secret belongs in `config.js`.
 
 ## Roles
 
-- **admin** — all individuals, users, roles, exports and editing;
-- **coordinator** — all individuals, progress, editing and exports;
-- **annotator** — only individuals explicitly assigned by an administrator;
+- **admin** — all records, users, roles, imports, exports, editing and moderation;
+- **coordinator** — browse and edit all records, progress, exports, verification and category moderation; no imports or user management;
+- **annotator** — browse every record, edit records created by that user, start unedited records for assigned birds, and use favourites/ratings/category or verification requests;
 - **public visitor** — current map/photo viewer only.
 
 ## Backups

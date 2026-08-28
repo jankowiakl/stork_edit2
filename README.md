@@ -18,8 +18,8 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - automatic draft saving during photo navigation, one active draft per user, completed records and optimistic version locking;
 - next-unannotated navigation, copying values from the previous photo and required environment descriptions;
 - per-user server-side Best pictures collections, map slideshows and optional 1–5 star ratings;
-- user verification requests for coordinators/administrators and administrator-moderated category proposals;
-- table view with search, filters, paging and direct editing;
+- user verification requests and category proposals moderated by coordinators/administrators;
+- table view with search, filters, paging, the current user's records first and permission-aware form editing;
 - full-width data-browser table with every photo/annotation field, horizontal scrolling, date/category filters and persistent column visibility, order and widths;
 - progress per individual and navigation to unfinished records;
 - XLSX, CSV, JSON, GeoJSON, KML and optional photo ZIP exports;
