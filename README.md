@@ -8,6 +8,8 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - server-backed photographs, GPS routes and stopovers;
 - photo positions prefer embedded EXIF geotags and otherwise use the nearest route point matched from the UTC timestamp in the filename;
 - browser-persisted interface font scaling from 100% to 160%;
+- a translucent Sieweczka-inspired left navigation drawer with role-aware tiles, hover auto-hide and a slim edge handle;
+- separate account/login, application-options, export and administrator workspaces instead of mixing account controls into map settings;
 - three-column desktop editor: map / form / photo;
 - synchronized photo navigation, a compact-by-default editor header and visible photo time/coordinates;
 - draggable map/photo divider in normal browsing as well as draggable map/form/photo dividers in editing;
@@ -19,7 +21,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - progress per individual and navigation to unfinished records;
 - XLSX, CSV, JSON, GeoJSON, KML and optional photo ZIP exports;
 - administrator, coordinator and annotator roles;
-- invitations, password reset and per-individual access;
+- SMTP invitations, password reset, invitation/last-login status and per-individual access;
 - PostgreSQL audit log and annotation history;
 - administrator-only, dry-run-first browser import of XLSX/CSV/TXT, photos/ZIP, GPS and stopovers;
 - import history showing who added what and when;

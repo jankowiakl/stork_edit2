@@ -70,9 +70,9 @@ curl -X POST https://bielik.myqnapcloud.com:18444/api/bootstrap-admin \
   -d '{"email":"YOUR_EMAIL","name":"Łukasz Jankowiak","password":"A_LONG_UNIQUE_PASSWORD"}'
 ```
 
-Further accounts are managed inside **Table → Users**. Temporary passwords must be changed at first login.
+Further accounts are managed from **Menu → Users**. Creating an account generates a temporary password and immediately attempts to send an SMTP invitation. The same panel can resend an invitation or reset the password and send a replacement. Temporary passwords must be changed at first login. If SMTP is unavailable, the administrator receives a prepared `mailto:` message and the temporary password so the invitation can be sent manually.
 
-If the first administrator exists but its password is unknown, open **Settings → Editor account → Cannot log in?**. Enter the administrator email, a new password and the current `BOOTSTRAP_TOKEN` from the server `.env`. The token is checked only by the API over HTTPS and is not saved in the browser. You can also recover from the server shell:
+If the first administrator exists but its password is unknown, open **Menu → Log in → Cannot log in?**. Enter the administrator email, a new password and the current `BOOTSTRAP_TOKEN` from the server `.env`. The token is checked only by the API over HTTPS and is not saved in the browser. You can also recover from the server shell:
 
 ```sh
 curl -X POST https://bielik.myqnapcloud.com:18444/api/recover-admin \

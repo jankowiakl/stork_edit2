@@ -22,7 +22,7 @@ export const signToken = (user) => jwt.sign({ sub:user.id }, JWT_SECRET, { expir
 export function publicUser(user) {
   return user ? {
     id:user.id, email:user.email, name:user.name, role:user.role, isActive:user.is_active,
-    mustChangePassword:user.must_change_password, lastLoginAt:user.last_login_at,
+    mustChangePassword:user.must_change_password, inviteSentAt:user.invite_sent_at, lastLoginAt:user.last_login_at,
     createdAt:user.created_at, updatedAt:user.updated_at
   } : null;
 }
@@ -61,4 +61,3 @@ export async function audit(user, action, entityType, entityId, payload = {}, re
     [user?.id || null, action, entityType, entityId || null, req?.ip || null, JSON.stringify(payload)]
   );
 }
-

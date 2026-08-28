@@ -6,11 +6,13 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT true,
   must_change_password BOOLEAN NOT NULL DEFAULT false,
+  invite_sent_at TIMESTAMPTZ,
   last_login_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users(lower(email));
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_sent_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS individuals (
   id TEXT PRIMARY KEY,

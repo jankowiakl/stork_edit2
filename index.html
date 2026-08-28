@@ -1175,12 +1175,72 @@ header h1 { font-size: var(--ui-font-heading); }
 header .hint, .metaGrid { font-size: var(--ui-font-label); }
 #metaTime, #metaCoords { font-size: var(--ui-font-display); }
 
+/* Sieweczka-inspired navigation and separated account panels. */
+.appNavDrawer { position:fixed; z-index:6950; inset:12px auto 12px 0; width:min(330px,calc(100vw - 42px)); box-sizing:border-box; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:10px; padding:13px; border:1px solid rgba(119,209,255,.25); border-left:0; border-radius:0 18px 18px 0; background:rgba(8,14,25,.82); color:var(--text); box-shadow:18px 0 46px rgba(0,0,0,.38); backdrop-filter:blur(18px) saturate(125%); transform:translateX(calc(-100% - 4px)); transition:transform .24s ease,background .2s ease; }
+.appNavDrawer.open, .appNavDrawer:focus-within { transform:translateX(0); background:rgba(8,14,25,.92); }
+.appNavHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.appNavHeader h2 { margin:0; font-size:var(--ui-font-heading); }
+.appNavUser { margin-top:3px; color:var(--muted); font-size:var(--ui-font-small); line-height:1.35; }
+.appNavTiles { min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:8px; padding:2px; }
+.appNavTile { min-height:76px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; padding:11px !important; text-align:left; border-color:rgba(119,209,255,.18); background:rgba(255,255,255,.055); }
+.appNavTile[hidden] { display:none !important; }
+.appNavTile:hover,.appNavTile:focus-visible { background:rgba(119,209,255,.16); border-color:rgba(119,209,255,.48); }
+.appNavTile.primary { background:linear-gradient(145deg,rgba(52,161,255,.28),rgba(57,217,138,.12)); }
+.appNavIcon { font-size:22px; line-height:1; color:var(--accent); }
+.appNavTile strong { font-size:var(--ui-font-title); }
+.appNavTile small { color:var(--muted); font-size:var(--ui-font-small); line-height:1.2; }
+.appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
+.appNavHandle { position:fixed; z-index:6960; left:0; top:50%; width:22px; height:68px; padding:0 !important; display:grid; place-items:center; transform:translateY(-50%); border-left:0; border-radius:0 12px 12px 0; color:rgba(255,255,255,.76); background:rgba(12,22,38,.48); border-color:rgba(119,209,255,.28); backdrop-filter:blur(8px); opacity:.72; transition:left .24s ease,opacity .2s ease,background .2s ease; }
+.appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
+.appNavDrawer.open + .appNavHandle { left:min(330px,calc(100vw - 42px)); }
+.appNavHandle span { transition:transform .2s ease; }
+.appNavDrawer.open + .appNavHandle span { transform:rotate(180deg); }
+.appPanelWorkspace { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:18px; box-sizing:border-box; background:rgba(3,7,14,.68); backdrop-filter:blur(9px); }
+.appPanelWorkspace.open { display:grid; }
+.appPanelCard { width:min(720px,100%); max-height:calc(100dvh - 36px); overflow:auto; box-sizing:border-box; padding:16px; border:1px solid rgba(119,209,255,.28); border-radius:18px; background:rgba(10,17,29,.94); box-shadow:0 24px 70px rgba(0,0,0,.55); }
+.appPanelTopbar { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.appPanelTopbar h2 { margin:0; }
+.accountHero { display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; align-items:center; padding:12px; margin-bottom:12px; border:1px solid var(--border); border-radius:13px; background:rgba(119,209,255,.06); }
+.accountAvatar { width:48px; height:48px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,rgba(119,209,255,.3),rgba(57,217,138,.24)); font-weight:800; font-size:20px; }
+.accountHero strong,.accountHero span { display:block; }
+.accountHero span { color:var(--muted); font-size:var(--ui-font-small); margin-top:2px; }
+.accountWorkspaceBody > details { display:block; border:0; padding:0; background:transparent; }
+.accountWorkspaceBody > details > summary { display:none; }
+.accountWorkspaceBody .subSettingsBody { padding:0; }
+.optionsSection { margin:0; border:1px solid rgba(255,255,255,.09); border-radius:12px; background:rgba(0,0,0,.12); }
+.optionsSection + .optionsSection { margin-top:8px; }
+.optionsSection > summary { cursor:pointer; padding:10px 11px; font-weight:750; color:var(--text); }
+.optionsSection > summary span { display:block; margin-top:2px; color:var(--muted); font-size:var(--ui-font-small); font-weight:500; }
+.optionsSectionBody { display:grid; gap:9px; padding:0 11px 11px; }
+.optionsSectionBody > .row,.optionsSectionBody > .checkRow,.optionsSectionBody > .btnrow { margin:0; }
+.dataTabGroup { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:4px 6px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(0,0,0,.12); }
+.dataTabGroupLabel { color:var(--muted); font-size:var(--ui-font-small); padding:0 3px; }
+body.appPanelOpen { overflow:hidden; }
+@media (max-width:700px){.appNavDrawer{inset:8px auto 8px 0;width:min(88vw,330px)}.appNavDrawer.open + .appNavHandle{left:min(88vw,330px)}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}}
+@media (hover:none){.appNavDrawer{background:rgba(8,14,25,.94)}}
+
 
   </style>
 </head>
 
 <body>
-</header>
+
+<nav class="appNavDrawer" id="appNavDrawer" aria-label="Main application menu" aria-hidden="true" inert>
+  <div class="appNavHeader"><div><h2>Stork Photo Editor</h2><div class="appNavUser" id="appNavUser">Public photo viewer</div></div><button class="secondary tiny" id="closeAppNav" type="button">Close</button></div>
+  <div class="appNavTiles">
+    <button class="appNavTile primary" type="button" data-app-nav="browse"><span class="appNavIcon">⌖</span><strong>Map &amp; photos</strong><small>Browse the current individual</small></button>
+    <button class="appNavTile" type="button" data-app-nav="edit"><span class="appNavIcon">✎</span><strong>Photo editor</strong><small>Describe the selected photo</small></button>
+    <button class="appNavTile" type="button" data-app-nav="table"><span class="appNavIcon">▦</span><strong>Data table</strong><small>All photo and annotation fields</small></button>
+    <button class="appNavTile" type="button" data-app-nav="progress"><span class="appNavIcon">✓</span><strong>Progress</strong><small>Completion by individual</small></button>
+    <button class="appNavTile" type="button" data-app-nav="account"><span class="appNavIcon">◎</span><strong id="appNavAccountLabel">Log in</strong><small>Account, password and access</small></button>
+    <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Map, playback, layout and music</small></button>
+    <button class="appNavTile" type="button" data-app-nav="export" data-role="coordinator,admin"><span class="appNavIcon">⇩</span><strong>Export data</strong><small>XLSX, CSV, GIS and ZIP</small></button>
+    <button class="appNavTile" type="button" data-app-nav="users" data-role="admin"><span class="appNavIcon">♙</span><strong>Users</strong><small>Accounts, roles and invitations</small></button>
+    <button class="appNavTile" type="button" data-app-nav="imports" data-role="admin"><span class="appNavIcon">⇧</span><strong>Import data</strong><small>Photos, descriptions and map layers</small></button>
+  </div>
+  <div class="appNavFooter"><span class="miniNote" id="appNavAccess">Public access</span><button class="danger tiny" id="appNavLogout" type="button" hidden>Log out</button></div>
+</nav>
+<button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span>›</span></button>
 
 <div class="wrap">
   <div class="card mapStack">
@@ -1310,11 +1370,12 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
               <button id="editorLogout" class="secondary tiny" type="button">Log out</button>
             </div>
             <div class="editorFields" id="passwordChangeFields" style="margin-top:10px; display:none;">
+              <div class="editorField full"><label for="editorCurrentPassword">Current password</label><input id="editorCurrentPassword" type="password" autocomplete="current-password" minlength="10"></div>
               <div class="editorField full"><label for="editorNewPassword">New password</label><input id="editorNewPassword" type="password" autocomplete="new-password" minlength="10"></div>
               <div class="editorField full"><button id="changeEditorPassword" class="secondary tiny" type="button">Change password</button></div>
             </div>
             <div class="miniNote" id="editorConnectionStatus">Log in to edit descriptions, open the table and view progress.</div>
-            <details class="subSettings" style="margin-top:10px;">
+            <details class="subSettings" id="adminRecoveryDetails" style="margin-top:10px;">
               <summary>Cannot log in? <span style="font-weight:500; opacity:.72;">administrator recovery</span></summary>
               <div class="subSettingsBody">
                 <p class="miniNote">Use the private BOOTSTRAP_TOKEN from the server's .env file. It is sent only to the API over HTTPS and is never stored in this browser.</p>
@@ -1329,7 +1390,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
           </div>
         </details>
 
-        <details class="subSettings">
+        <details class="subSettings" id="exportDataDetails">
           <summary>Export data <span style="font-weight:500; opacity:.72;">coordinator/admin</span></summary>
           <div class="subSettingsBody"><div class="btnrow" style="margin-top:10px;">
             <button class="secondary tiny exportBtn" data-format="xlsx" type="button">XLSX</button><button class="secondary tiny exportBtn" data-format="csv" type="button">CSV</button><button class="secondary tiny exportBtn" data-format="geojson" type="button">GeoJSON</button><button class="secondary tiny exportBtn" data-format="kml" type="button">KML</button><button class="secondary tiny exportBtn" data-format="zip" type="button">ZIP + photos</button>
@@ -1753,10 +1814,25 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 
 <div class="dataWorkspace" id="dataWorkspace" aria-hidden="true">
   <div class="dataTopbar">
-    <div class="dataTabs"><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button><button class="secondary" id="dataUsersTab" type="button" style="display:none;">Users</button><button class="secondary" id="dataImportsTab" type="button" style="display:none;">Import data</button></div>
+    <div class="dataTabs"><div class="dataTabGroup"><span class="dataTabGroupLabel">Scientific data</span><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button></div><div class="dataTabGroup" id="adminDataTabs" style="display:none;"><span class="dataTabGroupLabel">Administration</span><button class="secondary" id="dataUsersTab" type="button">Users</button><button class="secondary" id="dataImportsTab" type="button">Import data</button></div></div>
     <div class="dataActions"><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
   </div>
   <div class="dataPanel" id="dataPanel"></div>
+</div>
+
+<div class="appPanelWorkspace" id="accountWorkspace" aria-hidden="true">
+  <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="accountWorkspaceTitle">
+    <div class="appPanelTopbar"><div><h2 id="accountWorkspaceTitle">User account</h2><div class="muted">Login, password and access to scientific data</div></div><button class="danger tiny" id="closeAccountWorkspace" type="button">Close</button></div>
+    <div class="accountHero" id="accountHero"><div class="accountAvatar" id="accountAvatar">?</div><div><strong id="accountName">Not logged in</strong><span id="accountRole">Public photo viewer</span><span id="accountEmail">Log in to edit descriptions and use data tools.</span></div></div>
+    <div class="accountWorkspaceBody" id="accountWorkspaceBody"></div>
+  </section>
+</div>
+
+<div class="appPanelWorkspace" id="exportWorkspace" aria-hidden="true">
+  <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="exportWorkspaceTitle">
+    <div class="appPanelTopbar"><div><h2 id="exportWorkspaceTitle">Export data</h2><div class="muted">Download the currently accessible scientific dataset</div></div><button class="danger tiny" id="closeExportWorkspace" type="button">Close</button></div>
+    <div id="exportWorkspaceBody"></div>
+  </section>
 </div>
 
 <datalist id="editorEnvironmentOptions">
@@ -1830,6 +1906,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const followModeEl  = el("followMode");
   const layoutSplitEl = el("layoutSplit");
   const fontScaleEl = el("fontScale");
+  const basemapSelect = el("basemapSelect");
 
   const editorWebAppUrlEl = el("editorWebAppUrl");
   const editorSecretEl = el("editorSecret");
@@ -1837,12 +1914,14 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const editorConnectionStatusEl = el("editorConnectionStatus");
   const editorLogoutBtn = el("editorLogout");
   const passwordChangeFieldsEl = el("passwordChangeFields");
+  const editorCurrentPasswordEl = el("editorCurrentPassword");
   const editorNewPasswordEl = el("editorNewPassword");
   const changeEditorPasswordBtn = el("changeEditorPassword");
   const adminRecoveryTokenEl = el("adminRecoveryToken");
   const adminRecoveryPasswordEl = el("adminRecoveryPassword");
   const recoverAdminAccessBtn = el("recoverAdminAccess");
   const adminRecoveryStatusEl = el("adminRecoveryStatus");
+  const adminRecoveryDetailsEl = el("adminRecoveryDetails");
 
   const loopCurrentEl = el("loopCurrent");
   const loopAllEl     = el("loopAll");
@@ -1870,6 +1949,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const musicUploadRow= el("musicUploadRow");
   const musicToggleBtn= el("musicToggle");
   const musicAttribEl = el("musicAttribution");
+  const musicDetailsEl= el("musicDetails");
   const bgAudio       = el("bgAudio");
 
   const statusEl = el("status");
@@ -1964,7 +2044,37 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
   const dataProgressTabBtn = el("dataProgressTab");
   const dataUsersTabBtn = el("dataUsersTab");
   const dataImportsTabBtn = el("dataImportsTab");
+  const adminDataTabsEl = el("adminDataTabs");
   const closeDataWorkspaceBtn = el("closeDataWorkspace");
+  const appNavDrawerEl = el("appNavDrawer");
+  const appNavHandleEl = el("appNavHandle");
+  const closeAppNavBtn = el("closeAppNav");
+  const appNavUserEl = el("appNavUser");
+  const appNavAccessEl = el("appNavAccess");
+  const appNavAccountLabelEl = el("appNavAccountLabel");
+  const appNavLogoutBtn = el("appNavLogout");
+  const accountWorkspaceEl = el("accountWorkspace");
+  const closeAccountWorkspaceBtn = el("closeAccountWorkspace");
+  const accountWorkspaceBodyEl = el("accountWorkspaceBody");
+  const accountAvatarEl = el("accountAvatar");
+  const accountNameEl = el("accountName");
+  const accountRoleEl = el("accountRole");
+  const accountEmailEl = el("accountEmail");
+  const exportWorkspaceEl = el("exportWorkspace");
+  const closeExportWorkspaceBtn = el("closeExportWorkspace");
+  const exportWorkspaceBodyEl = el("exportWorkspaceBody");
+  const editorConnectionDetailsEl = el("editorConnectionDetails");
+  const exportDataDetailsEl = el("exportDataDetails");
+
+  accountWorkspaceBodyEl.appendChild(editorConnectionDetailsEl);editorConnectionDetailsEl.open=true;
+  exportWorkspaceBodyEl.appendChild(exportDataDetailsEl);exportDataDetailsEl.open=true;
+  const makeOptionsSection=(title,description,open=false)=>{const details=document.createElement("details"),summary=document.createElement("summary"),body=document.createElement("div");details.className="optionsSection";details.open=open;summary.innerHTML=`${title}<span>${description}</span>`;body.className="optionsSectionBody";details.append(summary,body);settingsBodyEl.appendChild(details);return body;};
+  const dataOptionsBody=makeOptionsSection("Data source","Server reload, local folder and selected individual",true),appearanceOptionsBody=makeOptionsSection("Appearance","Typography, basemap and panel proportions",true),playbackOptionsBody=makeOptionsSection("Playback","Animation timing, following and looping"),mapOptionsBody=makeOptionsSection("Map layers","GPS, stopovers and route appearance"),audioOptionsBody=makeOptionsSection("Music","Optional background audio");
+  const folderLabel=folderInput.previousElementSibling,folderButtons=loadGithubBtn.closest(".btnrow"),birdSpeedRow=birdSelect.closest(".row"),birdBox=birdSelect.parentElement,speedBox=speedEl.parentElement;
+  dataOptionsBody.append(folderLabel,folderInput,folderButtons,birdBox);playbackOptionsBody.append(speedBox);birdSpeedRow.remove();
+  appearanceOptionsBody.append(fontScaleEl.closest(".row"),basemapSelect.closest(".row"));
+  playbackOptionsBody.append(legSecondsEl.closest(".row"),followZoomEl.closest(".row"),loopCurrentEl.closest(".checkRow"),loadBtn.closest(".btnrow"));
+  mapOptionsBody.append(showGpsTrackEl.closest(".checkRow"),backgroundDataStatusEl,lineStyleDetailsEl);audioOptionsBody.append(musicDetailsEl);
 
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
   const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
@@ -1989,6 +2099,23 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
     return data;
   };
 
+  const syncAppPanelBodyState=()=>document.body.classList.toggle("appPanelOpen",accountWorkspaceEl.classList.contains("open")||exportWorkspaceEl.classList.contains("open"));
+  const closeAccountWorkspace=()=>{accountWorkspaceEl.classList.remove("open");accountWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
+  const openAccountWorkspace=()=>{closeAppNavigation();accountWorkspaceEl.classList.add("open");accountWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();setTimeout(()=>{(authState.user?editorCurrentPasswordEl:editorWebAppUrlEl).focus();},0);};
+  const closeExportWorkspace=()=>{exportWorkspaceEl.classList.remove("open");exportWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
+  const openExportWorkspace=()=>{if(!authState.user||authState.user.mustChangePassword||!["admin","coordinator"].includes(authState.user.role)){openAccountWorkspace();return;}closeAppNavigation();exportWorkspaceEl.classList.add("open");exportWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();};
+  let appNavCloseTimer=null;
+  function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
+  function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
+  const scheduleAppNavigationClose=()=>{if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
+  appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
+  appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
+  closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);
+  for(const workspace of [accountWorkspaceEl,exportWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;workspace===accountWorkspaceEl?closeAccountWorkspace():closeExportWorkspace();});
+  window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
+
+  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public";appNavUserEl.textContent=user?`${user.name} • ${role}${user.mustChangePassword?" • password change required":""}`:"Public photo viewer • not logged in";appNavAccessEl.textContent=ready?(["admin","coordinator"].includes(role)?"Access to all individuals":`${authState.individualIds.length} assigned individual(s)`):"Public access";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${role}${user.mustChangePassword?" • change password now":""}`:"Public photo viewer";accountEmailEl.textContent=user?user.email:"Log in to edit descriptions and use data tools.";};
+
   // Remember settings panel state when toggling the photo modal
   let prevSettingsCollapsed = false;
 
@@ -2003,8 +2130,6 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
     sliderPlayPauseBtn.disabled = !!(playBtn.disabled && pauseBtn.disabled);
     sliderPlayPauseBtn.textContent = playing ? "Pause" : "Play";
   };
-
-  const basemapSelect = el("basemapSelect");
 
     // Mobile full-screen mode (map+photo). Keep fullscreen on mobile and use a slide-up panel for details/settings.
   const mobileMQ = window.matchMedia("(max-width: 980px)");
@@ -2734,8 +2859,9 @@ loopCurrentEl.checked = false;
   const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
   const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true"); };
   const openDataWorkspace = async (mode = "table") => {
-    if (!editorHasConnection()) { settingsGearBtn.click(); document.getElementById("editorConnectionDetails").open = true; return; }
+    if (!editorHasConnection()) { openAccountWorkspace(); return; }
     if (document.body.classList.contains("editorOpen") && !closeEditorMode()) return;
+    closeAppNavigation();closeAccountWorkspace();closeExportWorkspace();
     dataWorkspaceEl.classList.add("open"); dataWorkspaceEl.setAttribute("aria-hidden","false");
     if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else if (mode === "imports") await loadImportsPanel(); else await loadDataTable();
   };
@@ -2775,11 +2901,21 @@ loopCurrentEl.checked = false;
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Progress failed");}
   };
 
+  const showInviteResult=(target,invite,successText="Invitation email sent.")=>{if(invite?.sent){target.textContent=successText;return;}const reason=invite?.reason==="smtp_send_failed"?"SMTP could not send the message.":"SMTP is not configured.";target.innerHTML=`${escapeHtml(reason)} ${invite?.mailtoUrl?`<a href="${escapeHtml(invite.mailtoUrl)}">Open prepared email</a>.`:""}${invite?.temporaryPassword?` Temporary password: <b>${escapeHtml(invite.temporaryPassword)}</b>`:""}`;};
   const loadUsersPanel = async () => {
-    if(authState.user?.role!=="admin")return loadDataTable(); setDataStatus("Loading users…");
-    try { const data=await apiFetch("/api/users"),birds=idsSorted(); dataPanelEl.innerHTML=`<div class="userGrid"><form class="userCard" id="createUserForm"><h3>Create user</h3><label>Name</label><input id="newUserName" required><label>Email</label><input id="newUserEmail" type="email" required><label>Role</label><select id="newUserRole"><option value="annotator">annotator</option><option value="coordinator">coordinator</option><option value="admin">admin</option></select><label>Assigned birds</label><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="newUserBird" type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(id)}</label>`).join("")}</div><button type="submit" style="margin-top:10px">Create / invite</button><div class="miniNote" id="newUserResult"></div></form><div><h3>Existing users</h3>${(data.users||[]).map((user)=>`<div class="userCard" data-user-id="${escapeHtml(user.id)}"><b>${escapeHtml(user.name)}</b><div class="muted">${escapeHtml(user.email)}</div><div class="dataControls" style="margin-top:8px"><select class="userRole"><option ${user.role==="annotator"?"selected":""}>annotator</option><option ${user.role==="coordinator"?"selected":""}>coordinator</option><option ${user.role==="admin"?"selected":""}>admin</option></select><label><input class="userActive" type="checkbox" ${user.isActive?"checked":""}> active</label></div><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="userBird" type="checkbox" value="${escapeHtml(id)}" ${(user.individualIds||[]).includes(id)?"checked":""}> ${escapeHtml(id)}</label>`).join("")}</div><div class="btnrow" style="margin-top:8px"><button class="secondary tiny saveUser" type="button">Save</button><button class="secondary tiny resetUser" type="button">Reset password</button></div><div class="miniNote userResult"></div></div>`).join("")}</div></div>`;setDataStatus(`${data.users?.length||0} users`);
-      el("createUserForm").addEventListener("submit",async(event)=>{event.preventDefault();const body={name:el("newUserName").value.trim(),email:el("newUserEmail").value.trim(),role:el("newUserRole").value,individualIds:[...dataPanelEl.querySelectorAll(".newUserBird:checked")].map((x)=>x.value)};try{const result=await apiFetch("/api/users",{method:"POST",body:JSON.stringify(body)});el("newUserResult").textContent=result.invite?.sent?"Invitation sent.":`Temporary password: ${result.invite?.temporaryPassword||"created"}`;setTimeout(loadUsersPanel,1800);}catch(error){el("newUserResult").textContent=error.message;}});
-      dataPanelEl.querySelectorAll(".userCard[data-user-id]").forEach((card)=>{card.querySelector(".saveUser").addEventListener("click",async()=>{try{await apiFetch(`/api/users/${encodeURIComponent(card.dataset.userId)}`,{method:"PATCH",body:JSON.stringify({role:card.querySelector(".userRole").value,isActive:card.querySelector(".userActive").checked,individualIds:[...card.querySelectorAll(".userBird:checked")].map((x)=>x.value)})});card.querySelector(".userResult").textContent="Saved.";}catch(error){card.querySelector(".userResult").textContent=error.message;}});card.querySelector(".resetUser").addEventListener("click",async()=>{try{const result=await apiFetch(`/api/users/${encodeURIComponent(card.dataset.userId)}/reset-password`,{method:"POST"});card.querySelector(".userResult").textContent=result.invite?.sent?"Reset email sent.":`Temporary password: ${result.invite?.temporaryPassword||"reset"}`;}catch(error){card.querySelector(".userResult").textContent=error.message;}});});
+    if(authState.user?.role!=="admin")return loadDataTable();
+    setDataStatus("Loading users…");
+    try {
+      const data=await apiFetch("/api/users"),birds=idsSorted();
+      dataPanelEl.innerHTML=`<div class="userGrid"><form class="userCard" id="createUserForm"><h3>Create and invite user</h3><p class="muted">The server generates a temporary password and sends it by email. The user must change it after first login.</p><label>Name</label><input id="newUserName" required><label>Email</label><input id="newUserEmail" type="email" required><label>Role</label><select id="newUserRole"><option value="annotator">annotator</option><option value="coordinator">coordinator</option><option value="admin">admin</option></select><label>Assigned birds</label><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="newUserBird" type="checkbox" value="${escapeHtml(id)}"> ${escapeHtml(id)}</label>`).join("")}</div><button type="submit" style="margin-top:10px">Create account and send invitation</button><div class="miniNote" id="newUserResult"></div></form><div><h3>Existing users</h3>${(data.users||[]).map((user)=>`<div class="userCard" data-user-id="${escapeHtml(user.id)}"><b>${escapeHtml(user.name)}</b><div class="muted">${escapeHtml(user.email)} • ${escapeHtml(user.role)} • ${user.isActive?"active":"inactive"}</div><div class="miniNote">Last login: ${escapeHtml(user.lastLoginAt?new Date(user.lastLoginAt).toLocaleString():"never")} • Invitation: ${escapeHtml(user.inviteSentAt?new Date(user.inviteSentAt).toLocaleString():"not sent")} • Password change: ${user.mustChangePassword?"required":"completed"}</div><div class="dataControls" style="margin-top:8px"><select class="userRole"><option ${user.role==="annotator"?"selected":""}>annotator</option><option ${user.role==="coordinator"?"selected":""}>coordinator</option><option ${user.role==="admin"?"selected":""}>admin</option></select><label><input class="userActive" type="checkbox" ${user.isActive?"checked":""}> active</label></div><div>${birds.map((id)=>`<label style="display:inline-flex;margin-right:8px"><input class="userBird" type="checkbox" value="${escapeHtml(id)}" ${(user.individualIds||[]).includes(id)?"checked":""}> ${escapeHtml(id)}</label>`).join("")}</div><div class="btnrow" style="margin-top:8px"><button class="secondary tiny saveUser" type="button">Save access</button><button class="secondary tiny inviteUser" type="button">Send invitation</button><button class="secondary tiny resetUser" type="button">Reset password &amp; email</button></div><div class="miniNote userResult"></div></div>`).join("")||'<p class="muted">No users.</p>'}</div></div>`;
+      setDataStatus(`${data.users?.length||0} users`);
+      el("createUserForm").addEventListener("submit",async(event)=>{event.preventDefault();const target=el("newUserResult"),submit=event.submitter;submit.disabled=true;target.textContent="Creating account and sending email…";const body={name:el("newUserName").value.trim(),email:el("newUserEmail").value.trim(),role:el("newUserRole").value,individualIds:[...dataPanelEl.querySelectorAll(".newUserBird:checked")].map((x)=>x.value),sendInvite:true};try{const result=await apiFetch("/api/users",{method:"POST",body:JSON.stringify(body)});showInviteResult(target,result.invite,"Account created and invitation email sent.");if(result.invite?.sent)setTimeout(loadUsersPanel,1300);}catch(error){target.textContent=error.message;submit.disabled=false;}});
+      dataPanelEl.querySelectorAll(".userCard[data-user-id]").forEach((card)=>{
+        const resultEl=card.querySelector(".userResult"),userUrl=`/api/users/${encodeURIComponent(card.dataset.userId)}`;
+        card.querySelector(".saveUser").addEventListener("click",async()=>{try{await apiFetch(userUrl,{method:"PATCH",body:JSON.stringify({role:card.querySelector(".userRole").value,isActive:card.querySelector(".userActive").checked,individualIds:[...card.querySelectorAll(".userBird:checked")].map((x)=>x.value)})});resultEl.textContent="Access saved.";}catch(error){resultEl.textContent=error.message;}});
+        card.querySelector(".inviteUser").addEventListener("click",async()=>{if(!window.confirm("Send a new invitation? The current password will be replaced with a temporary password."))return;resultEl.textContent="Sending invitation…";try{const result=await apiFetch(`${userUrl}/send-invite`,{method:"POST"});showInviteResult(resultEl,result.invite);if(result.invite?.sent)setTimeout(loadUsersPanel,1200);}catch(error){resultEl.textContent=error.message;}});
+        card.querySelector(".resetUser").addEventListener("click",async()=>{if(!window.confirm("Reset this user's password and send a new temporary password by email?"))return;resultEl.textContent="Resetting password and sending email…";try{const result=await apiFetch(`${userUrl}/reset-password`,{method:"POST"});showInviteResult(resultEl,result.invite,"Password reset email sent.");if(result.invite?.sent)setTimeout(loadUsersPanel,1200);}catch(error){resultEl.textContent=error.message;}});
+      });
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
   };
 
@@ -2818,6 +2954,7 @@ loopCurrentEl.checked = false;
 
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
   dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);
+  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="account"){openAccountWorkspace();return;}if(action==="export"){openExportWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(document.body.classList.contains("editorOpen"))closeEditorMode();return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode())return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}await openEditorMode();return;}if(["table","progress","users","imports"].includes(action))await openDataWorkspace(action);}));
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
   const splitTsvLine = (line) => {
@@ -3373,17 +3510,22 @@ loopCurrentEl.checked = false;
     const ready = loggedIn && !authState.user.mustChangePassword;
     testEditorConnectionBtn.textContent = loggedIn ? "Logged in" : "Log in";
     testEditorConnectionBtn.disabled = loggedIn;
+    testEditorConnectionBtn.hidden = loggedIn;
     editorLogoutBtn.disabled = !loggedIn;
+    editorLogoutBtn.hidden = !loggedIn;
+    editorWebAppUrlEl.closest(".editorField").style.display=loggedIn?"none":"block";
+    editorSecretEl.closest(".editorField").style.display=loggedIn?"none":"block";
+    adminRecoveryDetailsEl.hidden=loggedIn;
     passwordChangeFieldsEl.style.display = loggedIn ? "grid" : "none";
     editorConnectionWarningEl.classList.toggle("show", !ready);
     editorModeBtn.disabled = !ready || !track.length;
     tableModeBtn.disabled = !ready;
     progressModeBtn.disabled = !ready;
-    dataUsersTabBtn.style.display = ready && authState.user.role === "admin" ? "inline-flex" : "none";
-    dataImportsTabBtn.style.display = ready && authState.user.role === "admin" ? "inline-flex" : "none";
+    adminDataTabsEl.style.display = ready && authState.user.role === "admin" ? "flex" : "none";
     document.querySelectorAll(".exportBtn").forEach((button) => { button.disabled = !ready || !["admin","coordinator"].includes(authState.user?.role); });
     if (loggedIn) setEditorConnectionStatus(`${authState.user.name} • ${authState.user.role}${authState.user.mustChangePassword ? " • change password required" : ""}`, ready);
     else setEditorConnectionStatus("Log in to edit descriptions, open the table and view progress.");
+    updateAppNavigation();
   }
 
   testEditorConnectionBtn.addEventListener("click", async () => {
@@ -3397,6 +3539,8 @@ loopCurrentEl.checked = false;
       authState = { token:login.token, user:login.user, individualIds:[] }; saveAuth();
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
       updateAuthUi();
+      editorSecretEl.value="";
+      if(!authState.user.mustChangePassword)setTimeout(closeAccountWorkspace,350);
     } catch(error) {
       clearAuth();
       const message = error.status === 401 ? "Incorrect email or password. If this is the administrator account, use administrator recovery below." : error.status === 429 ? "Too many login attempts. Wait 15 minutes and try again." : `API connection failed (${error.message}).`;
@@ -3406,15 +3550,17 @@ loopCurrentEl.checked = false;
     }
   });
 
-  editorLogoutBtn.addEventListener("click", () => { editorSecretEl.value = ""; editorNewPasswordEl.value = ""; clearAuth(); });
+  editorLogoutBtn.addEventListener("click", () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();clearAuth();openAccountWorkspace(); });
+  appNavLogoutBtn.addEventListener("click",()=>editorLogoutBtn.click());
+  for(const input of [editorWebAppUrlEl,editorSecretEl])input.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();testEditorConnectionBtn.click();}});
   changeEditorPasswordBtn.addEventListener("click", async () => {
-    const currentPassword = String(editorSecretEl.value || ""), newPassword = String(editorNewPasswordEl.value || "");
+    const currentPassword = String(editorCurrentPasswordEl.value || ""), newPassword = String(editorNewPasswordEl.value || "");
     if (!currentPassword || newPassword.length < 10) return setEditorConnectionStatus("Enter the current password and a new password of at least 10 characters.", false);
     changeEditorPasswordBtn.disabled = true;
     try {
       await apiFetch("/api/me/change-password", { method:"POST", body:JSON.stringify({ currentPassword, newPassword }) });
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth();
-      editorSecretEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true);
+      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true);
     } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
     finally { changeEditorPasswordBtn.disabled = false; }
   });
@@ -4173,6 +4319,7 @@ loopCurrentEl.checked = false;
       try { const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || []; saveAuth(); updateAuthUi(); }
       catch(error) { clearAuth(); }
     }
+    if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
     loadEditorHelp();
     await loadGithubFiles();
   });
