@@ -128,9 +128,9 @@ Import issue keys never reuse the NUL-delimited in-memory key: reports store `Bi
 
 Photo coordinates prefer JPEG/PNG/WebP EXIF geotags. If EXIF GPS is absent, the importer parses UTC time from the filename and uses the nearest `gps_points` route point within `PHOTO_GPS_MAX_OFFSET_MINUTES` (default 90). Imported latitude/longitude is only the final fallback. A later copy of the same `Bird + FileName` with EXIF GPS replaces the earlier non-geotagged media without duplicating the photo record or overwriting its annotation. Deleting a photo removes its annotation/history but deliberately keeps GPS and stopovers as independent map layers.
 
-The interface defaults to 125% typography. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
+The interface defaults to 140% typography on desktop and 125% on mobile. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
 
-Normal browsing and editing both have draggable blue pane dividers. The data table exposes all stored photo and annotation fields with horizontal scrolling, filters and a locally saved column layout. User-confirmed custom categories are shared through PostgreSQL; the automatic migration creates `annotation_options` and relaxes the extensible altitude-category constraint.
+Normal browsing and editing both have draggable blue pane dividers. The data table exposes all stored photo and annotation fields with horizontal scrolling, filters and a locally saved column layout. Category proposals require a reason and remain pending until an administrator approves, rejects, renames or merges them. The automatic migration also creates server-side favorites, ratings and verification-request tables. Rebuild/restart the API after pulling so these migrations run before the new controls are used.
 
 ## Updating
 

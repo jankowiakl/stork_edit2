@@ -5,11 +5,13 @@ import { normalizeAnnotationInput, validateAnnotation } from "../src/validation.
 const completeGround = {
   Quality_selected:"yes", Pheno_period:"fledging", Residence:"yes", Period_day:"day",
   Feather_occ:"no", Ciconia_num:1, Water_presence_class:"no_water_visible", Fly_ground:"ground",
-  Activity_class:"foraging", Agriculture_type:"meadow_or_pasture", Foraging_habitat_group:"agricultural_land"
+  Activity_class:"foraging", Agriculture_type:"meadow_or_pasture", Foraging_habitat_group:"agricultural_land",
+  Env_desc_en:"meadow"
 };
 test("complete ground-foraging record passes", () => assert.deepEqual(validateAnnotation(normalizeAnnotationInput(completeGround), "complete"), []));
 test("rejected photo only requires quality", () => assert.deepEqual(validateAnnotation(normalizeAnnotationInput({Quality_selected:"no"}), "complete"), []));
 test("flight requires altitude", () => assert.ok(validateAnnotation(normalizeAnnotationInput({...completeGround,Fly_ground:"fly"}), "complete").some((e)=>e.field==="Altitude")));
+test("completed records require an environmental description",()=>assert.ok(validateAnnotation(normalizeAnnotationInput({...completeGround,Env_desc_en:null}),"complete").some((e)=>e.field==="Env_desc_en")));
 test("height is derived", () => assert.equal(normalizeAnnotationInput({Elevation_m:120},{altitude_m:345}).Above_ground,225));
 test("species pair is enforced", () => assert.ok(validateAnnotation(normalizeAnnotationInput({Spec1_name:"Ardea cinerea"}), "draft").some((e)=>e.field==="Spec1_abund")));
 test("custom values are allowed only for extensible categories",()=>{

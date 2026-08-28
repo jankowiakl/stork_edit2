@@ -13,9 +13,12 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - three-column desktop editor: map / form / photo;
 - synchronized photo navigation, a compact-by-default editor header and visible photo time/coordinates;
 - draggable map/photo divider in normal browsing as well as draggable map/form/photo dividers in editing;
-- mobile Map / Form / Photo editor tabs;
+- persistent desktop/mobile Map / Form / Photo editor tabs with animated mobile transitions;
 - field help, conditional controls and missing-value indicators;
-- drafts, completed records and optimistic version locking;
+- automatic draft saving during photo navigation, one active draft per user, completed records and optimistic version locking;
+- next-unannotated navigation, copying values from the previous photo and required environment descriptions;
+- per-user server-side Best pictures collections, map slideshows and optional 1–5 star ratings;
+- user verification requests for coordinators/administrators and administrator-moderated category proposals;
 - table view with search, filters, paging and direct editing;
 - full-width data-browser table with every photo/annotation field, horizontal scrolling, date/category filters and persistent column visibility, order and widths;
 - progress per individual and navigation to unfinished records;
@@ -45,7 +48,7 @@ On desktop, annotation mode keeps the map on the left, the form in the centre an
 
 The height section is open by default. GPS altitude and editable height above ground determine ground elevation (`GPS altitude - above ground`). The preliminary 100-m class uses 0 through 50 m as class 0, then 100-m classes above each 50-m boundary; users may replace that preliminary class with another non-negative multiple of 100. `Fly_ground=ground` always forces height above ground and height class to 0.
 
-Extensible categorical selectors offer **Add new category…**. After entering a value, the user must confirm it; the API stores it in `annotation_options`, so it is available to every user. Binary/control fields remain closed lists to preserve editor rules.
+Extensible categorical selectors offer **Add new category…**. A normal user must explain the reason; the value is temporary for that record until an administrator approves, rejects, renames or merges it. Rejected/deleted values are removed from affected annotations and completed records return to verification. Binary/control fields remain closed lists to preserve editor rules.
 
 The route and stopovers remain independent map data. Photo positioning uses this priority: image EXIF geotag; nearest route point within `PHOTO_GPS_MAX_OFFSET_MINUTES` (90 minutes by default) using the UTC timestamp parsed from the filename; imported latitude/longitude as a final round-trip fallback. Reimporting the same `Bird + FileName` never creates a duplicate. If the stored image has no EXIF position and the reimported version has one, the file and metadata are upgraded while its existing annotation remains attached to the same photo row.
 

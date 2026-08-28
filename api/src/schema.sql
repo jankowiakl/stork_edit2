@@ -130,6 +130,47 @@ CREATE TABLE IF NOT EXISTS annotation_options (
   PRIMARY KEY (field_key,value)
 );
 CREATE INDEX IF NOT EXISTS idx_annotation_options_field ON annotation_options(field_key,value);
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reason TEXT;
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS replacement_value TEXT;
+DO $$ BEGIN
+  ALTER TABLE annotation_options ADD CONSTRAINT annotation_options_status_check CHECK (status IN ('pending','approved','rejected'));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE INDEX IF NOT EXISTS idx_annotation_options_status ON annotation_options(status,created_at);
+
+CREATE TABLE IF NOT EXISTS user_photo_favorites (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id,photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_created ON user_photo_favorites(user_id,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS photo_ratings (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id,photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_photo_ratings_photo ON photo_ratings(photo_id,rating);
+
+CREATE TABLE IF NOT EXISTS annotation_review_requests (
+  id TEXT PRIMARY KEY,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  field_key TEXT,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','resolved','rejected')),
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  resolved_at TIMESTAMPTZ,
+  resolution_note TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_review_requests_status ON annotation_review_requests(status,created_at);
 
 CREATE TABLE IF NOT EXISTS annotation_history (
   id BIGSERIAL PRIMARY KEY,
