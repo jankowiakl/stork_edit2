@@ -24,12 +24,13 @@ import { parsePhotoFilename } from "./photo-filename.js";
 import { readPhotoExifGps } from "./photo-exif.js";
 import { inspectTabularHeaders } from "./tabular-import.js";
 import { backfillPhotoLocationsFromTrack,DEFAULT_PHOTO_GPS_MAX_OFFSET_MINUTES,nearestTrackPoint,shouldUpgradePhotoMedia } from "./photo-location.js";
+import { sendOriginalPhoto,sendPreviewOrOriginal } from "./photo-response.js";
 
 assertAuthConfiguration();
 await migrate();
 
 const app=express(), port=Number(process.env.PORT||3000);
-const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=path.join(photoDir,".previews"), uploadDir=path.join(photoDir,".uploads"), importStageDir=path.join(photoDir,".import-staging"), importUploadDir=path.join(photoDir,".import-uploads");
+const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=path.join(photoDir,"previews"), uploadDir=path.join(photoDir,".uploads"), importStageDir=path.join(photoDir,".import-staging"), importUploadDir=path.join(photoDir,".import-uploads");
 const publicApiUrl=String(process.env.PUBLIC_API_URL||"").replace(/\/$/,"");
 const publicAppUrl=String(process.env.PUBLIC_APP_URL||"").replace(/\/$/,"")+"/";
 const photoGpsMaxOffsetMinutes=Math.max(1,Number(process.env.PHOTO_GPS_MAX_OFFSET_MINUTES)||DEFAULT_PHOTO_GPS_MAX_OFFSET_MINUTES);
@@ -86,8 +87,9 @@ async function servePhoto(req,res,next,publicOnly=true){try{
   const original=safeStorage(photo.storage_path); if(!original||!fs.existsSync(original))return res.status(404).json({error:"photo_file_missing"});
   const stat=fs.statSync(original),etag=`\"${photo.sha256||`${photo.id}-${stat.size}`}\"`; if(req.headers["if-none-match"]===etag)return res.status(304).end();
   res.setHeader("ETag",etag);res.setHeader("Cache-Control","public, max-age=604800, stale-while-revalidate=2592000");
-  if(req.query.kind!=="preview")return res.sendFile(original);
-  const preview=path.join(previewDir,`${photo.id}.webp`);try{if(!fs.existsSync(preview)){const temporary=`${preview}.${randomId()}.tmp.webp`;try{await sharp(original).rotate().resize({width:720,height:720,fit:"inside",withoutEnlargement:true}).webp({quality:78}).toFile(temporary);await fsp.rename(temporary,preview).catch(async(error)=>{if(error.code!=="EEXIST")throw error;await fsp.unlink(temporary).catch(()=>{});});}catch(error){await fsp.unlink(temporary).catch(()=>{});throw error;}}return res.type("image/webp").sendFile(preview);}catch(error){console.warn(`Preview generation failed for ${photo.id}; serving original.`,error.message);return res.type(photo.mime_type||"image/jpeg").sendFile(original);}
+  if(req.query.kind!=="preview")return sendOriginalPhoto(res,next,{file:original,mimeType:photo.mime_type||"image/jpeg"});
+  const preview=path.join(previewDir,`${photo.id}.webp`);
+  return sendPreviewOrOriginal(res,next,{original,originalMimeType:photo.mime_type||"image/jpeg",preview,createPreview:(temporary)=>sharp(original).rotate().resize({width:720,height:720,fit:"inside",withoutEnlargement:true}).webp({quality:78}).toFile(temporary),onFallback:(error)=>console.warn(`Preview unavailable for ${photo.id}; serving original.`,error.message)});
 }catch(error){next(error);}}
 
 async function assignments(userId,client=db){const result=await client.query("SELECT individual_id FROM user_individual_access WHERE user_id=$1 ORDER BY individual_id",[userId]);return result.rows.map((r)=>r.individual_id);}
