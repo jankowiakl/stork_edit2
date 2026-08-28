@@ -64,9 +64,9 @@ export function validateAnnotation(values, status = "draft") {
   for (const [field, message] of [
     ["Pheno_period","Phenological period is required."], ["Residence","Residence is required."],
     ["Period_day","Period of day is required."], ["Feather_occ","Feathers visible is required."],
-    ["Water_presence_class","Water presence is required."], ["Fly_ground","Flight state is required."],
-    ["Env_desc_en","Environment description is required."]
+    ["Water_presence_class","Water presence is required."], ["Fly_ground","Flight state is required."]
   ]) required(field, message);
+  if (values.Fly_ground !== "fly") required("Env_desc_en", "Environment description is required unless the bird is flying.");
   if (!Number.isInteger(values.Ciconia_num) || values.Ciconia_num < 0) add("Ciconia_num", "Visible White Storks must be a whole number of at least 0.");
   if (values.Feather_occ === "yes") required("Feather_perc", "Feather coverage is required when feathers are visible.");
   if (values.Fly_ground === "fly") required("Altitude", "Altitude class is required for flight.");

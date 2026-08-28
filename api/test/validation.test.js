@@ -12,6 +12,7 @@ test("complete ground-foraging record passes", () => assert.deepEqual(validateAn
 test("rejected photo only requires quality", () => assert.deepEqual(validateAnnotation(normalizeAnnotationInput({Quality_selected:"no"}), "complete"), []));
 test("flight requires altitude", () => assert.ok(validateAnnotation(normalizeAnnotationInput({...completeGround,Fly_ground:"fly"}), "complete").some((e)=>e.field==="Altitude")));
 test("completed records require an environmental description",()=>assert.ok(validateAnnotation(normalizeAnnotationInput({...completeGround,Env_desc_en:null}),"complete").some((e)=>e.field==="Env_desc_en")));
+test("environmental description is optional while flying",()=>assert.equal(validateAnnotation(normalizeAnnotationInput({...completeGround,Fly_ground:"fly",Altitude:"medium",Env_desc_en:null}),"complete").some((e)=>e.field==="Env_desc_en"),false));
 test("height is derived", () => assert.equal(normalizeAnnotationInput({Elevation_m:120},{altitude_m:345}).Above_ground,225));
 test("species pair is enforced", () => assert.ok(validateAnnotation(normalizeAnnotationInput({Spec1_name:"Ardea cinerea"}), "draft").some((e)=>e.field==="Spec1_abund")));
 test("custom values are allowed only for extensible categories",()=>{

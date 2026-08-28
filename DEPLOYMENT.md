@@ -94,6 +94,8 @@ https://jankowiakl.github.io/stork_edit2/
 
 No password, database credential or API secret belongs in `config.js`.
 
+The GitHub Pages build also serves `manifest.webmanifest`, `sw.js` and the `icons/` directory. On Android, use the **Install application** tile or Chrome/Brave → Install application. On iPhone, use Safari → Share → Add to Home Screen. After publishing a new application shell, increment `CACHE_NAME` in `sw.js`; users can also use **Check for updates** and **Refresh application version** inside the application.
+
 ## Roles
 
 - **admin** — all records, users, roles, imports, exports, editing and moderation;

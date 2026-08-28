@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>White Stork Photo Flight Viewer</title>
+  <meta name="theme-color" content="#0f2740" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -17,14 +20,14 @@
       --border: rgba(255,255,255,0.10);
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 16px;
-      --ui-font-scale: 1.25;
-      --ui-font-body: 17.5px;
-      --ui-font-control: 16.25px;
-      --ui-font-label: 15px;
-      --ui-font-small: 13.75px;
-      --ui-font-title: 16.25px;
-      --ui-font-heading: 20px;
-      --ui-font-display: 30px;
+      --ui-font-scale: 1.6;
+      --ui-font-body: 22.4px;
+      --ui-font-control: 20.8px;
+      --ui-font-label: 19.2px;
+      --ui-font-small: 17.6px;
+      --ui-font-title: 20.8px;
+      --ui-font-heading: 25.6px;
+      --ui-font-display: 38.4px;
       --mobile-map-height: 50dvh;
       --mobile-photo-height: 50dvh;
     }
@@ -781,13 +784,16 @@
     .ratingAverage { min-width:38px; color:#ffe18a; font-size:var(--ui-font-small); text-align:center; }
     .accountCollections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:12px; }
     .accountCollectionBtn { min-height:70px; text-align:left; }
-    .collectionViewer { display:none; position:fixed; inset:0; z-index:6900; grid-template-columns:minmax(240px,36%) minmax(0,64%); background:#070b14; }
-    .collectionViewer.open { display:grid; }
-    .collectionMap { min-height:0; }
-    .collectionPhoto { position:relative; min-width:0; display:grid; place-items:center; overflow:hidden; }
-    .collectionPhoto img { width:100%; height:100%; object-fit:contain; }
-    .collectionToolbar { position:absolute; z-index:5; inset:10px 10px auto 10px; display:flex; align-items:center; gap:7px; padding:7px; border-radius:12px; background:rgba(5,10,18,.76); backdrop-filter:blur(10px); }
-    .collectionToolbar .collectionLabel { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .collectionModeBar,.viewerReturnBar { position:fixed; z-index:6945; left:50%; bottom:14px; transform:translateX(-50%); display:flex; align-items:center; gap:10px; max-width:calc(100vw - 28px); padding:8px 10px; border:1px solid rgba(255,225,138,.48); border-radius:14px; background:rgba(8,14,25,.90); box-shadow:0 12px 36px rgba(0,0,0,.42); backdrop-filter:blur(14px); animation:collectionBarEnter .24s ease both; }
+    .collectionModeBar[hidden],.viewerReturnBar[hidden],.ratingClear[hidden] { display:none !important; }
+    .collectionModeLabel { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffe18a; }
+    .ratingClear { color:#ffb9b9; min-width:27px; }
+    .ratedTable { width:100%; border-collapse:collapse; min-width:760px; }
+    .ratedTable th,.ratedTable td { padding:8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; }
+    .ratedTable tbody tr { cursor:pointer; transition:background .18s ease; }
+    .ratedTable tbody tr:hover { background:rgba(119,209,255,.09); }
+    .ratedStars { color:#ffe18a; white-space:nowrap; }
+    @keyframes collectionBarEnter { from { opacity:0; transform:translate(-50%,8px); } to { opacity:1; transform:translate(-50%,0); } }
     .editorPaneDivider { display:none; min-width:0; touch-action:none; user-select:none; }
     body:not(.editorOpen) #editorMapDivider { display:grid; grid-column:2; grid-row:1; place-items:center; position:relative; cursor:col-resize; outline:none; }
     body:not(.editorOpen) #editorMapDivider::after { content:""; width:3px; height:54px; border-radius:999px; background:rgba(119,209,255,.24); }
@@ -1175,7 +1181,7 @@
   body.editorOpen .mapStack, body.editorOpen .side, body.editorOpen .editorPanel { animation:editorPaneIn .26s cubic-bezier(.2,.8,.2,1); }
   .editorMobileTabs { top:max(6px,env(safe-area-inset-top)); width:min(360px,calc(100vw - 96px)); }
   .photoSocialControls { top:52px; }
-  .collectionViewer.open { grid-template-columns:1fr; grid-template-rows:38dvh 62dvh; }
+  .collectionModeBar,.viewerReturnBar { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 58px); }
   .dataWorkspace { padding:6px; }
   .dataWorkspace.open { grid-template-rows:auto minmax(0,1fr); }
   .dataTopbar { position:sticky; top:0; z-index:20; padding:6px; border:1px solid rgba(119,209,255,.18); border-radius:12px; background:rgba(7,11,20,.96); }
@@ -1219,7 +1225,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavTile strong { font-size:var(--ui-font-title); }
 .appNavTile small { color:var(--muted); font-size:var(--ui-font-small); line-height:1.2; }
 .appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
-.appNavHandle { position:fixed; z-index:6960; left:0; top:92px; width:32px; height:78px; padding:0 !important; display:grid; place-items:center; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
+.appNavHandle { position:fixed; z-index:6960; left:0; top:50%; transform:translateY(-50%); width:32px; height:78px; padding:0 !important; display:grid; place-items:center; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
 .appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
 .appNavDrawer.open + .appNavHandle { left:min(330px,calc(100vw - 42px)); }
 .appNavHandle span { transition:transform .2s ease; }
@@ -1228,6 +1234,8 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .quickLogin[hidden] { display:none !important; }
 .appPanelWorkspace { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:18px; box-sizing:border-box; background:rgba(3,7,14,.68); backdrop-filter:blur(9px); }
 .appPanelWorkspace.open { display:grid; }
+.dataWorkspace.open,.appPanelWorkspace.open { animation:panelEnter .22s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes panelEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .appPanelCard { width:min(720px,100%); max-height:calc(100dvh - 36px); overflow:auto; box-sizing:border-box; padding:16px; border:1px solid rgba(119,209,255,.28); border-radius:18px; background:rgba(10,17,29,.94); box-shadow:0 24px 70px rgba(0,0,0,.55); }
 .appPanelTopbar { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
 .appPanelTopbar h2 { margin:0; }
@@ -1247,7 +1255,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .dataTabGroup { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:4px 6px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(0,0,0,.12); }
 .dataTabGroupLabel { color:var(--muted); font-size:var(--ui-font-small); padding:0 3px; }
 body.appPanelOpen { overflow:hidden; }
-@media (max-width:700px){.appNavDrawer{inset:6px auto 6px 0;width:min(91vw,350px)}.appNavDrawer.open + .appNavHandle{left:min(91vw,350px)}.appNavHandle{top:max(86px,calc(env(safe-area-inset-top) + 72px));width:36px;height:82px}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}.quickLogin{top:max(8px,env(safe-area-inset-top));right:8px}}
+@media (max-width:700px){.appNavDrawer{inset:6px auto 6px 0;width:min(91vw,350px)}.appNavDrawer.open + .appNavHandle{left:min(91vw,350px)}.appNavHandle{top:50%;width:36px;height:82px}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}.quickLogin{top:max(8px,env(safe-area-inset-top));right:8px}}
 @media (hover:none){.appNavDrawer{background:rgba(8,14,25,.94)}}
 
 
@@ -1257,7 +1265,7 @@ body.appPanelOpen { overflow:hidden; }
 <body>
 
 <nav class="appNavDrawer" id="appNavDrawer" aria-label="Main application menu" aria-hidden="true" inert>
-  <div class="appNavHeader"><div><h2>Stork Photo Editor</h2><div class="appNavUser" id="appNavUser">Public photo viewer</div></div><button class="secondary tiny" id="closeAppNav" type="button">Close</button></div>
+  <div class="appNavHeader"><div><h2>Stork Photo Editor</h2><div class="appNavUser" id="appNavUser">Public photo viewer</div></div><button class="secondary tiny" id="closeAppNav" type="button">← Back</button></div>
   <div class="appNavTiles">
     <button class="appNavTile primary" type="button" data-app-nav="browse"><span class="appNavIcon">⌖</span><strong>Map &amp; photos</strong><small>Browse the current individual</small></button>
     <button class="appNavTile" type="button" data-app-nav="edit"><span class="appNavIcon">✎</span><strong>Photo editor</strong><small>Describe the selected photo</small></button>
@@ -1265,8 +1273,9 @@ body.appPanelOpen { overflow:hidden; }
     <button class="appNavTile" type="button" data-app-nav="progress"><span class="appNavIcon">✓</span><strong>Progress</strong><small>Completion by individual</small></button>
     <button class="appNavTile" type="button" data-app-nav="account"><span class="appNavIcon">◎</span><strong id="appNavAccountLabel">Log in</strong><small>Account, password and access</small></button>
     <button class="appNavTile" type="button" data-app-nav="favorites"><span class="appNavIcon">★</span><strong>Best pictures</strong><small>Your private server-side photo safe</small></button>
-    <button class="appNavTile" type="button" data-app-nav="rated"><span class="appNavIcon">☆</span><strong>Top rated</strong><small>Slideshow ordered by average rating</small></button>
+    <button class="appNavTile" type="button" data-app-nav="rated"><span class="appNavIcon">☆</span><strong>Top rated</strong><small>Ranking table ordered by average rating</small></button>
     <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Map, playback, layout and music</small></button>
+    <button class="appNavTile" type="button" data-app-nav="install"><span class="appNavIcon">⇩</span><strong>Install application</strong><small>Add Stork Journey to the phone home screen</small></button>
     <button class="appNavTile" type="button" data-app-nav="export" data-role="coordinator,admin"><span class="appNavIcon">⇩</span><strong>Export data</strong><small>XLSX, CSV, GIS and ZIP</small></button>
     <button class="appNavTile" type="button" data-app-nav="users" data-role="admin"><span class="appNavIcon">♙</span><strong>Users</strong><small>Accounts, roles and invitations</small></button>
     <button class="appNavTile" type="button" data-app-nav="imports" data-role="admin"><span class="appNavIcon">⇧</span><strong>Import data</strong><small>Photos, descriptions and map layers</small></button>
@@ -1277,6 +1286,8 @@ body.appPanelOpen { overflow:hidden; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span>›</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
+<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel">Best pictures</strong><button class="secondary tiny" id="leaveCollectionMode" type="button">← Back to previous photos</button></div>
+<div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
 <div class="wrap">
@@ -1330,9 +1341,9 @@ body.appPanelOpen { overflow:hidden; }
             <select id="fontScale">
               <option value="1">100% — compact</option>
               <option value="1.15">115%</option>
-              <option value="1.25" selected>125% — recommended</option>
+              <option value="1.25">125%</option>
               <option value="1.4">140% — large</option>
-              <option value="1.6">160% — very large</option>
+              <option value="1.6" selected>160% — default</option>
             </select>
           </div>
           <div class="miniNote" style="align-self:end;margin-bottom:8px;">Saved automatically in this browser.</div>
@@ -1533,7 +1544,7 @@ body.appPanelOpen { overflow:hidden; }
 
     <div class="card photoCard">
       <div class="photoStage">
-        <div class="photoSocialControls" data-photo-social hidden><button class="secondary tiny favoritePhotoBtn" type="button" title="Save in my best pictures">☆</button><div class="photoRating" aria-label="Rate photo"></div><span class="ratingAverage">—</span></div>
+        <div class="photoSocialControls" data-photo-social hidden><button class="secondary tiny favoritePhotoBtn" type="button" title="Save in my best pictures">☆</button><div class="photoRating" aria-label="Rate photo"></div><button class="secondary tiny ratingClear" type="button" title="Remove my rating" hidden>×</button><span class="ratingAverage">—</span></div>
         <div class="photoBirdPicker">
           <label for="birdSelectOverlay">Bird</label>
           <select id="birdSelectOverlay" aria-label="Select bird" disabled>
@@ -1577,7 +1588,7 @@ body.appPanelOpen { overflow:hidden; }
   <div class="panelShell" role="dialog" aria-modal="true" aria-label="Details and settings">
     <div class="panelTopbar">
       <span class="title">Details &amp; settings</span>
-      <button id="closeMobilePanel" class="secondary tiny" type="button">Close</button>
+      <button id="closeMobilePanel" class="secondary tiny" type="button">← Back</button>
     </div>
     <div class="panelBody" id="mobilePanelBody"></div>
   </div>
@@ -1593,7 +1604,7 @@ body.appPanelOpen { overflow:hidden; }
           <div class="editorBadge" id="editorTimeBadge">Time: —</div>
           <div class="editorBadge" id="editorFileBadge">File: —</div>
         </div>
-        <button id="closeEditorMode" class="danger tiny" type="button">Close</button>
+        <button id="closeEditorMode" class="danger tiny" type="button">← Back</button>
       </div>
       <div class="editorVisualNav">
         <button id="editorPrevPhoto" class="secondary tiny" type="button">−1</button>
@@ -1855,26 +1866,33 @@ body.appPanelOpen { overflow:hidden; }
 <div class="dataWorkspace" id="dataWorkspace" aria-hidden="true">
   <div class="dataTopbar">
     <div class="dataTabs"><div class="dataTabGroup"><span class="dataTabGroupLabel">Scientific data</span><button class="secondary" id="dataTableTab" type="button">Table</button><button class="secondary" id="dataProgressTab" type="button">Progress</button></div><div class="dataTabGroup" id="adminDataTabs" style="display:none;"><span class="dataTabGroupLabel">Administration</span><button class="secondary" id="dataUsersTab" type="button">Users</button><button class="secondary" id="dataImportsTab" type="button">Import data</button></div></div>
-    <div class="dataActions"><button class="secondary tiny" id="returnToMain" type="button">← Map &amp; photos</button><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">Close</button></div>
+    <div class="dataActions"><button class="secondary tiny" id="returnToMain" type="button">← Map &amp; photos</button><span class="muted" id="dataWorkspaceStatus"></span><button class="danger tiny" id="closeDataWorkspace" type="button">← Back</button></div>
   </div>
   <div class="dataPanel" id="dataPanel"></div>
 </div>
 
 <div class="appPanelWorkspace" id="accountWorkspace" aria-hidden="true">
   <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="accountWorkspaceTitle">
-    <div class="appPanelTopbar"><div><h2 id="accountWorkspaceTitle">User account</h2><div class="muted">Login, password and access to scientific data</div></div><button class="danger tiny" id="closeAccountWorkspace" type="button">Close</button></div>
+    <div class="appPanelTopbar"><div><h2 id="accountWorkspaceTitle">User account</h2><div class="muted">Login, password and access to scientific data</div></div><button class="danger tiny" id="closeAccountWorkspace" type="button">← Back</button></div>
     <div class="accountHero" id="accountHero"><div class="accountAvatar" id="accountAvatar">?</div><div><strong id="accountName">Not logged in</strong><span id="accountRole">Public photo viewer</span><span id="accountEmail">Log in to edit descriptions and use data tools.</span></div></div>
-    <div class="accountCollections" id="accountCollections"><button class="secondary accountCollectionBtn" type="button" data-open-collection="favorites"><strong>★ Best pictures</strong><br><span class="muted">Your private saved selection</span></button><button class="secondary accountCollectionBtn" type="button" data-open-collection="rated"><strong>☆ Top rated</strong><br><span class="muted">Photos ordered by average score</span></button></div>
+    <div class="accountCollections" id="accountCollections"><button class="secondary accountCollectionBtn" type="button" data-open-collection="favorites"><strong>★ Best pictures</strong><br><span class="muted">Selected photos in the complete map viewer</span></button><button class="secondary accountCollectionBtn" type="button" data-open-collection="rated"><strong>☆ Top rated</strong><br><span class="muted">Ranking table ordered by average score</span></button></div>
     <div class="accountWorkspaceBody" id="accountWorkspaceBody"></div>
   </section>
 </div>
 
-<div class="collectionViewer" id="collectionViewer" aria-hidden="true"><div class="collectionMap" id="collectionMap"></div><div class="collectionPhoto"><img id="collectionImage" alt="Selected collection photo"><div class="collectionToolbar"><button class="secondary tiny" id="collectionPrev" type="button">−1</button><button class="secondary tiny" id="collectionPlay" type="button">Play</button><button class="secondary tiny" id="collectionNext" type="button">+1</button><span class="collectionLabel" id="collectionLabel">—</span><button class="danger tiny" id="closeCollection" type="button">Close</button></div></div></div>
-
 <div class="appPanelWorkspace" id="exportWorkspace" aria-hidden="true">
   <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="exportWorkspaceTitle">
-    <div class="appPanelTopbar"><div><h2 id="exportWorkspaceTitle">Export data</h2><div class="muted">Download the currently accessible scientific dataset</div></div><button class="danger tiny" id="closeExportWorkspace" type="button">Close</button></div>
+    <div class="appPanelTopbar"><div><h2 id="exportWorkspaceTitle">Export data</h2><div class="muted">Download the currently accessible scientific dataset</div></div><button class="danger tiny" id="closeExportWorkspace" type="button">← Back</button></div>
     <div id="exportWorkspaceBody"></div>
+  </section>
+</div>
+
+<div class="appPanelWorkspace" id="installWorkspace" aria-hidden="true">
+  <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="installWorkspaceTitle">
+    <div class="appPanelTopbar"><div><h2 id="installWorkspaceTitle">Install Stork Journey</h2><div class="muted">Use the application from the phone home screen</div></div><button class="danger tiny" id="closeInstallWorkspace" type="button">← Back</button></div>
+    <p id="installStatus" class="muted">Checking installation options…</p>
+    <div class="btnrow"><button class="primarySave" id="installApp" type="button">Install application</button><button class="secondary" id="checkAppUpdate" type="button">Check for updates</button><button class="secondary" id="refreshAppVersion" type="button">Refresh application version</button></div>
+    <details class="optionsSection" open><summary>Manual installation</summary><div class="optionsSectionBody"><p>Android / Chrome or Brave: menu ⋮ → <b>Install application</b> or <b>Add to Home screen</b>.</p><p>iPhone / Safari: Share → <b>Add to Home Screen</b>.</p></div></details>
   </section>
 </div>
 
@@ -1902,7 +1920,7 @@ body.appPanelOpen { overflow:hidden; }
         <div class="chip" id="modalChip">Photo</div>
       </div>
       <div class="right">
-        <button id="hidePhoto" class="danger tiny" type="button">Hide photo (show controls)</button>
+        <button id="hidePhoto" class="danger tiny" type="button">← Back to previous view</button>
       </div>
     </div>
     <div class="stage">
@@ -2110,17 +2128,21 @@ body.appPanelOpen { overflow:hidden; }
   const accountRoleEl = el("accountRole");
   const accountEmailEl = el("accountEmail");
   const accountCollectionsEl = el("accountCollections");
-  const collectionViewerEl = el("collectionViewer");
-  const collectionMapEl = el("collectionMap");
-  const collectionImageEl = el("collectionImage");
-  const collectionLabelEl = el("collectionLabel");
-  const collectionPrevBtn = el("collectionPrev");
-  const collectionNextBtn = el("collectionNext");
-  const collectionPlayBtn = el("collectionPlay");
-  const closeCollectionBtn = el("closeCollection");
+  const collectionModeBarEl = el("collectionModeBar");
+  const collectionModeLabelEl = el("collectionModeLabel");
+  const leaveCollectionModeBtn = el("leaveCollectionMode");
+  const viewerReturnBarEl = el("viewerReturnBar");
+  const viewerReturnLabelEl = el("viewerReturnLabel");
+  const returnToPreviousWindowBtn = el("returnToPreviousWindow");
   const exportWorkspaceEl = el("exportWorkspace");
   const closeExportWorkspaceBtn = el("closeExportWorkspace");
   const exportWorkspaceBodyEl = el("exportWorkspaceBody");
+  const installWorkspaceEl = el("installWorkspace");
+  const closeInstallWorkspaceBtn = el("closeInstallWorkspace");
+  const installAppBtn = el("installApp");
+  const installStatusEl = el("installStatus");
+  const checkAppUpdateBtn = el("checkAppUpdate");
+  const refreshAppVersionBtn = el("refreshAppVersion");
   const editorConnectionDetailsEl = el("editorConnectionDetails");
   const exportDataDetailsEl = el("exportDataDetails");
 
@@ -2157,11 +2179,14 @@ body.appPanelOpen { overflow:hidden; }
     return data;
   };
 
-  const syncAppPanelBodyState=()=>document.body.classList.toggle("appPanelOpen",accountWorkspaceEl.classList.contains("open")||exportWorkspaceEl.classList.contains("open"));
+  const syncAppPanelBodyState=()=>document.body.classList.toggle("appPanelOpen",accountWorkspaceEl.classList.contains("open")||exportWorkspaceEl.classList.contains("open")||installWorkspaceEl.classList.contains("open"));
+  const closeOtherPanelWorkspaces=(keep=null)=>{for(const panel of [accountWorkspaceEl,exportWorkspaceEl,installWorkspaceEl])if(panel!==keep){panel.classList.remove("open");panel.setAttribute("aria-hidden","true");}};
   const closeAccountWorkspace=()=>{accountWorkspaceEl.classList.remove("open");accountWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
-  const openAccountWorkspace=()=>{closeAppNavigation();accountWorkspaceEl.classList.add("open");accountWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();setTimeout(()=>{(authState.user?editorCurrentPasswordEl:editorWebAppUrlEl).focus();},0);};
+  const openAccountWorkspace=()=>{closeAppNavigation();closeOtherPanelWorkspaces(accountWorkspaceEl);accountWorkspaceEl.classList.add("open");accountWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();setTimeout(()=>{(authState.user?editorCurrentPasswordEl:editorWebAppUrlEl).focus();},0);};
   const closeExportWorkspace=()=>{exportWorkspaceEl.classList.remove("open");exportWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
-  const openExportWorkspace=()=>{if(!authState.user||authState.user.mustChangePassword||!["admin","coordinator"].includes(authState.user.role)){openAccountWorkspace();return;}closeAppNavigation();exportWorkspaceEl.classList.add("open");exportWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();};
+  const openExportWorkspace=()=>{if(!authState.user||authState.user.mustChangePassword||!["admin","coordinator"].includes(authState.user.role)){openAccountWorkspace();return;}closeAppNavigation();closeOtherPanelWorkspaces(exportWorkspaceEl);exportWorkspaceEl.classList.add("open");exportWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();};
+  const closeInstallWorkspace=()=>{installWorkspaceEl.classList.remove("open");installWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
+  const openInstallWorkspace=()=>{closeAppNavigation();closeDataWorkspace();closeOtherPanelWorkspaces(installWorkspaceEl);installWorkspaceEl.classList.add("open");installWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();updateInstallStatus();};
   let appNavCloseTimer=null;
   function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
   function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
@@ -2169,11 +2194,21 @@ body.appPanelOpen { overflow:hidden; }
   appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
   appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
   quickLoginBtn.addEventListener("click",openAccountWorkspace);
-  closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);
-  for(const workspace of [accountWorkspaceEl,exportWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;workspace===accountWorkspaceEl?closeAccountWorkspace():closeExportWorkspace();});
-  window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(collectionViewerEl.classList.contains("open")){closePhotoCollection();return;}if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
+  closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);closeInstallWorkspaceBtn.addEventListener("click",closeInstallWorkspace);
+  for(const workspace of [accountWorkspaceEl,exportWorkspaceEl,installWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;if(workspace===accountWorkspaceEl)closeAccountWorkspace();else if(workspace===exportWorkspaceEl)closeExportWorkspace();else closeInstallWorkspace();});
+  window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(installWorkspaceEl.classList.contains("open")){closeInstallWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
 
   const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public";appNavUserEl.textContent=user?`${user.name} • ${role}${user.mustChangePassword?" • password change required":""}`:"Public photo viewer • not logged in";appNavAccessEl.textContent=ready?(["admin","coordinator"].includes(role)?"Browse and edit all records":`Browse all records • edit own and ${authState.individualIds.length} assigned bird(s)`):"Public access";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"]').forEach((item)=>item.hidden=!ready);accountCollectionsEl.hidden=!ready;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${role}${user.mustChangePassword?" • change password now":""}`:"Public photo viewer";accountEmailEl.textContent=user?user.email:"Log in to edit descriptions and use data tools.";};
+
+  let deferredInstallPrompt=null;
+  const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches||window.navigator.standalone===true;
+  function updateInstallStatus(message=""){installStatusEl.textContent=message||(isStandaloneApp()?"The application is already installed and running in standalone mode.":deferredInstallPrompt?"This device is ready to install the application.":"If the automatic installer is unavailable, use the browser menu or the manual instructions below.");installAppBtn.disabled=isStandaloneApp();}
+  installAppBtn.addEventListener("click",async()=>{if(isStandaloneApp())return updateInstallStatus("The application is already installed.");if(deferredInstallPrompt){const promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;promptEvent.prompt();const choice=await promptEvent.userChoice;updateInstallStatus(choice?.outcome==="accepted"?"Installation was started.":"Installation was cancelled. You can try again from the browser menu.");return;}const manual="Android: Chrome/Brave menu ⋮ → Install application or Add to Home screen. iPhone: Safari Share → Add to Home Screen.";updateInstallStatus(manual);window.alert(manual);});
+  checkAppUpdateBtn.addEventListener("click",async()=>{if(!("serviceWorker" in navigator))return updateInstallStatus("This browser does not support application updates.");const registration=await navigator.serviceWorker.getRegistration();if(!registration)return updateInstallStatus("The application worker is not installed yet. Reload the page and try again.");await registration.update();updateInstallStatus(registration.waiting||registration.installing?"A new application version is available. Use Refresh application version.":"The application is up to date.");});
+  refreshAppVersionBtn.addEventListener("click",async()=>{refreshAppVersionBtn.disabled=true;try{if("serviceWorker" in navigator){const registration=await navigator.serviceWorker.getRegistration();await registration?.update();registration?.waiting?.postMessage({type:"SKIP_WAITING"});}if("caches" in window){const keys=await caches.keys();await Promise.all(keys.filter((key)=>key.startsWith("stork-edit2-")).map((key)=>caches.delete(key)));}window.location.reload();}finally{refreshAppVersionBtn.disabled=false;}});
+  window.addEventListener("beforeinstallprompt",(event)=>{event.preventDefault();deferredInstallPrompt=event;updateInstallStatus("The application can be installed on this device. Click Install application.");});
+  window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallStatus("The application was installed successfully.");});
+  if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch((error)=>console.warn("Application installation worker failed",error)));
 
   // Remember settings panel state when toggling the photo modal
   let prevSettingsCollapsed = false;
@@ -2917,17 +2952,19 @@ loopCurrentEl.checked = false;
   const tableColumnManagerHtml=()=>`<details class="tableColumnManager"><summary>Columns: visibility, order and width</summary><div class="btnrow"><button id="tableShowAllColumns" class="secondary tiny" type="button">Show all</button><button id="tableResetColumns" class="secondary tiny" type="button">Reset layout</button></div><div class="tableColumnGrid">${orderedTableColumns().map((column,index)=>`<div class="tableColumnItem" data-column-key="${escapeHtml(column.key)}"><label><input class="tableColumnVisible" type="checkbox" ${tableColumnConfig.hidden.includes(column.key)?"":"checked"}> <span>${escapeHtml(column.label)}</span></label><button class="secondary tiny tableColumnUp" type="button" ${index===0?"disabled":""}>↑</button><button class="secondary tiny tableColumnDown" type="button" ${index===tableColumnDefs.length-1?"disabled":""}>↓</button><input class="tableColumnWidth" type="number" min="60" max="600" step="10" value="${Number(tableColumnConfig.widths[column.key]||column.width)}" title="Width in pixels"></div>`).join("")}</div></details>`;
   const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
   const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true"); };
+  let editorReturnDataMode=null;
   const openDataWorkspace = async (mode = "table") => {
     if (!editorHasConnection()) { openAccountWorkspace(); return; }
-    if (document.body.classList.contains("editorOpen") && !closeEditorMode()) return;
-    closeAppNavigation();closeAccountWorkspace();closeExportWorkspace();
+    if (document.body.classList.contains("editorOpen") && !closeEditorMode({returnPrevious:false})) return;
+    viewerReturnBarEl.hidden=true;
+    closeAppNavigation();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();
     dataWorkspaceEl.classList.add("open"); dataWorkspaceEl.setAttribute("aria-hidden","false");
-    if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else if (mode === "imports") await loadImportsPanel(); else if(mode==="reviews")await loadReviewRequestsPanel();else if(mode==="categories")await loadCategoryModerationPanel();else await loadDataTable();
+    if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else if (mode === "imports") await loadImportsPanel(); else if(mode==="reviews")await loadReviewRequestsPanel();else if(mode==="categories")await loadCategoryModerationPanel();else if(mode==="rated")await loadRatedPhotosPanel();else await loadDataTable();
   };
-  const openWorkspacePhoto = async (photoId, individualId, edit = false) => {
+  const openWorkspacePhoto = async (photoId, individualId, edit = false, returnMode = "table") => {
     closeDataWorkspace(); setBirdSelection(individualId); await loadTrackFor(individualId,{autoplay:false});
     const index = track.findIndex((point)=>point.photoId===photoId); if (index >= 0) showPhotoAtIndex(index);
-    if (edit && index >= 0) await openEditorMode();
+    if (edit && index >= 0){editorReturnDataMode=returnMode;await openEditorMode();}
   };
 
   const loadDataTable = async () => {
@@ -2943,8 +2980,8 @@ loopCurrentEl.checked = false;
       el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,phenoPeriod:el("tablePhenoFilter").value,periodDay:el("tablePeriodDayFilter").value,residence:el("tableResidenceFilter").value,activityClass:el("tableActivityFilter").value,country:el("tableCountryFilter").value,dateFrom:el("tableDateFrom").value,dateTo:el("tableDateTo").value,search:el("tableSearch").value.trim(),pageSize:el("tablePageSize").value};tablePage=1;loadDataTable();});
       el("tableClear").addEventListener("click",()=>{tableFilters={individualId:"",status:"",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();});
       el("tablePrev").addEventListener("click",()=>{tablePage=Math.max(1,tablePage-1);loadDataTable();}); el("tableNext").addEventListener("click",()=>{tablePage++;loadDataTable();});
-      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("dblclick",()=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true)));
-      dataPanelEl.querySelectorAll(".tableOpen").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true);}));
+      dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("dblclick",()=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true,"table")));
+      dataPanelEl.querySelectorAll(".tableOpen").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,true,"table");}));
       dataPanelEl.querySelectorAll(".tableDelete").forEach((button)=>button.addEventListener("click",async(event)=>{event.stopPropagation();const row=button.closest("tr"),filename=row.dataset.filename||row.dataset.photoId;if(!window.confirm(`Delete photo ${filename} and its annotation/history? GPS track and stopovers will remain on the map.`))return;button.disabled=true;try{await apiFetch(`/api/admin/photos/${encodeURIComponent(row.dataset.photoId)}`,{method:"DELETE"});await loadGithubFiles();await loadDataTable();}catch(error){button.disabled=false;setDataStatus(`Delete failed: ${error.message}`);}}));
       dataPanelEl.querySelectorAll(".tableColumnItem").forEach((item)=>{const key=item.dataset.columnKey;item.querySelector(".tableColumnVisible").addEventListener("change",(event)=>{const hidden=new Set(tableColumnConfig.hidden);event.target.checked?hidden.delete(key):hidden.add(key);tableColumnConfig.hidden=[...hidden];saveTableColumnConfig();loadDataTable();});item.querySelector(".tableColumnWidth").addEventListener("change",(event)=>{tableColumnConfig.widths[key]=Math.max(60,Math.min(600,Number(event.target.value)||100));saveTableColumnConfig();loadDataTable();});const move=(direction)=>{const order=orderedTableColumns().map((column)=>column.key),index=order.indexOf(key),target=index+direction;if(target<0||target>=order.length)return;[order[index],order[target]]=[order[target],order[index]];tableColumnConfig.order=order;saveTableColumnConfig();loadDataTable();};item.querySelector(".tableColumnUp").addEventListener("click",()=>move(-1));item.querySelector(".tableColumnDown").addEventListener("click",()=>move(1));});
       el("tableShowAllColumns").addEventListener("click",()=>{tableColumnConfig.hidden=[];saveTableColumnConfig();loadDataTable();});el("tableResetColumns").addEventListener("click",()=>{tableColumnConfig={order:tableColumnDefs.map((column)=>column.key),hidden:[],widths:{}};saveTableColumnConfig();loadDataTable();});
@@ -2956,11 +2993,11 @@ loopCurrentEl.checked = false;
     setDataStatus("Loading progress…");
     try { const data=await apiFetch("/api/progress"); dataPanelEl.innerHTML=`<div class="progressGrid">${(data.individuals||[]).map((item)=>`<div class="progressCard"><h3>${escapeHtml(item.individualId)}</h3><div><b>${item.complete}</b> / ${item.total} analysed (${item.percentComplete}%)</div><div class="progressBar"><span style="width:${Math.max(0,Math.min(100,item.percentComplete))}%"></span></div><div class="muted">Unstarted: ${item.unstarted} • Draft: ${item.draft} • Review: ${item.needsReview}</div><div class="btnrow" style="margin-top:9px;"><button class="secondary tiny progressOpen" data-bird="${escapeHtml(item.individualId)}" data-status="unstarted" type="button">Unfinished</button><button class="secondary tiny progressContinue" data-bird="${escapeHtml(item.individualId)}" type="button">Continue</button></div></div>`).join("")}</div>`;setDataStatus(`${data.individuals?.length||0} individuals`);
       dataPanelEl.querySelectorAll(".progressOpen").forEach((button)=>button.addEventListener("click",()=>{tableFilters={individualId:button.dataset.bird,status:"unstarted",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();}));
-      dataPanelEl.querySelectorAll(".progressContinue").forEach((button)=>button.addEventListener("click",async()=>{const result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(button.dataset.bird)}`);if(result.photo)openWorkspacePhoto(result.photo.id,result.photo.individual_id,true);else setDataStatus("No unfinished records for this bird.");}));
+      dataPanelEl.querySelectorAll(".progressContinue").forEach((button)=>button.addEventListener("click",async()=>{const result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(button.dataset.bird)}`);if(result.photo)openWorkspacePhoto(result.photo.id,result.photo.individual_id,true,"progress");else setDataStatus("No unfinished records for this bird.");}));
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Progress failed");}
   };
 
-  const showInviteResult=(target,invite,successText="Invitation email sent.")=>{if(invite?.sent){target.textContent=successText;return;}const reason=invite?.reason==="smtp_send_failed"?"SMTP could not send the message.":"SMTP is not configured.";target.innerHTML=`${escapeHtml(reason)} ${invite?.mailtoUrl?`<a href="${escapeHtml(invite.mailtoUrl)}">Open prepared email</a>.`:""}${invite?.temporaryPassword?` Temporary password: <b>${escapeHtml(invite.temporaryPassword)}</b>`:""}`;};
+  const showInviteResult=(target,invite,successText="Invitation email sent.")=>{if(invite?.sent){target.textContent=successText;return;}const reason=invite?.reason==="smtp_send_failed"?"The server could not send the message automatically.":"A prepared Gmail message is ready.";target.innerHTML=`${escapeHtml(reason)} ${invite?.gmailUrl?`<a href="${escapeHtml(invite.gmailUrl)}" target="_blank" rel="noopener">Open prepared message in Gmail</a>.`:invite?.mailtoUrl?`<a href="${escapeHtml(invite.mailtoUrl)}">Open prepared email</a>.`:""}${invite?.temporaryPassword?` Temporary password: <b>${escapeHtml(invite.temporaryPassword)}</b>`:""}`;if(invite?.gmailUrl){const opened=window.open(invite.gmailUrl,"storkInviteGmail");if(opened)opened.opener=null;else target.insertAdjacentHTML("beforeend"," The browser blocked the new tab — use the Gmail link above.");}};
   const loadUsersPanel = async () => {
     if(authState.user?.role!=="admin")return loadDataTable();
     setDataStatus("Loading users…");
@@ -2978,7 +3015,7 @@ loopCurrentEl.checked = false;
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
   };
 
-  const loadReviewRequestsPanel=async()=>{if(!["admin","coordinator"].includes(authState.user?.role))return loadDataTable();setDataStatus("Loading verification requests…");try{const result=await apiFetch("/api/review-requests?status=pending");dataPanelEl.innerHTML=`<h3>Records awaiting verification</h3>${(result.requests||[]).map((item)=>`<div class="userCard" data-review-id="${escapeHtml(item.id)}"><b>${escapeHtml(item.bird)} • ${escapeHtml(item.filename)}</b><div class="muted">${escapeHtml(item.fieldKey||"Whole record")} • requested by ${escapeHtml(item.createdBy?.name||"unknown")}</div><p>${escapeHtml(item.reason)}</p><div class="btnrow"><button class="secondary tiny openReviewPhoto" type="button">Open in editor</button><button class="primarySave tiny resolveReview" type="button">Resolve</button><button class="danger tiny rejectReview" type="button">Reject</button></div></div>`).join("")||'<p class="muted">No pending verification requests.</p>'}`;for(const card of dataPanelEl.querySelectorAll("[data-review-id]")){const item=result.requests.find((entry)=>entry.id===card.dataset.reviewId);card.querySelector(".openReviewPhoto").addEventListener("click",()=>openWorkspacePhoto(item.photoId,item.bird,true));const finish=async(status)=>{const note=window.prompt(status==="resolved"?"Resolution note (optional):":"Reason for rejection (optional):","");if(note===null)return;await apiFetch(`/api/review-requests/${encodeURIComponent(item.id)}`,{method:"PATCH",body:JSON.stringify({status,resolutionNote:note})});loadReviewRequestsPanel();};card.querySelector(".resolveReview").addEventListener("click",()=>finish("resolved"));card.querySelector(".rejectReview").addEventListener("click",()=>finish("rejected"));}setDataStatus(`${result.requests?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Verification queue failed");}};
+  const loadReviewRequestsPanel=async()=>{if(!["admin","coordinator"].includes(authState.user?.role))return loadDataTable();setDataStatus("Loading verification requests…");try{const result=await apiFetch("/api/review-requests?status=pending");dataPanelEl.innerHTML=`<h3>Records awaiting verification</h3>${(result.requests||[]).map((item)=>`<div class="userCard" data-review-id="${escapeHtml(item.id)}"><b>${escapeHtml(item.bird)} • ${escapeHtml(item.filename)}</b><div class="muted">${escapeHtml(item.fieldKey||"Whole record")} • requested by ${escapeHtml(item.createdBy?.name||"unknown")}</div><p>${escapeHtml(item.reason)}</p><div class="btnrow"><button class="secondary tiny openReviewPhoto" type="button">Open in editor</button><button class="primarySave tiny resolveReview" type="button">Resolve</button><button class="danger tiny rejectReview" type="button">Reject</button></div></div>`).join("")||'<p class="muted">No pending verification requests.</p>'}`;for(const card of dataPanelEl.querySelectorAll("[data-review-id]")){const item=result.requests.find((entry)=>entry.id===card.dataset.reviewId);card.querySelector(".openReviewPhoto").addEventListener("click",()=>openWorkspacePhoto(item.photoId,item.bird,true,"reviews"));const finish=async(status)=>{const note=window.prompt(status==="resolved"?"Resolution note (optional):":"Reason for rejection (optional):","");if(note===null)return;await apiFetch(`/api/review-requests/${encodeURIComponent(item.id)}`,{method:"PATCH",body:JSON.stringify({status,resolutionNote:note})});loadReviewRequestsPanel();};card.querySelector(".resolveReview").addEventListener("click",()=>finish("resolved"));card.querySelector(".rejectReview").addEventListener("click",()=>finish("rejected"));}setDataStatus(`${result.requests?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Verification queue failed");}};
 
   const loadCategoryModerationPanel=async()=>{if(!["admin","coordinator"].includes(authState.user?.role))return loadDataTable();setDataStatus("Loading category proposals…");try{const result=await apiFetch("/api/admin/annotation-options?status=pending");dataPanelEl.innerHTML=`<h3>Temporary category proposals</h3><p class="muted">Accept a proposal, reject it, rename it, or merge every occurrence into an existing category.</p>${(result.options||[]).map((item)=>`<div class="userCard" data-field="${escapeHtml(item.fieldKey)}" data-value="${escapeHtml(item.value)}"><b>${escapeHtml(item.fieldKey)}: ${escapeHtml(item.value)}</b><div class="muted">${escapeHtml(item.createdBy?.name||"unknown user")}</div><p>${escapeHtml(item.reason||"No reason supplied")}</p><div class="btnrow"><button class="primarySave tiny categoryAction" data-action="approve" type="button">Approve</button><button class="secondary tiny categoryAction" data-action="rename" type="button">Rename</button><button class="secondary tiny categoryAction" data-action="merge" type="button">Merge</button><button class="danger tiny categoryAction" data-action="reject" type="button">Reject</button><button class="danger tiny categoryAction" data-action="delete" type="button">Delete</button></div></div>`).join("")||'<p class="muted">No pending category proposals.</p>'}`;dataPanelEl.querySelectorAll(".categoryAction").forEach((button)=>button.addEventListener("click",async()=>{const card=button.closest("[data-field]"),action=button.dataset.action;let replacementValue="";if(["rename","merge"].includes(action)){replacementValue=window.prompt(action==="merge"?"Existing category to use for all records:":"New category name:",card.dataset.value)||"";if(!replacementValue.trim())return;}if(!window.confirm(`Confirm ${action} for “${card.dataset.value}”?`))return;await apiFetch("/api/admin/annotation-options",{method:"PATCH",body:JSON.stringify({fieldKey:card.dataset.field,value:card.dataset.value,action,replacementValue})});loadCategoryModerationPanel();}));setDataStatus(`${result.options?.length||0} pending`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Category queue failed");}};
 
@@ -3017,7 +3054,7 @@ loopCurrentEl.checked = false;
 
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
   dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);returnToMainBtn.addEventListener("click",closeDataWorkspace);
-  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"||action==="rated"){await openPhotoCollection(action);return;}if(action==="export"){openExportWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closePhotoCollection();if(document.body.classList.contains("editorOpen"))closeEditorMode();return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode())return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}await openEditorMode();return;}if(["table","progress","users","imports","reviews","categories"].includes(action))await openDataWorkspace(action);}));
+  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"){await openBestPictures();return;}if(action==="rated"){await openRatedTable();return;}if(action==="export"){openExportWorkspace();return;}if(action==="install"){openInstallWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(collectionBrowseState)await leaveCollectionMode();if(document.body.classList.contains("editorOpen"))closeEditorMode({returnPrevious:false});return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}editorReturnDataMode=null;await openEditorMode();return;}if(["table","progress","users","imports","reviews","categories"].includes(action))await openDataWorkspace(action);}));
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
   const splitTsvLine = (line) => {
@@ -3366,11 +3403,11 @@ loopCurrentEl.checked = false;
     const parsedPhotoShare=Number(savedPhotoShare);if(Number.isFinite(parsedPhotoShare)&&parsedPhotoShare>=20&&parsedPhotoShare<=80){viewerPhotoShare=parsedPhotoShare;if(validPhotoShares.has(String(parsedPhotoShare)))layoutSplitEl.value=String(parsedPhotoShare);else{const custom=layoutSplitEl.querySelector('option[value="custom"]');custom.hidden=false;custom.textContent=`Custom (${Math.round(parsedPhotoShare)}% photo)`;layoutSplitEl.value="custom";}}
     const savedFontScale = localStorage.getItem("storkViewerFontScale");
     if (validFontScales.has(savedFontScale)) fontScaleEl.value = savedFontScale;
-    else if(window.innerWidth>980)fontScaleEl.value="1.4";
+    else fontScaleEl.value="1.6";
   } catch(e) {}
 
   const applyFontScale = ({ persist = true } = {}) => {
-    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : "1.25";
+    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : "1.6";
     const multiplier = Number(scale);
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty("--ui-font-scale", scale);
@@ -3429,17 +3466,24 @@ loopCurrentEl.checked = false;
     progressModeBtn.disabled = !editorHasConnection();
   };
 
-  const photoSocialEl=document.querySelector("[data-photo-social]"),favoritePhotoBtn=photoSocialEl.querySelector(".favoritePhotoBtn"),photoRatingEl=photoSocialEl.querySelector(".photoRating"),ratingAverageEl=photoSocialEl.querySelector(".ratingAverage");
+  const photoSocialEl=document.querySelector("[data-photo-social]"),favoritePhotoBtn=photoSocialEl.querySelector(".favoritePhotoBtn"),photoRatingEl=photoSocialEl.querySelector(".photoRating"),ratingClearBtn=photoSocialEl.querySelector(".ratingClear"),ratingAverageEl=photoSocialEl.querySelector(".ratingAverage");
   let socialPhotoId=null,socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0},socialLoadToken=0;
-  const renderPhotoSocial=()=>{photoSocialEl.hidden=!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.textContent=socialState.favorite?"★":"☆";favoritePhotoBtn.title=socialState.favorite?"Remove from my best pictures":"Save in my best pictures";photoRatingEl.replaceChildren();for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${socialState.averageRating} (${socialState.ratingCount})`;};
+  const removeOwnRating=async()=>{if(!socialPhotoId||socialState.ownRating==null)return;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"DELETE"});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not remove rating: ${error.message}`);}};
+  const renderPhotoSocial=()=>{photoSocialEl.hidden=!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.textContent=socialState.favorite?"★":"☆";favoritePhotoBtn.title=socialState.favorite?"Remove from my best pictures":"Save in my best pictures";ratingClearBtn.hidden=socialState.ownRating==null;photoRatingEl.replaceChildren();for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${socialState.averageRating} (${socialState.ratingCount})`;};
   const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;const token=++socialLoadToken;if(!editorHasConnection()||!socialPhotoId){renderPhotoSocial();return;}try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`);if(token!==socialLoadToken)return;socialState=result.social||socialState;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};}renderPhotoSocial();};
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private Best pictures safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update Best pictures: ${error.message}`);}});
-  let collectionPhotos=[],collectionIndex=0,collectionTimer=null,collectionMap=null,collectionMarker=null;
-  const stopCollectionPlay=()=>{if(collectionTimer)clearInterval(collectionTimer);collectionTimer=null;collectionPlayBtn.textContent="Play";};
-  const renderCollectionPhoto=()=>{if(!collectionPhotos.length){collectionImageEl.removeAttribute("src");collectionLabelEl.textContent="No photos in this collection.";collectionPrevBtn.disabled=true;collectionNextBtn.disabled=true;return;}collectionIndex=Math.max(0,Math.min(collectionIndex,collectionPhotos.length-1));const photo=collectionPhotos[collectionIndex];collectionImageEl.src=photo.imageUrl;collectionLabelEl.textContent=`${collectionIndex+1} / ${collectionPhotos.length} • ${photo.bird} • ${photo.filename}${photo.social?.averageRating?` • ★ ${photo.social.averageRating}`:""}`;collectionPrevBtn.disabled=collectionIndex===0;collectionNextBtn.disabled=collectionIndex===collectionPhotos.length-1;if(collectionMap&&Number.isFinite(photo.lat)&&Number.isFinite(photo.lon)){collectionMarker.setLatLng([photo.lat,photo.lon]);collectionMap.setView([photo.lat,photo.lon],Math.max(5,collectionMap.getZoom()),{animate:true});}};
-  const openPhotoCollection=async(collection)=>{if(!editorHasConnection()){openAccountWorkspace();return;}closeAccountWorkspace();closeAppNavigation();stopCollectionPlay();collectionViewerEl.classList.add("open");collectionViewerEl.setAttribute("aria-hidden","false");collectionLabelEl.textContent="Loading…";if(!collectionMap){collectionMap=L.map(collectionMapEl,{zoomControl:true}).setView([20,10],3);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(collectionMap);collectionMarker=L.circleMarker([20,10],{radius:8,color:"#77d1ff",fillColor:"#34a1ff",fillOpacity:.9}).addTo(collectionMap);}requestAnimationFrame(()=>collectionMap.invalidateSize());try{const result=await apiFetch(`/api/me/photo-collection?collection=${encodeURIComponent(collection)}&sort=rating_desc`);collectionPhotos=result.photos||[];collectionIndex=0;renderCollectionPhoto();}catch(error){collectionPhotos=[];collectionLabelEl.textContent=`Could not load collection: ${error.message}`;}};
-  const closePhotoCollection=()=>{stopCollectionPlay();collectionViewerEl.classList.remove("open");collectionViewerEl.setAttribute("aria-hidden","true");};
-  collectionPrevBtn.addEventListener("click",()=>{stopCollectionPlay();collectionIndex--;renderCollectionPhoto();});collectionNextBtn.addEventListener("click",()=>{stopCollectionPlay();collectionIndex++;renderCollectionPhoto();});collectionPlayBtn.addEventListener("click",()=>{if(collectionTimer){stopCollectionPlay();return;}if(collectionPhotos.length<2)return;collectionPlayBtn.textContent="Pause";collectionTimer=setInterval(()=>{collectionIndex=(collectionIndex+1)%collectionPhotos.length;renderCollectionPhoto();},2500);});closeCollectionBtn.addEventListener("click",closePhotoCollection);document.querySelectorAll("[data-open-collection]").forEach((button)=>button.addEventListener("click",()=>openPhotoCollection(button.dataset.openCollection)));
+  ratingClearBtn.addEventListener("click",removeOwnRating);
+
+  let collectionBrowseState=null;
+  const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird});
+  const openBestPictures=async()=>{if(!editorHasConnection()){openAccountWorkspace();return;}closeAccountWorkspace();closeAppNavigation();setStatus("Loading your Best pictures…");try{const result=await apiFetch("/api/me/photo-collection?collection=favorites&sort=date_asc"),photos=result.photos||[];if(!photos.length){setStatus("Your Best pictures collection is empty.");return;}if(!collectionBrowseState){collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};}stopAnim();groupedFiles.clear();trackCache.clear();for(const photo of photos){if(!Number.isFinite(photo.lat)||!Number.isFinite(photo.lon))continue;if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push(collectionPhotoEntry(photo));}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));const ids=idsSorted();if(!ids.length){setStatus("Best pictures contains no photos with a usable map position.");await leaveCollectionMode();return;}updateBirdSelectors(ids);document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionModeLabelEl.textContent=`★ Best pictures • ${photos.length} selected photo(s) • all viewer functions remain available`;setBirdSelection(ids[0]);await loadTrackFor(ids[0],{autoplay:false});}catch(error){setStatus(`Could not load Best pictures: ${error.message}`);}};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const previous=collectionBrowseState;collectionBrowseState=null;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}};
+  leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
+
+  const loadRatedPhotosPanel=async()=>{setDataStatus("Loading the photo ranking…");try{const result=await apiFetch("/api/me/photo-collection?collection=rated&sort=rating_desc"),photos=result.photos||[];dataPanelEl.innerHTML=`<h3>Photo ranking</h3><p class="muted">Click a row to open the photograph in the standard map and photo viewer.</p><div class="dataTableWrap"><table class="ratedTable"><thead><tr><th>#</th><th>Photo</th><th>Bird</th><th>Filename</th><th>Average</th><th>Votes</th><th>Your rating</th></tr></thead><tbody>${photos.map((photo,index)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${index+1}</td><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td class="ratedStars">★ ${escapeHtml(photo.social?.averageRating??"—")}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"—":`★ ${Number(photo.social.ownRating)}`}</td></tr>`).join("")}</tbody></table></div>`;dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("click",async()=>{closeDataWorkspace();setBirdSelection(row.dataset.bird);await loadTrackFor(row.dataset.bird,{autoplay:false});const index=track.findIndex((point)=>point.photoId===row.dataset.photoId);if(index>=0)showPhotoAtIndex(index);viewerReturnLabelEl.textContent="Photo ranking";viewerReturnBarEl.hidden=false;}));setDataStatus(`${photos.length} rated photo(s)`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Ranking failed");}};
+  const openRatedTable=async()=>{if(collectionBrowseState)await leaveCollectionMode();closeAccountWorkspace();await openDataWorkspace("rated");};
+  returnToPreviousWindowBtn.addEventListener("click",async()=>{viewerReturnBarEl.hidden=true;await openDataWorkspace("rated");});
+  document.querySelectorAll("[data-open-collection]").forEach((button)=>button.addEventListener("click",()=>button.dataset.openCollection==="favorites"?openBestPictures():openRatedTable()));
 
   const showPhotoAtIndex = (requestedIndex) => {
     if (!track.length) return;
@@ -3633,7 +3677,7 @@ loopCurrentEl.checked = false;
     }
   });
 
-  editorLogoutBtn.addEventListener("click", async () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();clearAuth();await loadGithubFiles();openAccountWorkspace(); });
+  editorLogoutBtn.addEventListener("click", async () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();closeInstallWorkspace();collectionBrowseState=null;collectionModeBarEl.hidden=true;document.body.classList.remove("collectionMode");clearAuth();await loadGithubFiles();openAccountWorkspace(); });
   appNavLogoutBtn.addEventListener("click",()=>editorLogoutBtn.click());
   for(const input of [editorWebAppUrlEl,editorSecretEl])input.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();testEditorConnectionBtn.click();}});
   changeEditorPasswordBtn.addEventListener("click", async () => {
@@ -3773,7 +3817,8 @@ loopCurrentEl.checked = false;
   const updateEditorCompletionHints = () => {
     const required = new Set(["Quality_selected"]);
     if (editorQualityEl.value !== "no") {
-      ["Pheno_period","Residence","Period_day","Feather_occ","Ciconia_num","Water_presence_class","Fly_ground","Env_desc_en"].forEach((key)=>required.add(key));
+      ["Pheno_period","Residence","Period_day","Feather_occ","Ciconia_num","Water_presence_class","Fly_ground"].forEach((key)=>required.add(key));
+      if(editorFlyGroundEl.value!=="fly")required.add("Env_desc_en");
       if (editorFeatherOccEl.value === "yes") required.add("Feather_perc");
       if (editorFlyGroundEl.value === "fly") required.add("Altitude");
       if (editorFlyGroundEl.value === "ground") {
@@ -3943,7 +3988,7 @@ loopCurrentEl.checked = false;
     requireInteger("Ciconia_num", editorCiconiaNumEl, "Visible White Storks", 0);
     requireValue("Water_presence_class", editorWaterEl, "Water presence");
     requireValue("Fly_ground", editorFlyGroundEl, "Flight state");
-    requireValue("Env_desc_en", editorEnvDescEl, "Environment description");
+    if (values.Fly_ground !== "fly") requireValue("Env_desc_en", editorEnvDescEl, "Environment description");
 
     if (values.Feather_occ === "yes") {
       requireValue("Feather_perc", editorFeatherPercEl, "Feather coverage");
@@ -4036,8 +4081,9 @@ loopCurrentEl.checked = false;
     await editorLoadPhoto(index);
   };
 
-  const closeEditorMode = ({ force = false } = {}) => {
+  const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;
     editorWorkspaceEl.appendChild(editorPanelEl);
     editorVisualTopEl.appendChild(closeEditorModeBtn);
     editorVisualEl.appendChild(editorVisualNavEl);
@@ -4050,6 +4096,7 @@ loopCurrentEl.checked = false;
     editorDirty = false;
     editorLoadToken++;
     refreshMapSizes();
+    if(returnMode)setTimeout(()=>openDataWorkspace(returnMode),0);
     return true;
   };
 
@@ -4061,7 +4108,7 @@ loopCurrentEl.checked = false;
     await editorLoadPhoto(nextIndex);
   };
 
-  const returnToActiveDraft=async(activeDraft)=>{if(!activeDraft)return;if(!window.confirm(`You already have an unfinished draft: ${activeDraft.filename}. Return to it now?`))return;if(activeDraft.bird===birdId){const index=track.findIndex((point)=>point.photoId===activeDraft.photoId);if(index>=0){editorDirty=false;await editorLoadPhoto(index);return;}}editorDirty=false;closeEditorMode({force:true});setBirdSelection(activeDraft.bird);await loadTrackFor(activeDraft.bird,{autoplay:false});const index=track.findIndex((point)=>point.photoId===activeDraft.photoId);if(index>=0){showPhotoAtIndex(index);await openEditorMode();}};
+  const returnToActiveDraft=async(activeDraft)=>{if(!activeDraft)return;if(!window.confirm(`You already have an unfinished draft: ${activeDraft.filename}. Return to it now?`))return;if(activeDraft.bird===birdId){const index=track.findIndex((point)=>point.photoId===activeDraft.photoId);if(index>=0){editorDirty=false;await editorLoadPhoto(index);return;}}editorDirty=false;closeEditorMode({force:true,returnPrevious:false});setBirdSelection(activeDraft.bird);await loadTrackFor(activeDraft.bird,{autoplay:false});const index=track.findIndex((point)=>point.photoId===activeDraft.photoId);if(index>=0){showPhotoAtIndex(index);await openEditorMode();}};
 
   const saveEditorRecord = async ({ markAnalysed, advance, automatic=false }) => {
     if (editorSaving || editorPhotoIndex < 0) return false;
@@ -4133,7 +4180,7 @@ loopCurrentEl.checked = false;
     });
   }
 
-  editorModeBtn.addEventListener("click", openEditorMode);
+  editorModeBtn.addEventListener("click",()=>{editorReturnDataMode=null;openEditorMode();});
   toggleEditorHeaderBtn.addEventListener("click",()=>{const compact=editorPanelHeaderEl.classList.toggle("compact");toggleEditorHeaderBtn.textContent=compact?"Details":"Hide";toggleEditorHeaderBtn.setAttribute("aria-expanded",String(!compact));});
   closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
   editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
@@ -4359,6 +4406,7 @@ loopCurrentEl.checked = false;
   };
 
   const loadGithubFiles = async () => {
+    viewerReturnBarEl.hidden=true;
     groupedFiles.clear();
     trackCache.clear();
     updateBirdSelectors([]);

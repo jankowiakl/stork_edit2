@@ -30,6 +30,13 @@ export const ANNOTATION_FIELDS = Object.freeze([
 
 export const ANNOTATION_DB_COLUMNS = ANNOTATION_FIELDS.filter((field) => field.table !== "photos").map((field) => field.db);
 export const EXTENSIBLE_ANNOTATION_FIELDS=Object.freeze(ANNOTATION_FIELDS.filter((field)=>field.extensible).map((field)=>field.key));
+export function normalizeReviewField(value){
+  const raw=String(value||"").replaceAll("\0","").trim();
+  if(!raw)return null;
+  const comparable=raw.toLowerCase().replace(/[\s-]+/g,"_");
+  const known=ANNOTATION_FIELDS.find((field)=>[field.key,field.db,field.label].some((candidate)=>String(candidate).toLowerCase().replace(/[\s-]+/g,"_")===comparable));
+  return known?.key||raw.slice(0,100);
+}
 export function publicAnnotationSchema(customOptions={}) {
   return {
     version: 1,

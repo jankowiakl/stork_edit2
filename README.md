@@ -7,7 +7,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - unchanged public map/photo viewer with lazy image loading;
 - server-backed photographs, GPS routes and stopovers;
 - photo positions prefer embedded EXIF geotags and otherwise use the nearest route point matched from the UTC timestamp in the filename;
-- browser-persisted interface font scaling from 100% to 160%;
+- browser-persisted interface font scaling from 100% to 160%, with 160% as the first-use default;
 - a translucent Sieweczka-inspired left navigation drawer with role-aware tiles, hover auto-hide and a slim edge handle;
 - separate account/login, application-options, export and administrator workspaces instead of mixing account controls into map settings;
 - three-column desktop editor: map / form / photo;
@@ -17,18 +17,21 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - field help, conditional controls and missing-value indicators;
 - automatic draft saving during photo navigation, one active draft per user, completed records and optimistic version locking;
 - next-unannotated navigation, copying values from the previous photo and required environment descriptions;
-- per-user server-side Best pictures collections, map slideshows and optional 1–5 star ratings;
+- per-user server-side Best pictures opened inside the complete map/photo viewer, a clickable Top rated ranking table and removable 1–5 star ratings;
 - user verification requests and category proposals moderated by coordinators/administrators;
 - table view with search, filters, paging, the current user's records first and permission-aware form editing;
 - full-width data-browser table with every photo/annotation field, horizontal scrolling, date/category filters and persistent column visibility, order and widths;
 - progress per individual and navigation to unfinished records;
 - XLSX, CSV, JSON, GeoJSON, KML and optional photo ZIP exports;
 - administrator, coordinator and annotator roles;
-- SMTP invitations, password reset, invitation/last-login status and per-individual access;
+- SMTP invitations with a prepared Gmail fallback, role/permission descriptions, password reset, invitation/last-login status and per-individual edit access;
 - PostgreSQL audit log and annotation history;
 - administrator-only, dry-run-first browser import of XLSX/CSV/TXT, photos/ZIP, GPS and stopovers;
 - import history showing who added what and when;
 - secure administrator password recovery with the private server bootstrap token.
+- installable mobile PWA with a manifest, stork icons, service-worker updates and in-application Android/iPhone instructions.
+
+Completed records require an environment description except when `Fly_ground=fly`. Verification requests accept a schema key, database column, visible field label or a short custom subject, so a user can request review of e.g. a species without receiving `invalid_review_field`.
 
 ## Storage model
 
