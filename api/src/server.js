@@ -22,6 +22,8 @@ import { queryExportRows,rowToExport,sendCsv,sendXlsx,sendGeoJson,sendKml,sendZi
 import { stageBrowserImport,runStagedImport,removeStagedImport } from "./admin-import.js";
 import { parsePhotoFilename } from "./photo-filename.js";
 import { readPhotoExifGps } from "./photo-exif.js";
+import { inspectTabularHeaders } from "./tabular-import.js";
+import { backfillPhotoLocationsFromTrack,DEFAULT_PHOTO_GPS_MAX_OFFSET_MINUTES,nearestTrackPoint,shouldUpgradePhotoMedia } from "./photo-location.js";
 
 assertAuthConfiguration();
 await migrate();
@@ -30,6 +32,7 @@ const app=express(), port=Number(process.env.PORT||3000);
 const photoDir=path.resolve(process.env.PHOTO_DIR||"/data/photos"), previewDir=path.join(photoDir,".previews"), uploadDir=path.join(photoDir,".uploads"), importStageDir=path.join(photoDir,".import-staging"), importUploadDir=path.join(photoDir,".import-uploads");
 const publicApiUrl=String(process.env.PUBLIC_API_URL||"").replace(/\/$/,"");
 const publicAppUrl=String(process.env.PUBLIC_APP_URL||"").replace(/\/$/,"")+"/";
+const photoGpsMaxOffsetMinutes=Math.max(1,Number(process.env.PHOTO_GPS_MAX_OFFSET_MINUTES)||DEFAULT_PHOTO_GPS_MAX_OFFSET_MINUTES);
 await Promise.all([photoDir,previewDir,uploadDir,importStageDir,importUploadDir].map((dir)=>fsp.mkdir(dir,{recursive:true})));
 
 async function repairMisclassifiedPhotoImports(){
@@ -43,10 +46,12 @@ async function repairMisclassifiedPhotoImports(){
 await repairMisclassifiedPhotoImports();
 async function indexStoredPhotoExif(){
   const rows=(await db.query("SELECT id,storage_path FROM photos WHERE media_status='available' AND exif_checked_at IS NULL")).rows;if(!rows.length)return;let next=0,withGps=0,withoutGps=0;
-  const worker=async()=>{while(next<rows.length){const row=rows[next++],file=safeStorage(row.storage_path);let exif={hasGps:false,latitude:null,longitude:null,altitudeM:null,gpsTime:null};if(file&&fs.existsSync(file))try{exif=await readPhotoExifGps(file);}catch(error){console.warn(`EXIF read failed for ${row.id}.`,error.message);}await db.query("UPDATE photos SET latitude=$1,longitude=$2,gps_time=$3,location_source=$4,exif_checked_at=now(),altitude_m=COALESCE($5,altitude_m),updated_at=now() WHERE id=$6",[exif.latitude,exif.longitude,exif.gpsTime,exif.hasGps?"exif":"missing",exif.altitudeM,row.id]);if(exif.hasGps)withGps++;else withoutGps++;}};
+  const worker=async()=>{while(next<rows.length){const row=rows[next++],file=safeStorage(row.storage_path);let exif={hasGps:false,latitude:null,longitude:null,altitudeM:null,gpsTime:null};if(file&&fs.existsSync(file))try{exif=await readPhotoExifGps(file);}catch(error){console.warn(`EXIF read failed for ${row.id}.`,error.message);}await db.query("UPDATE photos SET latitude=CASE WHEN $4='exif' THEN $1 ELSE latitude END,longitude=CASE WHEN $4='exif' THEN $2 ELSE longitude END,gps_time=CASE WHEN $4='exif' THEN $3 ELSE gps_time END,location_source=CASE WHEN $4='exif' THEN 'exif' ELSE COALESCE(location_source,'missing') END,exif_checked_at=now(),altitude_m=COALESCE($5,altitude_m),updated_at=now() WHERE id=$6",[exif.latitude,exif.longitude,exif.gpsTime,exif.hasGps?"exif":"missing",exif.altitudeM,row.id]);if(exif.hasGps)withGps++;else withoutGps++;}};
   await Promise.all(Array.from({length:Math.min(6,rows.length)},()=>worker()));await db.query("INSERT INTO audit_log(action,entity_type,payload) VALUES('photo_exif_indexed','photo_import',$1::jsonb)",[JSON.stringify({checked:rows.length,withGps,withoutGps,coordinatesFromTrack:0})]);console.log(`Indexed EXIF geotags: ${withGps} with GPS, ${withoutGps} without GPS.`);
 }
 await indexStoredPhotoExif();
+const backfilledPhotoLocations=await backfillPhotoLocationsFromTrack(db,photoGpsMaxOffsetMinutes);
+if(backfilledPhotoLocations)console.log(`Matched ${backfilledPhotoLocations} photos without EXIF GPS to the nearest track point.`);
 await db.query("UPDATE import_batches SET status='failed',summary=summary||$1::jsonb,finished_at=now() WHERE status='started'",[JSON.stringify({error:"server_restarted_during_import"})]);
 
 if(String(process.env.TRUST_PROXY||"")==="1")app.set("trust proxy",1);
@@ -60,6 +65,7 @@ const loginLimiter=rateLimit({windowMs:15*60*1000,limit:12,standardHeaders:true,
 const writeLimiter=rateLimit({windowMs:60*1000,limit:120,standardHeaders:true,legacyHeaders:false});
 const uploadPhoto=multer({dest:uploadDir,limits:{fileSize:Math.max(1,Number(process.env.MAX_PHOTO_MB||30))*1024*1024},fileFilter:(_req,file,cb)=>cb(null,/^image\/(jpeg|png|webp)$/i.test(file.mimetype))});
 const uploadImport=multer({dest:importUploadDir,limits:{fileSize:Math.max(1,Number(process.env.MAX_IMPORT_FILE_MB||4096))*1024*1024,files:6005,parts:6020}}).fields([{name:"workbook",maxCount:1},{name:"gps",maxCount:1},{name:"stopovers",maxCount:1},{name:"archive",maxCount:1},{name:"photos",maxCount:6000}]);
+const uploadTableInspect=multer({dest:importUploadDir,limits:{fileSize:Math.max(1,Number(process.env.MAX_IMPORT_FILE_MB||4096))*1024*1024}}).single("workbook");
 
 const positiveInt=(value,fallback,max)=>{const n=Number.parseInt(value,10);return Number.isFinite(n)&&n>0?Math.min(n,max):fallback;};
 const iso=(value)=>{if(!value)return null;const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?null:date.toISOString();};
@@ -67,6 +73,12 @@ const imageUrl=(id,preview=false)=>`${publicApiUrl}/api/public/photos/${encodeUR
 function photoPublic(row){return{id:row.id,bird:row.individual_id,filename:row.filename,captureTime:iso(row.capture_time),lat:row.latitude==null?null:Number(row.latitude),lon:row.longitude==null?null:Number(row.longitude),gpsTime:iso(row.gps_time),locationSource:row.location_source||null,altitudeM:row.altitude_m==null?null:Number(row.altitude_m),elevationM:row.elevation_m==null?null:Number(row.elevation_m),imageUrl:imageUrl(row.id),previewUrl:imageUrl(row.id,true)};}
 function photoJoined(row){return{...photoPublic(row),address:row.address,country:row.country,closeCity:row.close_city,geoDescription:row.geo_desc,status:row.status||"unstarted",version:Number(row.version||0),annotation:fromDbAnnotation(row),updatedAt:iso(row.annotation_updated_at),updatedBy:row.updated_by_name?{id:row.updated_by,name:row.updated_by_name}:null};}
 function safeStorage(storagePath){if(!storagePath)return null;const absolute=path.resolve(photoDir,storagePath),rel=path.relative(photoDir,absolute);return rel.startsWith("..")||path.isAbsolute(rel)?null:absolute;}
+async function resolveUploadedPhotoLocation(individualId,captureTime,exif){
+  if(exif.hasGps)return{latitude:exif.latitude,longitude:exif.longitude,gpsTime:exif.gpsTime||captureTime||null,altitudeM:exif.altitudeM,locationSource:"exif"};
+  if(!captureTime)return{latitude:null,longitude:null,gpsTime:null,altitudeM:null,locationSource:"missing"};
+  const padding=photoGpsMaxOffsetMinutes*60,result=await db.query(`SELECT observed_at,longitude,latitude,altitude_m FROM gps_points WHERE individual_id=$1 AND observed_at BETWEEN $2::timestamptz-($3::double precision*interval '1 second') AND $2::timestamptz+($3::double precision*interval '1 second') ORDER BY abs(extract(epoch FROM observed_at-$2::timestamptz)) LIMIT 2`,[individualId,captureTime,padding]),points=result.rows.map((row)=>({observedAt:row.observed_at,lon:Number(row.longitude),lat:Number(row.latitude),altitudeM:row.altitude_m==null?null:Number(row.altitude_m)})),fallback=nearestTrackPoint(points,captureTime,photoGpsMaxOffsetMinutes);
+  return fallback?{latitude:fallback.lat,longitude:fallback.lon,gpsTime:fallback.observedAt,altitudeM:fallback.altitudeM,locationSource:"track"}:{latitude:null,longitude:null,gpsTime:null,altitudeM:null,locationSource:"missing"};
+}
 
 async function servePhoto(req,res,next,publicOnly=true){try{
   const result=await db.query(`SELECT id,storage_path,mime_type,sha256,public_visible,media_status FROM photos WHERE id=$1 ${publicOnly?"AND public_visible=true":""}`,[req.params.id]);
@@ -162,6 +174,10 @@ app.get("/api/admin/imports/:id",authenticateUser,requireRole("admin"),async(req
   const issues=(await db.query("SELECT issue_type,source_row,source_key,details,created_at FROM import_issues WHERE batch_id=$1 ORDER BY id LIMIT 500",[row.id])).rows;
   res.json({import:publicImportBatch(row),issues});
 }catch(e){next(e);}});
+app.post("/api/admin/imports/columns",authenticateUser,requireRole("admin"),writeLimiter,uploadTableInspect,async(req,res,next)=>{try{
+  if(!req.file)return res.status(400).json({error:"tabular_file_required"});
+  const result=await inspectTabularHeaders(req.file.path,req.file.originalname);res.json(result);
+}catch(e){next(e);}finally{if(req.file?.path)await fsp.unlink(req.file.path).catch(()=>{});}});
 app.post("/api/admin/imports/preview",authenticateUser,requireRole("admin"),writeLimiter,uploadImport,async(req,res,next)=>{const batchId=randomId();let staged=null;try{
   const hasFiles=Object.values(req.files||{}).some((group)=>group?.length);if(!hasFiles)return res.status(400).json({error:"import_files_required"});
   staged=await stageBrowserImport({batchId,files:req.files,body:req.body,stageRoot:importStageDir,maxEntries:positiveInt(process.env.MAX_IMPORT_ENTRIES,10000,25000)});
@@ -182,18 +198,32 @@ app.delete("/api/admin/imports/:id",authenticateUser,requireRole("admin"),writeL
 }catch(e){next(e);}});
 
 app.post("/api/admin/photos",authenticateUser,requireRole("admin"),writeLimiter,uploadPhoto.single("photo"),async(req,res,next)=>{
-  let target=null;
+  let target=null,removeTargetOnError=true;
   try{
     if(!req.file)return res.status(400).json({error:"photo_required"});
     const individualId=String(req.body.individualId||"").trim();
     if(!/^[A-Za-z0-9._-]+$/.test(individualId)||!(await db.query("SELECT 1 FROM individuals WHERE id=$1",[individualId])).rows[0]){await fsp.unlink(req.file.path).catch(()=>{});return res.status(400).json({error:"individual_not_found"});}
-    const ext={"image/jpeg":".jpg","image/png":".png","image/webp":".webp"}[req.file.mimetype]||".jpg",dir=path.join(photoDir,individualId);
-    await fsp.mkdir(dir,{recursive:true});target=path.join(dir,`${randomId()}${ext}`);await fsp.rename(req.file.path,target);
-    let exif={hasGps:false,latitude:null,longitude:null,altitudeM:null,gpsTime:null};try{exif=await readPhotoExifGps(target);}catch(error){console.warn(`EXIF read failed for upload ${req.file.originalname}.`,error.message);}
-    const bytes=await fsp.readFile(target),id=randomId(),filename=req.body.filename||req.file.originalname,captureTime=req.body.captureTime||parsePhotoFilename(filename).captureTime||null,result=await db.query("INSERT INTO photos(id,individual_id,filename,capture_time,storage_path,original_path,mime_type,size_bytes,sha256,latitude,longitude,gps_time,location_source,exif_checked_at,altitude_m) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now(),$14) RETURNING *",[id,individualId,filename,captureTime,path.relative(photoDir,target),req.file.originalname,req.file.mimetype,req.file.size,crypto.createHash("sha256").update(bytes).digest("hex"),exif.latitude,exif.longitude,exif.gpsTime,exif.hasGps?"exif":"missing",exif.altitudeM]);
-    await audit(req.user,"photo_uploaded","photo",id,{individualId,filename:result.rows[0].filename,locationSource:result.rows[0].location_source},req);res.status(201).json({photo:photoPublic(result.rows[0])});
-  }catch(e){if(target)await fsp.unlink(target).catch(()=>{});else if(req.file?.path)await fsp.unlink(req.file.path).catch(()=>{});next(e);}
+    const filename=String(req.body.filename||req.file.originalname),captureTime=req.body.captureTime||parsePhotoFilename(filename).captureTime||null,bytes=await fsp.readFile(req.file.path),sha256=crypto.createHash("sha256").update(bytes).digest("hex"),existing=(await db.query("SELECT * FROM photos WHERE individual_id=$1 AND filename=$2",[individualId,filename])).rows[0];
+    let exif={hasGps:false,latitude:null,longitude:null,altitudeM:null,gpsTime:null};try{exif=await readPhotoExifGps(req.file.path);}catch(error){console.warn(`EXIF read failed for upload ${req.file.originalname}.`,error.message);}
+    const location=await resolveUploadedPhotoLocation(individualId,captureTime,exif),upgradesGeotag=!!existing&&shouldUpgradePhotoMedia(existing.location_source,location.locationSource);
+    if(existing&&!upgradesGeotag){
+      if(existing.location_source!=="exif"&&location.locationSource==="track")await db.query("UPDATE photos SET latitude=$1,longitude=$2,gps_time=$3,altitude_m=COALESCE(altitude_m,$4),location_source='track',updated_at=now() WHERE id=$5",[location.latitude,location.longitude,location.gpsTime,location.altitudeM,existing.id]);
+      await fsp.unlink(req.file.path).catch(()=>{});const current=(await db.query("SELECT * FROM photos WHERE id=$1",[existing.id])).rows[0];
+      await audit(req.user,"photo_duplicate_skipped","photo",existing.id,{individualId,filename,locationSource:current.location_source},req);return res.status(200).json({photo:photoPublic(current),duplicate:true,replaced:false});
+    }
+    const ext={"image/jpeg":".jpg","image/png":".png","image/webp":".webp"}[req.file.mimetype]||".jpg",dir=path.join(photoDir,individualId);await fsp.mkdir(dir,{recursive:true});
+    target=existing?.storage_path?safeStorage(existing.storage_path):null;if(target)removeTargetOnError=false;else target=path.join(dir,`${randomId()}${ext}`);await fsp.copyFile(req.file.path,target);await fsp.unlink(req.file.path).catch(()=>{});
+    const id=existing?.id||randomId(),result=existing?await db.query("UPDATE photos SET capture_time=COALESCE(capture_time,$1),storage_path=$2,original_path=$3,mime_type=$4,size_bytes=$5,sha256=$6,media_status='available',latitude=$7,longitude=$8,gps_time=$9,location_source=$10,exif_checked_at=now(),altitude_m=COALESCE($11,altitude_m),updated_at=now() WHERE id=$12 RETURNING *",[captureTime,path.relative(photoDir,target),req.file.originalname,req.file.mimetype,req.file.size,sha256,location.latitude,location.longitude,location.gpsTime,location.locationSource,location.altitudeM,id]):await db.query("INSERT INTO photos(id,individual_id,filename,capture_time,storage_path,original_path,mime_type,size_bytes,sha256,latitude,longitude,gps_time,location_source,exif_checked_at,altitude_m) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now(),$14) RETURNING *",[id,individualId,filename,captureTime,path.relative(photoDir,target),req.file.originalname,req.file.mimetype,req.file.size,sha256,location.latitude,location.longitude,location.gpsTime,location.locationSource,location.altitudeM]);
+    await audit(req.user,existing?"photo_replaced_with_geotag":"photo_uploaded","photo",id,{individualId,filename:result.rows[0].filename,locationSource:result.rows[0].location_source},req);res.status(existing?200:201).json({photo:photoPublic(result.rows[0]),duplicate:false,replaced:!!existing});
+  }catch(e){if(target&&removeTargetOnError)await fsp.unlink(target).catch(()=>{});if(req.file?.path)await fsp.unlink(req.file.path).catch(()=>{});next(e);}
 });
+
+app.delete("/api/admin/photos/:id",authenticateUser,requireRole("admin"),writeLimiter,async(req,res,next)=>{try{
+  const photo=(await db.query("SELECT id,individual_id,filename,storage_path FROM photos WHERE id=$1",[req.params.id])).rows[0];if(!photo)return res.status(404).json({error:"photo_not_found"});
+  await transaction(async(client)=>{await client.query("DELETE FROM photos WHERE id=$1",[photo.id]);await audit(req.user,"photo_deleted","photo",photo.id,{individualId:photo.individual_id,filename:photo.filename,mapDataPreserved:true},req,client);});
+  const stored=safeStorage(photo.storage_path);if(stored)await fsp.unlink(stored).catch((error)=>{if(error.code!=="ENOENT")console.warn(`Could not remove photo file ${photo.id}.`,error.message);});await fsp.unlink(path.join(previewDir,`${photo.id}.webp`)).catch(()=>{});
+  res.json({ok:true,deletedPhotoId:photo.id,annotationsDeleted:true,gpsAndStopoversPreserved:true});
+}catch(e){next(e);}});
 
 app.use((error,_req,res,_next)=>{console.error(error);if(error.code==="23505")return res.status(409).json({error:"duplicate_value",detail:error.detail});if(error.code==="LIMIT_FILE_SIZE")return res.status(413).json({error:"file_too_large"});if(error.code==="LIMIT_FILE_COUNT")return res.status(413).json({error:"too_many_files"});if(["invalid_upload_path","archive_has_too_many_files"].includes(error.message))return res.status(400).json({error:error.message});if(String(error.message||"").includes("CORS"))return res.status(403).json({error:"cors_forbidden"});res.status(500).json({error:"server_error"});});
 const server=app.listen(port,()=>console.log(`Stork Edit API listening on port ${port}`));

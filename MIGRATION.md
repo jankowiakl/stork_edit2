@@ -37,7 +37,7 @@ docker compose run --rm api npm run import -- \
   --report /reports/import-dry-run.json
 ```
 
-Inspect `import-reports/import-dry-run.json`. It reports missing/unreferenced media, duplicate rows and filenames, photos with and without EXIF GPS, independent route GPS totals, invalid annotations and stopovers. Photo coordinates are never inferred from route timestamps.
+Inspect `import-reports/import-dry-run.json`. It reports missing/unreferenced media, duplicate rows and filenames, photos with and without EXIF GPS, positions matched to route time, independent route GPS totals, invalid annotations and stopovers. EXIF has priority; only a photo without EXIF GPS can use the nearest route point within `PHOTO_GPS_MAX_OFFSET_MINUTES`.
 
 The inspected workbook contains 3176 source rows and 3175 unique `Bird + FileName` records. The duplicate remains visible in the report and audit log; the photo itself is imported once. Starting counts are 657 analysed and 2519 unfinished source rows.
 

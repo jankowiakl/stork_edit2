@@ -40,6 +40,9 @@ export async function stageBrowserImport({batchId,files,body,stageRoot,maxEntrie
   const single=async(field)=>{const file=files?.[field]?.[0];if(!file)return null;const target=path.join(stage,`${field}${path.extname(file.originalname).toLowerCase()}`);return moveUploaded(file,target);};
   try{
     manifest.workbook=await single("workbook");
+    if(manifest.workbook){
+      try{const columns=JSON.parse(body?.importColumns||"[]");if(Array.isArray(columns))manifest.columns=columns.map(String);}catch{}
+    }
     manifest.gps=await single("gps");
     manifest.stopovers=await single("stopovers");
     const archive=await single("archive");
@@ -59,6 +62,7 @@ export async function stageBrowserImport({batchId,files,body,stageRoot,maxEntrie
 export async function runStagedImport({batchId,createdBy,manifest,reportPath,apply=false,replaceAnnotations=false,timeoutMs=30*60*1000}){
   const cli=[path.join(sourceDir,"import-data.js")];
   for(const key of ["workbook","photos","gps","stopovers"])if(manifest[key])cli.push(`--${key}`,manifest[key]);
+  if(Array.isArray(manifest.columns)&&manifest.columns.length)cli.push("--columns",JSON.stringify(manifest.columns));
   cli.push("--report",reportPath,"--batch-id",batchId,"--created-by",createdBy,"--source-name",manifest.sourceName||"browser import");
   if(apply)cli.push("--apply");if(replaceAnnotations)cli.push("--replace-annotations");
   await execFileAsync(process.execPath,cli,{cwd:path.dirname(sourceDir),timeout:timeoutMs,maxBuffer:8*1024*1024,env:process.env});

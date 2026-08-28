@@ -765,18 +765,19 @@
     .editorMobileTabs { display:none; gap:5px; margin-top:8px; }
     .editorMobileTabs button { flex:1; }
     .editorPaneDivider { display:none; min-width:0; touch-action:none; user-select:none; }
-    body.editorOpen .wrap { grid-template-columns:minmax(180px,var(--editor-map-pane,18fr)) 9px minmax(360px,var(--editor-form-pane,30fr)) 9px minmax(320px,var(--editor-photo-pane,52fr)); gap:0; padding:10px; }
-    body.editorOpen .mapStack { grid-column:1; }
+    body.editorOpen header { display:none; }
+    body.editorOpen .wrap { grid-template-columns:minmax(180px,var(--editor-map-pane,18fr)) 9px minmax(360px,var(--editor-form-pane,30fr)) 9px minmax(320px,var(--editor-photo-pane,52fr)); grid-template-rows:minmax(0,1fr); align-items:stretch; gap:0; padding:10px; height:100dvh; }
+    body.editorOpen .mapStack { grid-column:1; grid-row:1; height:100%; min-height:0; }
     body.editorOpen .mapStack .overviewInset { width:min(72%,240px); height:150px; }
     body.editorOpen .editorPaneDivider { display:grid; place-items:center; position:relative; cursor:col-resize; outline:none; }
     body.editorOpen .editorPaneDivider::after { content:""; width:3px; height:54px; border-radius:999px; background:rgba(119,209,255,.28); transition:height .16s ease,background .16s ease,box-shadow .16s ease; }
     body.editorOpen .editorPaneDivider:hover::after, body.editorOpen .editorPaneDivider:focus-visible::after, body.editorOpen .editorPaneDivider.dragging::after { height:88px; background:var(--accent); box-shadow:0 0 0 3px rgba(119,209,255,.12); }
-    body.editorOpen #editorMapDivider { grid-column:2; }
-    body.editorOpen .editorPanel { grid-column:3; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-    body.editorOpen #editorPhotoDivider { grid-column:4; }
-    body.editorOpen .side { grid-column:5; min-width:0; grid-template-rows:minmax(0,1fr); }
+    body.editorOpen #editorMapDivider { grid-column:2; grid-row:1; }
+    body.editorOpen .editorPanel { grid-column:3; grid-row:1; height:100%; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    body.editorOpen #editorPhotoDivider { grid-column:4; grid-row:1; }
+    body.editorOpen .side { grid-column:5; grid-row:1; display:grid; height:100%; min-width:0; min-height:0; grid-template-rows:minmax(0,1fr); overflow:hidden; }
     body.editorOpen .side #settingsCard, body.editorOpen .side .metaCard { display:none !important; }
-    body.editorOpen .side .photoCard { grid-row:1; height:100%; min-height:0; }
+    body.editorOpen .side .photoCard, body.editorOpen .side .photoStage { grid-row:1; width:100%; height:100%; min-height:0; }
     body.editorOpen .editorPanelHeader > #closeEditorMode { float:right; margin-top:-25px; }
     body.editorOpen .editorPanelHeader .editorVisualNav { position:static; transform:none; margin-top:8px; justify-content:center; background:rgba(0,0,0,.18); }
     .dataWorkspace { position:fixed; inset:0; z-index:6800; display:none; background:#070b14; padding:14px; box-sizing:border-box; }
@@ -805,6 +806,8 @@
     .importField { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); }
     .importField:last-child { border-bottom:0; }
     .importField input[type="file"] { width:100%; margin-top:5px; }
+    .importColumnPicker { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:6px 10px; max-height:280px; overflow:auto; margin-top:9px; padding:10px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,.14); }
+    .importColumnPicker label { display:flex; align-items:center; gap:7px; margin:0; color:var(--text); }
     .importSummary { display:grid; grid-template-columns:minmax(180px,1fr) auto; gap:6px 14px; margin:12px 0; }
     .importSummary div:nth-child(even) { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
     .importHistory { width:100%; border-collapse:collapse; font-size:12px; }
@@ -1706,7 +1709,7 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
               <div class="editorDerived" id="editorHeightClass">—</div>
             </div>
             <div class="editorField full">
-              <label>Photo EXIF GPS</label>
+              <label>Photo location</label>
               <div class="editorDerived" id="editorGpsRecord">—</div>
             </div>
           </div>
@@ -2702,7 +2705,7 @@ loopCurrentEl.checked = false;
     if (edit && index >= 0) await openEditorMode();
   };
 
-  const tableOptions = () => `<option value="">All birds</option>${idsSorted().map((id)=>`<option value="${escapeHtml(id)}" ${tableFilters.individualId===id?"selected":""}>${escapeHtml(id)}</option>`).join("")}`;
+  const tableOptions = () => `<option value="">All birds</option>${idsSorted().map((id)=>`<option value="${escapeHtml(id)}" ${tableFilters.individualId===id?"selected":""}>${escapeHtml(id)} (${birdPhotoCount(id).toLocaleString()} photos)</option>`).join("")}`;
   const loadDataTable = async () => {
     setDataStatus("Loading table…");
     const query = new URLSearchParams({page:String(tablePage),pageSize:"50"});
@@ -2710,12 +2713,13 @@ loopCurrentEl.checked = false;
     try {
       const data = await apiFetch(`/api/photos?${query}`);
       dataPanelEl.innerHTML = `<div class="dataControls"><select id="tableBirdFilter">${tableOptions()}</select><select id="tableStatusFilter"><option value="">All statuses</option>${["unstarted","draft","needs_review","complete"].map((s)=>`<option value="${s}" ${tableFilters.status===s?"selected":""}>${s}</option>`).join("")}</select><input id="tableSearch" type="search" placeholder="Filename or remarks" value="${escapeHtml(tableFilters.search)}"><button id="tableApply" class="secondary" type="button">Apply</button></div>
-      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Photo location</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td>${photo.locationSource==="exif"?`EXIF geotag<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:'<span class="muted">No EXIF geotag</span>'}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button></td></tr>`).join("")}</tbody></table>
+      <table class="dataTable"><thead><tr><th>Photo</th><th>Bird</th><th>Filename</th><th>Time</th><th>Photo location</th><th>Status</th><th>Updated by</th><th></th></tr></thead><tbody>${(data.photos||[]).map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td><img class="dataThumb" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt=""></td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td>${escapeHtml(photo.captureTime?new Date(photo.captureTime).toLocaleString():"—")}</td><td>${photo.locationSource==="exif"?`EXIF geotag<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:photo.locationSource==="track"?`GPS track (matched by time)<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:photo.locationSource==="import"?`Imported coordinates<br><span class="muted">${Number(photo.lat).toFixed(5)}, ${Number(photo.lon).toFixed(5)}</span>`:'<span class="muted">No location match</span>'}</td><td><span class="statusPill">${escapeHtml(photo.status)}</span></td><td>${escapeHtml(photo.updatedBy?.name||"—")}</td><td><button class="secondary tiny tableEdit" type="button">Edit</button>${authState.user?.role==="admin"?' <button class="danger tiny tableDelete" type="button">Delete</button>':""}</td></tr>`).join("")}</tbody></table>
       <div class="btnrow" style="margin-top:10px;"><button id="tablePrev" class="secondary tiny" type="button" ${data.page<=1?"disabled":""}>Previous</button><span class="muted">Page ${data.page} • ${data.total} records</span><button id="tableNext" class="secondary tiny" type="button" ${data.page*data.pageSize>=data.total?"disabled":""}>Next</button></div>`;
       setDataStatus(`${data.total} records`);
       el("tableApply").addEventListener("click",()=>{tableFilters={individualId:el("tableBirdFilter").value,status:el("tableStatusFilter").value,search:el("tableSearch").value.trim()};tablePage=1;loadDataTable();});
       el("tablePrev").addEventListener("click",()=>{tablePage=Math.max(1,tablePage-1);loadDataTable();}); el("tableNext").addEventListener("click",()=>{tablePage++;loadDataTable();});
       dataPanelEl.querySelectorAll("tbody tr").forEach((row)=>row.addEventListener("click",(event)=>openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,event.target.closest(".tableEdit")!==null)));
+      dataPanelEl.querySelectorAll(".tableDelete").forEach((button)=>button.addEventListener("click",async(event)=>{event.stopPropagation();const row=button.closest("tr"),filename=row.children[2]?.textContent||row.dataset.photoId;if(!window.confirm(`Delete photo ${filename} and its annotation/history? GPS track and stopovers will remain on the map.`))return;button.disabled=true;try{await apiFetch(`/api/admin/photos/${encodeURIComponent(row.dataset.photoId)}`,{method:"DELETE"});await loadGithubFiles();await loadDataTable();}catch(error){button.disabled=false;setDataStatus(`Delete failed: ${error.message}`);}}));
     } catch(error) { dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`; setDataStatus("Table failed"); }
   };
 
@@ -2736,32 +2740,34 @@ loopCurrentEl.checked = false;
   };
 
   let importDroppedFiles=[];
+  const importableColumns=["Bird","Lat/Lon","FileName","Address","Country","Close_city","Geo_desc","FilePath","Date_time","Quality_selected","Pheno_period","Residence","Feather_perc","Feather_occ","Ciconia_num","Env_desc_en","Remarks","Altitude","Fly_ground","Above_ground","Height_class_100m","Thermal_updraft","Activity_class","Agriculture_type","Foraging_habitat_group","Roost_site_group","Period_day","Artificial_lights","Water_presence_class","Spec1_abund","Spec1_name","Spec2_abund","Spec2_name","Altitude_m","GPS_time","Latitude","Longitude","Elevation_m","Analysed"];
   const importNumber=(value)=>Number(value||0).toLocaleString();
   const importSummaryHtml=(summary={})=>`<div class="importSummary">
     <div>Photos found</div><div>${importNumber(summary.mediaFilesFound)}</div><div>New photos</div><div>${importNumber(summary.newMedia)}</div><div>Already stored</div><div>${importNumber(summary.existingMedia)}</div><div>Missing against Excel</div><div>${importNumber(summary.missingMedia)}</div>
-    <div>Photos with EXIF GPS</div><div>${importNumber(summary.photosWithExifGps)}</div><div>Photos without EXIF GPS</div><div>${importNumber(summary.photosWithoutExifGps)}</div><div>Positions inferred from track/time</div><div>0</div>
+    <div>Photos with EXIF GPS</div><div>${importNumber(summary.photosWithExifGps)}</div><div>Photos without EXIF GPS</div><div>${importNumber(summary.photosWithoutExifGps)}</div><div>Positions inferred from track/time</div><div>${importNumber(summary.photoCoordinatesFromTrack)}</div><div>Existing photos upgraded with geotag</div><div>${importNumber(summary.mediaUpgrades)}</div>
     <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
-    <div>Excel records</div><div>${importNumber(summary.workbookRows)}</div><div>NUL characters removed</div><div>${importNumber(summary.nulCharactersRemoved)}</div><div>Marked complete (Analysed=yes)</div><div>${importNumber(summary.completeSourceRows)}</div><div>New/incomplete (Analysed=no)</div><div>${importNumber(summary.unfinishedSourceRows)}</div><div>New records</div><div>${importNumber(summary.newPhotoRecords)}</div><div>Already existing</div><div>${importNumber(summary.existingPhotoRecords)}</div><div>Empty placeholders to fill</div><div>${importNumber(summary.blankAnnotationsToFill)}</div><div>Edited annotations preserved</div><div>${importNumber(summary.annotationsToPreserve)}</div>
+    <div>Table records</div><div>${importNumber(summary.workbookRows)}</div><div>NUL characters removed</div><div>${importNumber(summary.nulCharactersRemoved)}</div><div>Marked complete (Analysed=yes)</div><div>${importNumber(summary.completeSourceRows)}</div><div>New/incomplete (Analysed=no)</div><div>${importNumber(summary.unfinishedSourceRows)}</div><div>New records</div><div>${importNumber(summary.newPhotoRecords)}</div><div>Already existing</div><div>${importNumber(summary.existingPhotoRecords)}</div><div>Empty placeholders to fill</div><div>${importNumber(summary.blankAnnotationsToFill)}</div><div>Edited annotations preserved</div><div>${importNumber(summary.annotationsToPreserve)}</div>
     <div style="grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);margin-top:4px"></div>
     <div>New GPS points</div><div>${importNumber(summary.newGpsPoints)}</div><div>GPS duplicates</div><div>${importNumber(summary.duplicateGpsPoints)}</div><div>New stopovers</div><div>${importNumber(summary.newStopovers)}</div><div>Existing stopovers</div><div>${importNumber(summary.existingStopovers)}</div>
   </div>`;
   const importHistoryHtml=(imports=[])=>`<h3 style="margin-top:18px">Import history</h3><table class="importHistory"><thead><tr><th>Date</th><th>Administrator</th><th>Source</th><th>Status</th><th>Result</th></tr></thead><tbody>${imports.map((item)=>`<tr><td>${escapeHtml(item.createdAt?new Date(item.createdAt).toLocaleString():"—")}</td><td>${escapeHtml(item.createdBy?.name||"—")}</td><td>${escapeHtml(item.sourceName)}</td><td class="importStatus-${escapeHtml(item.status)}">${escapeHtml(item.status)}</td><td>${importNumber(item.summary?.newPhotoRecords)} records / ${importNumber(item.summary?.newGpsPoints)} GPS / ${importNumber(item.summary?.newStopovers)} stopovers</td></tr>`).join("")||'<tr><td colspan="5" class="muted">No imports yet.</td></tr>'}</tbody></table>`;
   const waitForImport=async(id,target)=>{const deadline=Date.now()+35*60*1000;while(Date.now()<deadline){const state=await apiFetch(`/api/admin/imports/${encodeURIComponent(id)}`),status=state.import.status;if(status==="completed")return state;if(status==="failed"||status==="cancelled")throw new Error(state.import.summary?.error||`Import ${status}.`);target.querySelector(".importProgressMessage").textContent=`Server status: ${status}. You may leave this screen; the job will continue on the server.`;await new Promise((resolve)=>setTimeout(resolve,2500));}throw new Error("Import is still running. Check Import history in a moment.");};
   const renderImportPreview=(result)=>{
-    const target=el("importPreview"),nulIssues=(result.issues||[]).filter((issue)=>issue.type==="nul_characters_removed"),nulReport=nulIssues.length?`<div class="editorStatus ok"><b>Invisible NUL characters removed:</b><br>${nulIssues.slice(0,20).map((issue)=>`Row ${importNumber(issue.sourceRow)}, field ${escapeHtml(issue.field||"unknown")}`).join("<br>")}${nulIssues.length>20?`<br>…and ${importNumber(nulIssues.length-20)} more`:""}</div>`:"";target.innerHTML=`<h3>Import preview</h3>${importSummaryHtml(result.import.summary)}${nulReport}<div class="miniNote">Issues detected: ${importNumber(result.issueCount)}. Empty unstarted placeholders can be filled from Excel; edited annotations will not be overwritten.</div><div class="btnrow" style="margin-top:14px"><button id="cancelImport" class="secondary" type="button">Cancel</button><button id="applyImport" class="primarySave" type="button">Run import</button></div>`;
+    const target=el("importPreview"),nulIssues=(result.issues||[]).filter((issue)=>issue.type==="nul_characters_removed"),nulReport=nulIssues.length?`<div class="editorStatus ok"><b>Invisible NUL characters removed:</b><br>${nulIssues.slice(0,20).map((issue)=>`Row ${importNumber(issue.sourceRow)}, field ${escapeHtml(issue.field||"unknown")}`).join("<br>")}${nulIssues.length>20?`<br>…and ${importNumber(nulIssues.length-20)} more`:""}</div>`:"";target.innerHTML=`<h3>Import preview</h3>${importSummaryHtml(result.import.summary)}${nulReport}<div class="miniNote">Issues detected: ${importNumber(result.issueCount)}. Selected columns fill empty fields only; draft, reviewed and completed annotations remain protected.</div><div class="btnrow" style="margin-top:14px"><button id="cancelImport" class="secondary" type="button">Cancel</button><button id="applyImport" class="primarySave" type="button">Run import</button></div>`;
     el("cancelImport").addEventListener("click",async()=>{el("cancelImport").disabled=true;try{await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}`,{method:"DELETE"});await loadImportsPanel();}catch(error){setDataStatus(`Cancellation failed: ${error.message}`);el("cancelImport").disabled=false;}});
-    el("applyImport").addEventListener("click",async()=>{el("applyImport").disabled=true;el("cancelImport").disabled=true;target.insertAdjacentHTML("beforeend",'<div class="editorStatus busy importProgressMessage">Starting server import…</div>');setDataStatus("Import running on the server…");try{try{await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}/apply`,{method:"POST"});}catch(startError){const state=await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}`).catch(()=>null);if(!state||!["started","completed"].includes(state.import.status))throw startError;}const applied=await waitForImport(result.import.id,target);target.innerHTML=`<h3>Import completed</h3>${importSummaryHtml(applied.import.summary)}<div class="editorStatus ok">Excel data was saved into empty records. Previously edited annotations were preserved.</div>`;setDataStatus("Import completed");const history=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(history.imports);}catch(error){target.innerHTML+=`<div class="editorStatus error">Import failed: ${escapeHtml(error.message)}</div>`;setDataStatus("Import failed");}});
+    el("applyImport").addEventListener("click",async()=>{el("applyImport").disabled=true;el("cancelImport").disabled=true;target.insertAdjacentHTML("beforeend",'<div class="editorStatus busy importProgressMessage">Starting server import…</div>');setDataStatus("Import running on the server…");try{try{await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}/apply`,{method:"POST"});}catch(startError){const state=await apiFetch(`/api/admin/imports/${encodeURIComponent(result.import.id)}`).catch(()=>null);if(!state||!["started","completed"].includes(state.import.status))throw startError;}const applied=await waitForImport(result.import.id,target);target.innerHTML=`<h3>Import completed</h3>${importSummaryHtml(applied.import.summary)}<div class="editorStatus ok">Selected table data was saved into empty fields. Previously edited annotations were preserved.</div>`;setDataStatus("Import completed");const history=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(history.imports);}catch(error){target.innerHTML+=`<div class="editorStatus error">Import failed: ${escapeHtml(error.message)}</div>`;setDataStatus("Import failed");}});
   };
   const loadImportsPanel=async()=>{
     if(authState.user?.role!=="admin")return loadDataTable();setDataStatus("Loading imports…");
     try{const history=await apiFetch("/api/admin/imports");dataPanelEl.innerHTML=`<div class="importGrid"><form class="importCard" id="importForm"><h3>Prepare data import</h3><div class="miniNote">Select any combination. Bird and UTC capture time are read from names such as <b>1d0000097a_20250707_200000_…jpg</b>; a Bird/FileName folder structure is also supported. Nothing is written to the scientific tables until you review the report and click Run import.</div>
-      <div class="importField"><label><b>Descriptive records / completed annotations (.xlsx)</b><input id="importWorkbook" type="file" accept=".xlsx"></label></div>
+      <div class="importField"><label><b>Photo descriptions (.xlsx, .csv with comma/semicolon, .txt with tabs)</b><input id="importWorkbook" type="file" accept=".xlsx,.csv,.txt,text/csv,text/plain"></label><div id="importColumnStatus" class="miniNote">Choose a table to select imported columns. Bird and FileName are always used as the photo identity.</div><div id="importColumnPicker" class="importColumnPicker" hidden></div></div>
       <div class="importField"><label><b>Photos (individual files)</b><input id="importPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><label><b>or complete photo folder</b><input id="importPhotoFolder" type="file" accept="image/jpeg,image/png,image/webp" webkitdirectory directory multiple></label><label><b>or ZIP archive</b><input id="importArchive" type="file" accept=".zip,application/zip"></label><div id="importDropZone" class="userCard" style="margin-top:8px;text-align:center;border-style:dashed">Drop photos or one ZIP here</div></div>
       <div class="importField"><label><b>GPS (.txt)</b><input id="importGps" type="file" accept=".txt,text/plain"></label></div>
       <div class="importField"><label><b>Stopovers (.gpkg, .geojson)</b><input id="importStopovers" type="file" accept=".gpkg,.geojson,.json"></label></div>
-      <button id="previewImport" type="submit">Analyse files</button><div class="miniNote" id="importFormStatus"></div></form><div><div class="importCard" id="importPreview"><h3>Import preview</h3><div class="muted">Choose files and click Analyse files. The report will show completed Excel rows, empty placeholders to fill, duplicates, missing media and edited annotations to preserve.</div></div><div id="importHistoryWrap">${importHistoryHtml(history.imports)}</div></div></div>`;
-      importDroppedFiles=[];const drop=el("importDropZone");drop.addEventListener("dragover",(event)=>{event.preventDefault();drop.style.borderColor="var(--accent)";});drop.addEventListener("dragleave",()=>{drop.style.borderColor="";});drop.addEventListener("drop",(event)=>{event.preventDefault();drop.style.borderColor="";importDroppedFiles=[...event.dataTransfer.files].filter((file)=>/\.(jpe?g|png|webp|zip)$/i.test(file.name));drop.textContent=`Dropped: ${importDroppedFiles.length} file(s)`;});
-      el("importForm").addEventListener("submit",async(event)=>{event.preventDefault();const formData=new FormData(),photos=[...el("importPhotos").files,...el("importPhotoFolder").files,...importDroppedFiles.filter((file)=>/\.(jpe?g|png|webp)$/i.test(file.name))],archive=el("importArchive").files[0]||importDroppedFiles.find((file)=>/\.zip$/i.test(file.name));const add=(field,input)=>{if(input?.files?.[0])formData.append(field,input.files[0]);};add("workbook",el("importWorkbook"));add("gps",el("importGps"));add("stopovers",el("importStopovers"));if(archive)formData.append("archive",archive);for(const file of photos)formData.append("photos",file,file.name);formData.append("photoPaths",JSON.stringify(photos.map((file)=>file.webkitRelativePath||file.name)));if(![...formData.keys()].some((key)=>key!=="photoPaths")){el("importFormStatus").textContent="Select at least one input file.";return;}el("previewImport").disabled=true;el("importFormStatus").textContent=`Uploading and analysing ${photos.length.toLocaleString()} photo file(s)…`;setDataStatus("Preparing dry-run report…");try{const result=await apiFetch("/api/admin/imports/preview",{method:"POST",body:formData});renderImportPreview(result);el("importFormStatus").textContent="Analysis complete. Review the report on the right.";setDataStatus("Preview ready — no data imported yet");const refreshed=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(refreshed.imports);}catch(error){el("importFormStatus").textContent=`Analysis failed: ${error.message}`;setDataStatus("Preview failed");}finally{el("previewImport").disabled=false;}});
+      <button id="previewImport" type="submit">Analyse files</button><div class="miniNote" id="importFormStatus"></div></form><div><div class="importCard" id="importPreview"><h3>Import preview</h3><div class="muted">Choose files and click Analyse files. The report will show completed table rows, empty values to fill, duplicates, missing media and edited annotations to preserve.</div></div><div id="importHistoryWrap">${importHistoryHtml(history.imports)}</div></div></div>`;
+      importDroppedFiles=[];const drop=el("importDropZone"),renderColumnPicker=(available=importableColumns)=>{const availableSet=new Set(available),picker=el("importColumnPicker");picker.hidden=false;picker.innerHTML=importableColumns.map((column)=>{const identity=["Bird","FileName"].includes(column),present=availableSet.has(column);return `<label class="${present?"":"muted"}"><input class="importColumn" type="checkbox" value="${escapeHtml(column)}" ${present||identity?"checked":""} ${identity?"disabled":""}> ${escapeHtml(column)}${identity?" (required)":""}</label>`;}).join("");};drop.addEventListener("dragover",(event)=>{event.preventDefault();drop.style.borderColor="var(--accent)";});drop.addEventListener("dragleave",()=>{drop.style.borderColor="";});drop.addEventListener("drop",(event)=>{event.preventDefault();drop.style.borderColor="";importDroppedFiles=[...event.dataTransfer.files].filter((file)=>/\.(jpe?g|png|webp|zip)$/i.test(file.name));drop.textContent=`Dropped: ${importDroppedFiles.length} file(s)`;});
+      el("importWorkbook").addEventListener("change",async()=>{const file=el("importWorkbook").files[0],status=el("importColumnStatus");if(!file){el("importColumnPicker").hidden=true;return;}status.textContent="Reading column names…";const form=new FormData();form.append("workbook",file);try{const result=await apiFetch("/api/admin/imports/columns",{method:"POST",body:form});renderColumnPicker(result.recognized||[]);status.textContent=`Recognized ${result.recognized?.length||0} of ${result.headers?.length||0} columns. Select the fields that may fill empty database values.`;}catch(error){renderColumnPicker();status.textContent=`Could not inspect headers (${error.message}). All supported columns are available for selection.`;}});
+      el("importForm").addEventListener("submit",async(event)=>{event.preventDefault();const formData=new FormData(),photos=[...el("importPhotos").files,...el("importPhotoFolder").files,...importDroppedFiles.filter((file)=>/\.(jpe?g|png|webp)$/i.test(file.name))],archive=el("importArchive").files[0]||importDroppedFiles.find((file)=>/\.zip$/i.test(file.name)),selected=["Bird","FileName",...new Set([...dataPanelEl.querySelectorAll(".importColumn:checked")].map((input)=>input.value))];const add=(field,input)=>{if(input?.files?.[0])formData.append(field,input.files[0]);};add("workbook",el("importWorkbook"));add("gps",el("importGps"));add("stopovers",el("importStopovers"));if(el("importWorkbook").files[0])formData.append("importColumns",JSON.stringify([...new Set(selected)]));if(archive)formData.append("archive",archive);for(const file of photos)formData.append("photos",file,file.name);formData.append("photoPaths",JSON.stringify(photos.map((file)=>file.webkitRelativePath||file.name)));if(![...formData.keys()].some((key)=>!["photoPaths","importColumns"].includes(key))){el("importFormStatus").textContent="Select at least one input file.";return;}el("previewImport").disabled=true;el("importFormStatus").textContent=`Uploading and analysing ${photos.length.toLocaleString()} photo file(s)…`;setDataStatus("Preparing dry-run report…");try{const result=await apiFetch("/api/admin/imports/preview",{method:"POST",body:formData});renderImportPreview(result);el("importFormStatus").textContent="Analysis complete. Review the report on the right.";setDataStatus("Preview ready — no data imported yet");const refreshed=await apiFetch("/api/admin/imports");el("importHistoryWrap").innerHTML=importHistoryHtml(refreshed.imports);}catch(error){el("importFormStatus").textContent=`Analysis failed: ${error.message}`;setDataStatus("Preview failed");}finally{el("previewImport").disabled=false;}});
       setDataStatus(`${history.imports?.length||0} import batches`);
     }catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Imports failed");}
   };
@@ -3138,7 +3144,7 @@ loopCurrentEl.checked = false;
     const mapShare = 100 - photoShare;
 
     // Desktop: split the screen width. Mobile: split the screen height.
-    wrapEl.style.gridTemplateColumns = `minmax(0, ${mapShare}fr) minmax(0, ${photoShare}fr)`;
+    if (!document.body.classList.contains("editorOpen")) wrapEl.style.gridTemplateColumns = `minmax(0, ${mapShare}fr) minmax(0, ${photoShare}fr)`;
     document.documentElement.style.setProperty("--mobile-map-height", `${mapShare}dvh`);
     document.documentElement.style.setProperty("--mobile-photo-height", `${photoShare}dvh`);
 
@@ -3243,7 +3249,7 @@ loopCurrentEl.checked = false;
   const defaultEditorPaneRatios = [0.18,0.30,0.52];
   let editorPaneRatios = [...defaultEditorPaneRatios];
   try {
-    const saved=JSON.parse(localStorage.getItem("storkEditorPaneRatios")||"null");
+    const saved=JSON.parse(localStorage.getItem("storkEditorPaneRatiosV2")||"null");
     if(Array.isArray(saved)&&saved.length===3&&saved.every((value)=>Number.isFinite(Number(value))&&Number(value)>0)){
       const total=saved.reduce((sum,value)=>sum+Number(value),0);editorPaneRatios=saved.map((value)=>Number(value)/total);
     }
@@ -3252,7 +3258,7 @@ loopCurrentEl.checked = false;
   const applyEditorPaneRatios = ({persist=false}={}) => {
     const total=editorPaneRatios.reduce((sum,value)=>sum+value,0)||1,[mapRatio,formRatio,photoRatio]=editorPaneRatios.map((value)=>value/total),style=document.documentElement.style;
     editorPaneRatios=[mapRatio,formRatio,photoRatio];style.setProperty("--editor-map-pane",`${mapRatio}fr`);style.setProperty("--editor-form-pane",`${formRatio}fr`);style.setProperty("--editor-photo-pane",`${photoRatio}fr`);
-    if(persist)try{localStorage.setItem("storkEditorPaneRatios",JSON.stringify(editorPaneRatios));}catch(e){}
+    if(persist)try{localStorage.setItem("storkEditorPaneRatiosV2",JSON.stringify(editorPaneRatios));}catch(e){}
     refreshMapSizes();
   };
 
@@ -3437,7 +3443,9 @@ loopCurrentEl.checked = false;
     const longitude = editorLoadedRecord && editorLoadedRecord.Longitude;
     const gpsParts = [];
     if (editorLoadedRecord?.GPS_source === "exif") gpsParts.push("EXIF geotag");
-    else if (editorLoadedRecord?.GPS_source === "missing") gpsParts.push("no EXIF geotag");
+    else if (editorLoadedRecord?.GPS_source === "track") gpsParts.push("GPS track matched by photo time");
+    else if (editorLoadedRecord?.GPS_source === "import") gpsParts.push("coordinates imported from table");
+    else if (editorLoadedRecord?.GPS_source === "missing") gpsParts.push("no location match");
     if (gpsTime) gpsParts.push(String(gpsTime));
     if (latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined) {
       gpsParts.push(String(latitude) + ", " + String(longitude));
@@ -3725,14 +3733,17 @@ loopCurrentEl.checked = false;
     }
     closeMobilePanel();
     if (photoModal.classList.contains("open")) closePhoto();
+    wrapEl.style.gridTemplateColumns="";
+    wrapEl.insertBefore(editorMapDividerEl, sideEl);
     wrapEl.insertBefore(editorPanelEl, sideEl);
+    wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
     editorPanelHeaderEl.appendChild(closeEditorModeBtn);
     editorPanelHeaderEl.appendChild(editorVisualNavEl);
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.add("editorOpen");
     document.body.dataset.editorTab = "form";
     applyEditorPaneRatios();
-    refreshMapSizes();
+    requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
     await editorLoadPhoto(index);
   };
 
@@ -3743,6 +3754,9 @@ loopCurrentEl.checked = false;
     editorVisualEl.appendChild(editorVisualNavEl);
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.remove("editorOpen");
+    wrapEl.insertBefore(editorMapDividerEl, sideEl);
+    wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
+    applyLayoutSplit({persist:false});
     delete document.body.dataset.editorTab;
     editorDirty = false;
     editorLoadToken++;
@@ -3894,13 +3908,17 @@ loopCurrentEl.checked = false;
   }
 
   const idsSorted = () => Array.from(groupedFiles.keys()).sort();
+  const birdPhotoCount = (id) => {
+    const files=groupedFiles.get(id);if(!files)return 0;
+    return files.serverPlaceholder?Number(files.serverPhotoCount||0):files.length;
+  };
 
   const updateBirdSelectors = (ids = idsSorted()) => {
     for (const select of [birdSelect, birdSelectOverlay]) {
       select.replaceChildren(new Option(ids.length ? "— select —" : "—", ""));
       for (const id of ids) {
-        const n = groupedFiles.get(id).length;
-        select.add(new Option(`${id} (${n} files)`, id));
+        const n = birdPhotoCount(id);
+        select.add(new Option(`${id} (${n.toLocaleString()} photos)`, id));
       }
       select.disabled = ids.length === 0;
     }
@@ -4012,21 +4030,20 @@ loopCurrentEl.checked = false;
     return tmp;
   };
 
-  // Server photo coordinates come only from each image's EXIF geotag.
-  // The separate GPS timeline is rendered as context and never substitutes
-  // a position for an image that has no embedded geotag.
-  const buildRemoteTrackFromExif = (files) => {
+  // Prefer the embedded EXIF geotag. Photos without one may use the nearest
+  // GPS track point matched from the UTC timestamp encoded in the filename.
+  const buildRemotePhotoTrack = (files) => {
     const points = [];
     let skipped = 0;
 
     for (const entry of files) {
-      if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon) || entry.locationSource !== "exif") {
+      if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon) || !["exif","track","import"].includes(entry.locationSource)) {
         skipped++;
         continue;
       }
       points.push({
         ...entry,
-        locationSource: "exif"
+        locationSource: entry.locationSource
       });
     }
 
@@ -4069,7 +4086,7 @@ loopCurrentEl.checked = false;
       const data = await apiFetch("/api/public/individuals", {}, { auth:false });
       let jpgCount = 0;
       for (const individual of data.individuals || []) {
-        const placeholder = []; placeholder.serverPlaceholder = true;
+        const placeholder = []; placeholder.serverPlaceholder = true; placeholder.serverPhotoCount=Number(individual.photoCount||individual.photo_count||0);
         groupedFiles.set(individual.id, placeholder); jpgCount += Number(individual.photoCount || 0);
       }
 
@@ -4201,12 +4218,12 @@ loopCurrentEl.checked = false;
       let loadMessage = "";
 
       if (remoteFiles) {
-        setStatus(`Preparing ${id} from photo EXIF geotags…`);
-        const matched = buildRemoteTrackFromExif(files);
+        setStatus(`Preparing ${id} from stored photo locations…`);
+        const matched = buildRemotePhotoTrack(files);
         tmp = matched.points;
         loadMessage =
           `Loaded bird ${id}.\n` +
-          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no EXIF geotag)` : ""}.\n` +
+          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no usable location)` : ""}.\n` +
           `Image downloads: current photo + one-photo buffer.`;
       } else {
         setStatus(`Reading EXIF GPS for ${id}… (0 / ${files.length})`);

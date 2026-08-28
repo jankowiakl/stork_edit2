@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS photos (
   latitude DOUBLE PRECISION,
   longitude DOUBLE PRECISION,
   gps_time TIMESTAMPTZ,
-  location_source TEXT CHECK (location_source IS NULL OR location_source IN ('exif','missing')),
+  location_source TEXT CHECK (location_source IS NULL OR location_source IN ('exif','track','import','missing')),
   exif_checked_at TIMESTAMPTZ,
   altitude_m DOUBLE PRECISION,
   elevation_m DOUBLE PRECISION,
@@ -67,6 +67,21 @@ CREATE INDEX IF NOT EXISTS idx_photos_filename ON photos(filename);
 CREATE INDEX IF NOT EXISTS idx_photos_sha256 ON photos(sha256);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS location_source TEXT;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS exif_checked_at TIMESTAMPTZ;
+DO $$
+DECLARE constraint_name TEXT;
+BEGIN
+  SELECT conname INTO constraint_name
+  FROM pg_constraint
+  WHERE conrelid = 'photos'::regclass
+    AND contype = 'c'
+    AND pg_get_constraintdef(oid) LIKE '%location_source%';
+  IF constraint_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE photos DROP CONSTRAINT %I', constraint_name);
+  END IF;
+  ALTER TABLE photos ADD CONSTRAINT photos_location_source_check
+    CHECK (location_source IS NULL OR location_source IN ('exif','track','import','missing'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS photo_annotations (
   photo_id TEXT PRIMARY KEY REFERENCES photos(id) ON DELETE CASCADE,

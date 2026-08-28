@@ -21,6 +21,7 @@ Replace at least:
 - `BOOTSTRAP_TOKEN` with a different random string of at least 24 characters;
 - `PUBLIC_API_URL` with the final HTTPS address of the API;
 - `MAX_IMPORT_FILE_MB` and `MAX_IMPORT_ENTRIES` if an archive may exceed the defaults;
+- `PHOTO_GPS_MAX_OFFSET_MINUTES` if a photo without EXIF may be farther than 90 minutes from the nearest route point;
 - SMTP values if invitations should be emailed automatically.
 
 Generate secrets on the server:
@@ -117,7 +118,7 @@ An administrator opens **Table → Import data** and may upload any combination 
 - photographs as files, a folder or a ZIP; photo-only folders use `Bird/FileName` paths;
 - `data_clear30m.txt` (or a later file with the same columns);
 - stopovers as `.gpkg` or GeoJSON;
-- descriptive/completed records as `.xlsx` with a `photos` sheet.
+- descriptive/completed records as `.xlsx`, comma/semicolon `.csv`, or tab-delimited `.txt`; after choosing the file, select which recognized columns may fill empty fields.
 
 The administrator must first review the dry-run report. **Run import** appears only after that report. SHA-256 and database uniqueness prevent duplicate photos and GPS points; stable geometry/property hashes prevent duplicate stopovers. `Analysed=yes` in the `photos` worksheet marks a record complete. An empty `unstarted` placeholder may be filled from Excel, while annotations containing user-entered data are preserved. The history identifies the administrator, time, sources and result of every batch.
 
@@ -125,7 +126,7 @@ The XLSX reader removes only NUL (`U+0000`) from text values and reports the aff
 
 Import issue keys never reuse the NUL-delimited in-memory key: reports store `Bird | FileName`, and the full issue object is deep-sanitized before its TEXT and JSONB parameters are inserted. A dedicated integration test can be run against a disposable PostgreSQL database with `TEST_DATABASE_URL=... npm run test:integration`; it creates and removes its own random schema.
 
-Photo coordinates come only from JPEG/PNG/WebP EXIF geotags. `data_clear30m.txt` supplies the independent route layer and is never used to infer a missing photo position from its timestamp. The report lists photos with and without EXIF GPS separately.
+Photo coordinates prefer JPEG/PNG/WebP EXIF geotags. If EXIF GPS is absent, the importer parses UTC time from the filename and uses the nearest `gps_points` route point within `PHOTO_GPS_MAX_OFFSET_MINUTES` (default 90). Imported latitude/longitude is only the final fallback. A later copy of the same `Bird + FileName` with EXIF GPS replaces the earlier non-geotagged media without duplicating the photo record or overwriting its annotation. Deleting a photo removes its annotation/history but deliberately keeps GPS and stopovers as independent map layers.
 
 The interface defaults to 125% typography. Each browser can change this under **Settings → Interface font size** (100–160%); the choice is saved locally.
 
