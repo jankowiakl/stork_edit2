@@ -161,6 +161,13 @@ test("navigation tiles and panel grids scale with the selected font",()=>{
   assert.match(ui,/\.contributionMetric,\.nextRewardBox,\.progressCard,\.userCard,\.importCard,\.optionsSection,\.appNavTile \{ height:auto/);
 });
 
+test("individual progress cards render a visible blue completion bar",()=>{
+  assert.match(ui,/class="individualProgressBar" role="progressbar"/);
+  assert.match(ui,/aria-valuenow="\$\{percent\}"/);
+  assert.match(ui,/class="individualProgressFill" style="width:\$\{percent\}%"/);
+  assert.match(ui,/background:linear-gradient\(90deg,#168cff,#77d1ff\)/);
+});
+
 test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{
   assert.match(ui,/class="appNavHandleLabel">Menu</);
   assert.match(ui,/id="appNavWelcome" hidden/);

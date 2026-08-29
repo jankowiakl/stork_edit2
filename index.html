@@ -848,8 +848,16 @@
     .statusPill { display:inline-block; padding:3px 7px; border-radius:999px; background:rgba(255,255,255,.08); }
     .progressGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
     .progressCard { padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,.15); }
-    .progressBar { height:8px; margin:9px 0; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
-    .progressBar span { display:block; height:100%; background:linear-gradient(90deg,#39d98a,#77d1ff); }
+    .individualProgressBar {
+      display:block; width:100%; height:9px; min-height:9px; margin:9px 0; overflow:hidden;
+      box-sizing:border-box; border:1px solid rgba(119,209,255,.28); border-radius:999px;
+      background:rgba(31,140,255,.14);
+    }
+    .individualProgressFill {
+      display:block; height:100%; min-width:0; border-radius:inherit;
+      background:linear-gradient(90deg,#168cff,#77d1ff);
+      box-shadow:0 0 8px rgba(22,140,255,.55); transition:width .25s ease;
+    }
     .userGrid { display:grid; grid-template-columns:minmax(280px,.7fr) minmax(420px,1.3fr); gap:12px; }
     .userCard { padding:11px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; }
     .importGrid { display:grid; grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr); gap:12px; }
@@ -3116,7 +3124,7 @@ loopCurrentEl.checked = false;
 
   const loadProgressPanel = async () => {
     setDataStatus("Loading progress…");
-    try { const data=await apiFetch("/api/progress"); dataPanelEl.innerHTML=`<div class="progressGrid">${(data.individuals||[]).map((item)=>`<div class="progressCard"><h3>${escapeHtml(item.individualId)}</h3><div><b>${item.complete}</b> / ${item.total} analysed (${item.percentComplete}%)</div><div class="progressBar"><span style="width:${Math.max(0,Math.min(100,item.percentComplete))}%"></span></div><div class="muted">Unstarted: ${item.unstarted} • Draft: ${item.draft} • Review: ${item.needsReview}</div><div class="btnrow" style="margin-top:9px;"><button class="secondary tiny progressOpen" data-bird="${escapeHtml(item.individualId)}" data-status="unstarted" type="button">Unfinished</button><button class="secondary tiny progressContinue" data-bird="${escapeHtml(item.individualId)}" type="button">Continue</button></div></div>`).join("")}</div>`;setDataStatus(`${data.individuals?.length||0} individuals`);
+    try { const data=await apiFetch("/api/progress"); dataPanelEl.innerHTML=`<div class="progressGrid">${(data.individuals||[]).map((item)=>{const percent=Math.max(0,Math.min(100,Number(item.percentComplete)||0));return `<div class="progressCard"><h3>${escapeHtml(item.individualId)}</h3><div><b>${item.complete}</b> / ${item.total} analysed (${item.percentComplete}%)</div><div class="individualProgressBar" role="progressbar" aria-label="${escapeHtml(item.individualId)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span class="individualProgressFill" style="width:${percent}%"></span></div><div class="muted">Unstarted: ${item.unstarted} • Draft: ${item.draft} • Review: ${item.needsReview}</div><div class="btnrow" style="margin-top:9px;"><button class="secondary tiny progressOpen" data-bird="${escapeHtml(item.individualId)}" data-status="unstarted" type="button">Unfinished</button><button class="secondary tiny progressContinue" data-bird="${escapeHtml(item.individualId)}" type="button">Continue</button></div></div>`;}).join("")}</div>`;setDataStatus(`${data.individuals?.length||0} individuals`);
       dataPanelEl.querySelectorAll(".progressOpen").forEach((button)=>button.addEventListener("click",()=>{tableFilters={individualId:button.dataset.bird,status:"unstarted",phenoPeriod:"",periodDay:"",residence:"",activityClass:"",country:"",dateFrom:"",dateTo:"",search:"",pageSize:tableFilters.pageSize||"50"};tablePage=1;loadDataTable();}));
       dataPanelEl.querySelectorAll(".progressContinue").forEach((button)=>button.addEventListener("click",async()=>{const result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(button.dataset.bird)}`);if(result.photo)openWorkspacePhoto(result.photo.id,result.photo.individual_id,true,"progress");else setDataStatus("No unfinished records for this bird.");}));
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Progress failed");}
