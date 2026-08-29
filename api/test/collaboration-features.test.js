@@ -20,6 +20,10 @@ test("manual invitations provide a Gmail compose link and role permissions",()=>
   assert.match(server,/https:\/\/mail\.google\.com\/mail\//);
   assert.match(server,/Uprawnienia:/);
   assert.match(server,/gmailUrl/);
+  assert.match(server,/Tryb konta: Restricted Contributor/);
+  assert.match(server,/Ukończenie jednego rekordu jako complete rozpoczyna nowy cykl/);
+  assert.match(server,/Prywatny sejf zdjęć odblokuje się po/);
+  assert.match(server,/Pełny dostęp do kolekcji odblokuje się po/);
 });
 
 test("the private photo safe and top rated reuse the main viewer and offer a table",()=>{
@@ -151,6 +155,10 @@ test("photo information remains enabled across manual and playback navigation",(
   assert.doesNotMatch(ui,/No descriptive information for this photo/);
   assert.doesNotMatch(ui,/photoInfoOverlayEl\.hidden=true/);
   assert.match(ui,/\.photoInfoToggle \{ right:12px; bottom:calc\(92px/);
+  assert.match(ui,/const photoAboveGround=/);
+  assert.match(ui,/Number\(altitude\)-Number\(elevation\)/);
+  assert.match(ui,/>GPS altitude \(m\):<\/b>/);
+  assert.match(ui,/>Above ground \(m\):<\/b>/);
 });
 
 test("navigation tiles and panel grids scale with the selected font",()=>{
@@ -164,8 +172,23 @@ test("navigation tiles and panel grids scale with the selected font",()=>{
 test("individual progress cards render a visible blue completion bar",()=>{
   assert.match(ui,/class="individualProgressBar" role="progressbar"/);
   assert.match(ui,/aria-valuenow="\$\{percent\}"/);
-  assert.match(ui,/class="individualProgressFill" style="width:\$\{percent\}%"/);
+  assert.match(ui,/class="individualProgressFill" style="--progress:\$\{percent\}%;width:\$\{percent\}%"/);
+  assert.match(ui,/position:absolute; inset:0 auto 0 0/);
   assert.match(ui,/background:linear-gradient\(90deg,#168cff,#77d1ff\)/);
+});
+
+test("progress continue opens the first unfinished photo using the public bird field",()=>{
+  assert.match(ui,/result\.photo\.bird\|\|button\.dataset\.bird,true,"progress"/);
+  assert.doesNotMatch(ui,/result\.photo\.individual_id,true,"progress"/);
+});
+
+test("managers can review completed photos grouped by contributor in the regular editor",()=>{
+  assert.match(ui,/data-app-nav="user-photos" data-role="coordinator,admin"/);
+  assert.match(ui,/const loadContributorPhotoReviewPanel=/);
+  assert.match(ui,/photo\.status==="complete"&&photo\.updatedBy\?\.id/);
+  assert.match(ui,/editorContributorReview=\{userId:selected\.id,userName:selected\.name,points:/);
+  assert.match(ui,/const activeEditorSequence=/);
+  assert.match(ui,/editorReturnDataMode="user-photos"/);
 });
 
 test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{
