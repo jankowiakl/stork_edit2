@@ -73,11 +73,17 @@ test("restricted tables do not preload media that has not been unlocked",()=>{
   assert.match(ui,/if\(!deferInitialAccess\)void showPhotoAtIndex\(0\)/);
 });
 
-test("restricted annotation escape hatch is limited to one focused photo",()=>{
+test("restricted annotation escape hatch is limited to five editable focused photos",()=>{
   assert.match(schema,/CREATE TABLE IF NOT EXISTS restricted_annotation_focus/);
+  assert.match(schema,/PRIMARY KEY\(user_id,photo_id\)/);
   assert.match(server,/INSERT INTO restricted_annotation_focus\(user_id,photo_id,granted_at\)/);
   assert.match(server,/profile\.restricted&&profile\.browseLimitReached&&!taskAssigned&&!focusActive/);
   assert.match(server,/DELETE FROM restricted_annotation_focus WHERE user_id=\$1 AND photo_id=\$2/);
+  assert.match(server,/p\.latitude IS NOT NULL","p\.longitude IS NOT NULL/);
+  assert.match(server,/DELETE FROM restricted_annotation_focus f WHERE f\.user_id=\$1 AND NOT EXISTS/);
+  assert.match(server,/LIMIT 5/);
+  assert.match(ui,/queue=result\.photos\?\.length/);
+  assert.match(ui,/activateTrack\(focusedTrack\)/);
 });
 
 test("collections provide jump playback, compact tables and authenticated downloads",()=>{
@@ -93,7 +99,16 @@ test("collections provide jump playback, compact tables and authenticated downlo
 
 test("responsive defaults and mobile editor controls remain compact",()=>{
   assert.match(ui,/<option value="1\.25" selected>125%/);
-  assert.match(ui,/@media\(max-width:700px\)\{:root\{--ui-font-scale:1;/);
+  assert.match(ui,/@media\(max-width:700px\)\{:root\{--ui-font-scale:1\.25;/);
   assert.match(ui,/id="adminRecoveryDetails"[^>]*hidden aria-hidden="true"/);
   assert.match(ui,/<select id="editorEnvDesc" data-field="Env_desc_en">/);
+});
+
+test("contribution dashboard reveals only earned badges and progress to the next one",()=>{
+  const renderer=ui.match(/const renderContributionDashboard=[\s\S]*?const loadContributionDashboard/)?.[0]||"";
+  assert.match(renderer,/Your current badge/);
+  assert.match(renderer,/levels\.slice\(0,currentIndex\+1\)/);
+  assert.match(renderer,/Progress to the next badge/);
+  assert.match(renderer,/c-currentLevel\.threshold/);
+  assert.doesNotMatch(renderer,/class="levelBox locked/);
 });

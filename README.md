@@ -7,7 +7,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - unchanged public map/photo viewer with lazy image loading;
 - server-backed photographs, GPS routes and stopovers;
 - photo positions prefer embedded EXIF geotags and otherwise use the nearest route point matched from the UTC timestamp in the filename;
-- browser-persisted interface font scaling from 100% to 160%, with a 125% desktop default and compact 100% mobile default;
+- browser-persisted interface font scaling from 100% to 160%, with a 125% default on desktop and mobile;
 - a translucent Sieweczka-inspired left navigation drawer with role-aware tiles, hover auto-hide and a slim edge handle;
 - separate account/login, application-options, export and administrator workspaces instead of mixing account controls into map settings;
 - three-column desktop editor: map / form / photo;
@@ -32,7 +32,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - installable mobile PWA with a manifest, stork icons, service-worker updates and in-application Android/iPhone instructions.
 - backend-enforced private media access: signed photo-specific URLs, no anonymous thumbnails/full images and a restricted-contributor allowance that cannot be bypassed with filters or direct IDs;
 - five contribution levels, completed/verified counters, milestone dates, Best pictures/full-access unlocks, private progress boxes and administrator-only contributor statistics;
-- one focused annotation exception at the browsing limit: the lock screen opens exactly one unfinished photo until it is completed, while explicit administrator tasks remain accessible;
+- a protected annotation queue at the browsing limit: the lock screen opens at most five unfinished, editable photos with usable map locations, while all other new media and direct URLs remain blocked (explicit administrator tasks remain accessible);
 - administrator-configurable global thresholds and per-user overrides, plus annotation tasks and verification requests linked directly from the user's account.
 
 Completed records require an environment description except when `Fly_ground=fly`. Verification requests accept a schema key, database column, visible field label or a short custom subject, so a user can request review of e.g. a species without receiving `invalid_review_field`.

@@ -240,10 +240,23 @@ CREATE TABLE IF NOT EXISTS user_photo_access (
 CREATE INDEX IF NOT EXISTS idx_user_photo_access_allowance ON user_photo_access(user_id,counts_against_allowance);
 
 CREATE TABLE IF NOT EXISTS restricted_annotation_focus (
-  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
-  granted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(user_id,photo_id)
 );
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid='restricted_annotation_focus'::regclass
+      AND contype='p'
+      AND pg_get_constraintdef(oid)='PRIMARY KEY (user_id)'
+  ) THEN
+    ALTER TABLE restricted_annotation_focus DROP CONSTRAINT restricted_annotation_focus_pkey;
+    ALTER TABLE restricted_annotation_focus ADD PRIMARY KEY(user_id,photo_id);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_restricted_annotation_focus_photo ON restricted_annotation_focus(photo_id);
 
 CREATE TABLE IF NOT EXISTS annotation_tasks (
