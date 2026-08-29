@@ -110,6 +110,15 @@ test("collections provide jump playback, compact tables and authenticated downlo
   assert.match(tableRenderer,/if\(isSafe\)return/);
 });
 
+test("photo safe previous and next buttons follow the complete cross-bird collection",()=>{
+  assert.match(ui,/classList\.contains\("collectionMode"\)&&collectionSequence\.length/);
+  assert.match(ui,/const canStep=collectionSequence\.length>1/);
+  assert.match(ui,/prevPhotoBtn\.disabled=!canStep/);
+  assert.match(ui,/nextPhotoBtn\.disabled=!canStep/);
+  assert.match(ui,/showCollectionSequencePhoto\(collectionSequenceIndex-1\)/);
+  assert.match(ui,/showCollectionSequencePhoto\(collectionSequenceIndex\+1\)/);
+});
+
 test("the mobile collection show uses only a responsive icon and photo counter",()=>{
   assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
   assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{safe\?"🔐":"☆"\} \$\{position\}`/);

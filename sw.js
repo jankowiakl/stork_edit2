@@ -1,4 +1,4 @@
-const CACHE_NAME="stork-edit2-shell-v2026-08-29-10";
+const CACHE_NAME="stork-edit2-shell-v2026-08-29-11";
 const APP_SHELL=["./","./index.html","./config.js","./manifest.webmanifest","./icons/icon.svg","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png"];
 
 self.addEventListener("install",(event)=>{
