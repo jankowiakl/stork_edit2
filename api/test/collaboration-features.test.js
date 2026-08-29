@@ -115,6 +115,18 @@ test("contribution dashboard reveals only earned badges and progress to the next
   assert.doesNotMatch(renderer,/class="levelBox locked/);
 });
 
+test("the browsing lock explains configurable rewards and links to personal progress",()=>{
+  assert.match(ui,/id="browseLockRewards"/);
+  assert.match(ui,/Best pictures and private favourites/);
+  assert.match(ui,/Full photo collection/);
+  assert.match(ui,/Publication acknowledgements/);
+  assert.match(ui,/Scientific Contributor/);
+  assert.match(ui,/settings\.fullAccessThreshold\?\?400/);
+  assert.match(ui,/id="browseLockAccount"/);
+  assert.match(ui,/browseLockAccountBtn\.addEventListener\("click",openAccountWorkspace\)/);
+  assert.match(ui,/complete progress are available in your personal account/);
+});
+
 test("photo information remains enabled across manual and playback navigation",()=>{
   assert.match(ui,/let currentPhotoDetails=null,photoInfoEnabled=false/);
   assert.match(ui,/setPhotoInfoEnabled\(!photoInfoEnabled\)/);
