@@ -88,8 +88,8 @@ export function sendKml(res, rows) {
     `<Placemark><name>${xml(r.FileName)}</name><description>${xml(`${r.Bird} • ${r.Status}`)}</description><Point><coordinates>${r.Longitude},${r.Latitude},0</coordinates></Point></Placemark>`).join("");
   res.type("application/vnd.google-earth.kml+xml").attachment("stork-photo-data.kml").send(`<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document>${points}</Document></kml>`);
 }
-export function sendZip(res, sourceRows, rows, photoDir) {
-  res.type("application/zip").attachment("stork-photo-export.zip");
+export function sendZip(res, sourceRows, rows, photoDir,filename="stork-photo-export.zip") {
+  res.type("application/zip").attachment(filename);
   const archive=archiver("zip",{zlib:{level:6}}); archive.on("error",(e)=>res.destroy(e)); archive.pipe(res);
   const csv=[EXPORT_HEADERS.map(csvCell).join(","),...rows.map((r)=>EXPORT_HEADERS.map((h)=>csvCell(r[h])).join(","))].join("\r\n");
   archive.append("\uFEFF"+csv,{name:"stork-photo-data.csv"});

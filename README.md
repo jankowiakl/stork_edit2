@@ -19,7 +19,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - field help, conditional controls and missing-value indicators;
 - automatic draft saving during photo navigation, one active draft per user, completed records and optimistic version locking;
 - next-unannotated navigation, copying values from the previous photo and required environment descriptions;
-- per-user server-side Best pictures opened inside the complete map/photo viewer, a clickable Top rated ranking table and removable 1–5 star ratings;
+- a private per-user photo safe opened inside the complete map/photo viewer, without rating controls and with individual or bulk ZIP downloads; Top rated remains a separate ranking with removable 1–5 star ratings;
 - user verification requests and category proposals moderated by coordinators/administrators;
 - table view with search, filters, paging, the current user's records first and permission-aware form editing;
 - full-width data-browser table with every photo/annotation field, horizontal scrolling, date/category filters and persistent column visibility, order and widths;
@@ -33,7 +33,7 @@ Public White Stork photo/GPS viewer with a protected scientific annotation works
 - secure administrator password recovery with the private server bootstrap token.
 - installable mobile PWA with a manifest, stork icons, service-worker updates and in-application Android/iPhone instructions.
 - backend-enforced private media access: signed photo-specific URLs, no anonymous thumbnails/full images and a renewable restricted-contributor browsing cycle that cannot be bypassed with filters or direct IDs;
-- five contribution levels, completed/verified counters, milestone dates, Best pictures/full-access unlocks, private progress boxes and administrator-only contributor statistics;
+- five contribution levels, completed/verified counters, milestone dates, photo-safe/full-access unlocks, private progress boxes and administrator-only contributor statistics;
 - protected **Start annotating** access at the browsing limit: the backend exposes at most five unfinished, editable photos with usable map locations; completing one starts a fresh fixed-size browsing cycle, while all other new media and direct URLs remain blocked (own completed photos and explicit administrator tasks remain accessible);
 - administrator-configurable global thresholds and per-user overrides, plus annotation tasks and verification requests linked directly from the user's account.
 

@@ -22,7 +22,7 @@ test("manual invitations provide a Gmail compose link and role permissions",()=>
   assert.match(server,/gmailUrl/);
 });
 
-test("best pictures and top rated reuse the main viewer and offer a table",()=>{
+test("the private photo safe and top rated reuse the main viewer and offer a table",()=>{
   assert.match(ui,/collectionBrowseState/);
   assert.match(ui,/openPhotoCollection/);
   assert.match(ui,/collectionTableMode/);
@@ -97,6 +97,13 @@ test("collections provide jump playback, compact tables and authenticated downlo
   assert.doesNotMatch(tableRenderer,/<th>Filename<\/th>/);
   assert.match(server,/\/api\/photos\/:id\/download/);
   assert.match(server,/\/api\/me\/photo-collection\/download/);
+  assert.match(server,/collection==="favorites"/);
+  assert.match(server,/FROM user_photo_favorites f JOIN photos p/);
+  assert.match(server,/sendZip\(res,rows,\[\],photoDir,downloadName\)/);
+  assert.match(ui,/Download my photo safe \(ZIP\)/);
+  assert.match(ui,/photoSafeMode/);
+  assert.match(ui,/photoRatingEl\.hidden=photoSafeMode/);
+  assert.match(tableRenderer,/if\(isSafe\)return/);
 });
 
 test("responsive defaults and mobile editor controls remain compact",()=>{
@@ -117,7 +124,7 @@ test("contribution dashboard reveals only earned badges and progress to the next
 
 test("the browsing lock explains configurable rewards and links to personal progress",()=>{
   assert.match(ui,/id="browseLockRewards"/);
-  assert.match(ui,/Best pictures and private favourites/);
+  assert.match(ui,/Private photo safe/);
   assert.match(ui,/Full photo collection/);
   assert.match(ui,/Publication acknowledgements/);
   assert.match(ui,/Scientific Contributor/);
