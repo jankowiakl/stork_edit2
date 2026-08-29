@@ -797,15 +797,31 @@
     .ratingAverage { min-width:38px; color:#ffe18a; font-size:var(--ui-font-small); text-align:center; }
     .accountCollections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:12px; }
     .accountCollectionBtn { min-height:70px; text-align:left; }
-    .collectionModeBar,.viewerReturnBar { position:fixed; z-index:6945; left:50%; bottom:10px; transform:translateX(-50%); display:flex; align-items:center; gap:7px; max-width:calc(100vw - 28px); padding:6px 8px; border:1px solid rgba(255,225,138,.48); border-radius:12px; background:rgba(8,14,25,.90); box-shadow:0 12px 36px rgba(0,0,0,.42); backdrop-filter:blur(14px); animation:collectionBarEnter .24s ease both; }
-    .collectionBack { padding:4px 7px !important; font-size:var(--ui-font-small) !important; }
+    .collectionModeBar,.viewerReturnBar { position:fixed; z-index:6945; left:50%; bottom:10px; transform:translateX(-50%); display:flex; align-items:center; gap:6px; max-width:calc(100vw - 28px); padding:5px 7px; border:1px solid rgba(255,225,138,.48); border-radius:12px; background:rgba(8,14,25,.90); box-shadow:0 12px 36px rgba(0,0,0,.42); backdrop-filter:blur(14px); animation:collectionBarEnter .24s ease both; --slideshow-font:clamp(12px,var(--ui-font-control),14px); --slideshow-font-small:clamp(11px,var(--ui-font-small),13px); }
+    .collectionModeBar button,.collectionModeBar input,.collectionModeBar select,.collectionModeBar label { font-size:var(--slideshow-font)!important; line-height:1.2; }
+    .collectionPrimaryControl { min-height:36px; padding:5px 9px!important; white-space:nowrap; }
+    #collectionDetailsToggle[aria-expanded="true"] { color:#fff; border-color:rgba(119,209,255,.7); background:rgba(20,93,137,.72); }
+    .collectionBack { padding-inline:7px!important; }
     .collectionModeBar[hidden],.viewerReturnBar[hidden],.ratingClear[hidden] { display:none !important; }
-    .collectionModeLabel { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffe18a; }
-    .collectionOption { display:flex; align-items:center; gap:4px; min-width:0; color:var(--muted); font-size:var(--ui-font-small); white-space:nowrap; }
-    .collectionOption select { width:auto; min-width:132px; padding:4px 7px; }
-    .collectionOption input { width:58px; padding:4px 6px; text-align:center; }
+    .collectionModeLabel { min-width:3.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffe18a; font-size:var(--slideshow-font); text-align:center; }
+    .collectionDetails { position:absolute; right:0; bottom:calc(100% + 7px); width:min(520px,calc(100vw - 28px)); max-height:min(42dvh,330px); overflow:auto; box-sizing:border-box; padding:9px; border:1px solid rgba(119,209,255,.34); border-radius:12px; background:rgba(8,16,28,.96); box-shadow:0 14px 38px rgba(0,0,0,.44); backdrop-filter:blur(16px); }
+    .collectionDetails[hidden] { display:none!important; }
+    .collectionDetailsHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; font-size:var(--slideshow-font); }
+    .collectionDetailsHeader button { min-width:34px; min-height:34px; padding:2px 8px!important; }
+    .collectionDetailsGrid { display:grid; grid-template-columns:minmax(100px,.62fr) minmax(190px,1.38fr); gap:8px; }
+    .collectionOption { display:grid; align-content:start; gap:4px; min-width:0; margin:0; color:var(--muted); white-space:normal; font-size:var(--slideshow-font-small)!important; }
+    .collectionOption select { width:100%; min-width:0; padding:6px 7px; }
+    .collectionOption input { width:62px; min-width:0; padding:6px; text-align:center; }
+    .collectionIntervalControl { display:flex; align-items:center; gap:4px; color:var(--text); }
+    .collectionDetailsActions { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .collectionDetailsActions button { min-height:35px; padding:5px 8px!important; }
     .collectionOption[hidden] { display:none!important; }
-    .collectionSharedBy { color:#cfe5f4; font-size:var(--ui-font-small); white-space:nowrap; }
+    .collectionSharedBy { display:block; margin:0 0 7px; color:#cfe5f4; font-size:var(--slideshow-font-small); overflow-wrap:anywhere; }
+    .collectionSharedBy[hidden] { display:none!important; }
+    body.collectionMode #sliderOverlay { display:none!important; }
+    body.collectionMode .photoNav { width:44px; min-width:44px; height:44px; padding:0; font-size:clamp(12px,var(--ui-font-control),14px); }
+    body.collectionMode .photoInfoToggle { width:36px; height:36px; font-size:clamp(12px,var(--ui-font-control),14px); }
+    body.collectionMode .photoTools button,body.collectionMode .photoBirdPicker { font-size:clamp(11px,var(--ui-font-small),13px)!important; }
     .sharedSafeGrid { display:grid; gap:8px; margin:10px 0 14px; }
     .sharedSafeCard { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid rgba(119,209,255,.22); border-radius:11px; background:rgba(119,209,255,.05); }
     .shareSafeWorkspace,.publicProjectIntro { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:14px; background:rgba(3,8,15,.82); backdrop-filter:blur(12px); }
@@ -1223,11 +1239,16 @@
   .editorMobileTabs { top:max(6px,env(safe-area-inset-top)); width:min(360px,calc(100vw - 96px)); }
   .photoSocialControls { top:52px; }
   .viewerReturnBar { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 58px); }
-  .collectionModeBar { left:max(7px,env(safe-area-inset-left)); right:max(7px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); width:auto; max-width:none; transform:none; justify-content:center; flex-wrap:wrap; gap:clamp(4px,1.4vw,7px); padding:clamp(5px,1.5vw,7px); animation:collectionBarMobileEnter .22s ease both; }
-  .collectionModeBar .collectionModeLabel { flex:0 0 auto; min-width:3.6em; text-align:center; font-size:clamp(14px,4.2vw,19px); line-height:1; }
-  .collectionModeBar button { flex:0 1 auto; min-width:0; padding-inline:clamp(5px,1.8vw,9px)!important; font-size:clamp(12px,3.2vw,15px)!important; }
-  .collectionModeBar .collectionOption { flex:0 1 auto; font-size:clamp(11px,2.9vw,14px); }
-  .collectionModeBar .collectionOption select { min-width:min(38vw,150px); }
+  .collectionModeBar { left:max(6px,env(safe-area-inset-left)); right:max(6px,env(safe-area-inset-right)); bottom:max(7px,env(safe-area-inset-bottom)); width:auto; max-width:none; transform:none; justify-content:center; flex-wrap:nowrap; gap:4px; padding:4px 5px; animation:collectionBarMobileEnter .22s ease both; --slideshow-font:clamp(12px,var(--ui-font-control),13.5px); --slideshow-font-small:clamp(11px,var(--ui-font-small),12.5px); }
+  .collectionModeBar .collectionModeLabel { flex:0 1 auto; min-width:3.4em; text-align:center; font-size:var(--slideshow-font)!important; line-height:1; }
+  .collectionModeBar .collectionPrimaryControl { flex:0 1 auto; min-width:42px; min-height:42px; padding:6px clamp(6px,1.8vw,9px)!important; font-size:var(--slideshow-font)!important; }
+  .collectionModeBar .collectionBack { min-width:42px; }
+  .collectionDetails { right:0; width:min(420px,calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))); max-height:min(32dvh,240px); padding:8px; }
+  .collectionDetailsGrid { grid-template-columns:minmax(88px,.62fr) minmax(0,1.38fr); gap:7px; }
+  .collectionDetailsActions button,.collectionDetailsHeader button { min-height:40px; }
+  .collectionDetailsActions { gap:5px; }
+  .collectionDetails input,.collectionDetails select { min-height:40px; }
+  body.collectionMode .photoNav,body.collectionMode .photoInfoToggle { width:42px; min-width:42px; height:42px; }
   .dataWorkspace { padding:6px; }
   .dataWorkspace.open { grid-template-rows:auto minmax(0,1fr); }
   .dataTopbar { position:sticky; top:0; z-index:20; padding:6px; border:1px solid rgba(119,209,255,.18); border-radius:12px; background:rgba(7,11,20,.96); }
@@ -1243,6 +1264,9 @@
   .editorField.full { grid-column: auto; }
   .editorVisualTop { left: 8px; right: 8px; top: 8px; }
   .editorVisualTop #closeEditorMode { padding: 7px 8px; }
+}
+@media (max-width:380px) {
+  .collectionDetailsGrid { grid-template-columns:1fr; }
 }
 
 /* Readable typography on GitHub Pages and user-controlled scaling. */
@@ -1317,7 +1341,7 @@ body.appPanelOpen #mobilePanelBtn,body.dataWorkspaceOpen #mobilePanelBtn,body.co
 
 .publicLanding{position:fixed;inset:0;z-index:1200;display:none;place-items:center;padding:24px;background:radial-gradient(circle at 70% 15%,rgba(54,127,177,.22),transparent 42%),linear-gradient(145deg,#07101d,#101b2b);color:#edf7ff}.loggedOut .publicLanding{display:grid}.loggedOut .wrap,.loggedOut .collectionModeBar,.loggedOut .viewerReturnBar,.loggedOut #mobilePanelBtn{visibility:hidden}.publicLandingCard{width:min(760px,94vw);padding:clamp(24px,5vw,52px);border:1px solid rgba(151,211,247,.28);border-radius:22px;background:rgba(7,15,27,.82);box-shadow:0 24px 80px rgba(0,0,0,.38);backdrop-filter:blur(16px)}.publicLandingMark{display:flex;gap:14px;align-items:center}.publicLandingMark img{width:68px;height:68px}.publicLanding h1{margin:0 0 8px;font-size:clamp(30px,6vw,58px)}.publicLanding p{max-width:62ch;line-height:1.65;color:#bcd1e3}.publicLanding .primarySave{font-size:1.08rem;padding:12px 22px}
 .contributionDashboard{display:grid;gap:12px;margin-bottom:16px}.contributionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.contributionMetric,.nextRewardBox{padding:12px;border:1px solid rgba(133,194,231,.22);border-radius:12px;background:rgba(121,199,244,.055)}.contributionMetric b{display:block;font-size:1.45rem;margin-top:5px}.nextRewardBox{border-color:rgba(221,185,96,.32)}.contributionPath{display:grid;gap:9px}.levelBox{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(144,181,207,.22);border-radius:13px;background:linear-gradient(120deg,rgba(236,247,255,.045),rgba(87,139,178,.035));box-shadow:0 6px 18px rgba(0,0,0,.12)}.levelBox.locked{filter:saturate(.5);opacity:.65}.levelBox.active{border-color:#64b9ec;background:linear-gradient(120deg,rgba(81,174,232,.14),rgba(231,193,103,.055))}.levelBox.unlocked{border-color:rgba(231,193,103,.5)}.storkBadge{width:58px;height:58px;border-radius:10px;border:2px solid rgba(154,197,225,.32);display:grid;place-items:center;background:#152638;image-rendering:pixelated;font-size:31px}.levelBox.unlocked .storkBadge{border-color:#d7b866}.levelNumbers{text-align:right;white-space:nowrap}.levelProgress{grid-column:2/-1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.levelProgress span{display:block;height:100%;background:linear-gradient(90deg,#5ab5e8,#d7ba66)}.milestoneNotice{padding:11px;border-radius:10px;border:1px solid rgba(95,207,155,.38);background:rgba(56,176,119,.11);color:#b8f2d3}.browseLock{position:absolute;inset:0;z-index:46;display:none;place-items:center;text-align:center;padding:20px;background:linear-gradient(145deg,rgba(8,16,29,.94),rgba(13,31,49,.96));backdrop-filter:blur(12px)}.browseLock.show{display:grid}.browseLockCard{width:min(650px,100%);max-height:100%;overflow:auto;padding:4px;box-sizing:border-box}.browseLockIcon{font-size:48px}.browseLockRewards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0;text-align:left}.browseLockReward{min-width:0;padding:9px 10px;border:1px solid rgba(139,198,232,.23);border-radius:10px;background:rgba(255,255,255,.045);overflow-wrap:anywhere}.browseLockReward.fullAccess{border-color:rgba(221,185,96,.48);background:rgba(221,185,96,.08)}.browseLockReward.unlocked{border-color:rgba(76,209,147,.42);background:rgba(57,217,138,.07)}.browseLockReward b,.browseLockReward span{display:block}.browseLockReward span{margin-top:3px;color:var(--muted);font-size:var(--ui-font-small)}.browseLockActions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.browseLockAccountNote{margin:10px auto 0;max-width:56ch}.photoInfoToggle{position:absolute;right:12px;bottom:12px;z-index:45;border-radius:50%!important;width:38px;height:38px;padding:0!important}.photoInfoOverlay{position:absolute;inset:12px;z-index:44;pointer-events:none;color:#eef8ff;line-height:1.4}.photoInfoOverlay[hidden]{display:none}.photoInfoSide,.photoInfoDescription{position:absolute;padding:8px 10px;border:1px solid rgba(160,215,246,.24);border-radius:10px;background:rgba(4,13,24,.58);backdrop-filter:blur(9px);box-shadow:0 5px 18px rgba(0,0,0,.2)}.photoInfoPlace{left:0;top:48px}.photoInfoHeight{right:0;top:94px;text-align:right}.photoInfoDescription{left:4%;right:4%;bottom:48px;text-align:center}.photoInfoDescription .remarks{display:block;margin-top:5px;color:#cfe3f1}.editorMobileMeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:flex;gap:12px;justify-content:center;padding:7px 10px;border-radius:9px;background:rgba(2,10,18,.67);backdrop-filter:blur(8px);color:#fff;font-size:var(--ui-font-small)}
-@media(max-width:700px){:root{--ui-font-scale:1.25;--ui-font-body:17.5px;--ui-font-control:16.25px;--ui-font-label:15px;--ui-font-small:13.75px;--ui-font-title:16.25px;--ui-font-heading:20px;--ui-font-display:30px}.contributionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.levelBox{grid-template-columns:54px minmax(0,1fr)}.levelNumbers{grid-column:2;text-align:left}.levelProgress{grid-column:1/-1}.browseLock{padding:10px}.browseLockIcon{font-size:34px}.browseLockRewards{grid-template-columns:1fr;margin:10px 0}.editorMobileMeta{display:flex}.photoInfoOverlay{inset:8px}.photoInfoPlace{top:40px}.photoInfoHeight{top:82px}.photoInfoDescription{bottom:54px}}
+@media(max-width:700px){:root{--ui-font-scale:1;--ui-font-body:14px;--ui-font-control:13px;--ui-font-label:12px;--ui-font-small:11px;--ui-font-title:13px;--ui-font-heading:16px;--ui-font-display:24px}.contributionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.levelBox{grid-template-columns:54px minmax(0,1fr)}.levelNumbers{grid-column:2;text-align:left}.levelProgress{grid-column:1/-1}.browseLock{padding:10px}.browseLockIcon{font-size:34px}.browseLockRewards{grid-template-columns:1fr;margin:10px 0}.editorMobileMeta{display:flex}.photoInfoOverlay{inset:8px}.photoInfoPlace{top:40px}.photoInfoHeight{top:82px}.photoInfoDescription{bottom:54px}}
 @media(max-width:700px){.contributorReviewToolbar{flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap}.contributorReviewToolbar select{width:min(100%,320px);flex:1 1 190px}.contributorReviewCount{flex:0 0 auto}}
 
 /* Controls and panels follow the selected font size instead of clipping text. */
@@ -1399,7 +1423,21 @@ button { white-space:normal; line-height:1.2; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
-<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong><span class="collectionSharedBy" id="collectionSharedBy" hidden></span><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><label class="collectionOption">Every <input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</label><label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="collectionShare" type="button">Share</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
+<div class="collectionModeBar" id="collectionModeBar" hidden>
+  <strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong>
+  <button class="primarySave tiny collectionPrimaryControl" id="collectionPlay" type="button">Play</button>
+  <button class="secondary tiny collectionPrimaryControl" id="collectionDetailsToggle" type="button" aria-expanded="false" aria-controls="collectionDetails">Details</button>
+  <button class="secondary tiny collectionBack collectionPrimaryControl" id="leaveCollectionMode" type="button">← Back</button>
+  <section class="collectionDetails" id="collectionDetails" aria-label="Photo Safe presentation details" hidden>
+    <div class="collectionDetailsHeader"><strong>Presentation options</strong><button class="secondary tiny" id="collectionDetailsClose" type="button" aria-label="Close presentation details">×</button></div>
+    <span class="collectionSharedBy" id="collectionSharedBy" hidden></span>
+    <div class="collectionDetailsGrid">
+      <label class="collectionOption">Interval <span class="collectionIntervalControl"><input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</span></label>
+      <label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label>
+    </div>
+    <div class="collectionDetailsActions"><button class="secondary tiny" id="collectionViewerMode" type="button">Map viewer</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="collectionShare" type="button">Share</button></div>
+  </section>
+</div>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
@@ -1452,9 +1490,9 @@ button { white-space:normal; line-height:1.2; }
           <div>
             <label>Interface font size</label>
             <select id="fontScale">
-              <option value="1">100% — compact</option>
+              <option value="1">100% — mobile default</option>
               <option value="1.15">115%</option>
-              <option value="1.25" selected>125% — default</option>
+              <option value="1.25" selected>125% — desktop default</option>
               <option value="1.4">140% — large</option>
               <option value="1.6">160% — very large</option>
             </select>
@@ -2275,6 +2313,9 @@ button { white-space:normal; line-height:1.2; }
   const collectionModeBarEl = el("collectionModeBar");
   const collectionModeLabelEl = el("collectionModeLabel");
   const collectionPlayBtn = el("collectionPlay");
+  const collectionDetailsToggleBtn = el("collectionDetailsToggle");
+  const collectionDetailsEl = el("collectionDetails");
+  const collectionDetailsCloseBtn = el("collectionDetailsClose");
   const collectionIntervalEl = el("collectionInterval");
   const collectionOrderWrapEl = el("collectionOrderWrap");
   const collectionOrderEl = el("collectionOrder");
@@ -3642,18 +3683,18 @@ loopCurrentEl.checked = false;
 
   const validPhotoShares = new Set(["40", "50", "60", "70"]);
   const validFontScales = new Set(["1", "1.15", "1.25", "1.4", "1.6"]);
-  const fontScalePreferenceVersion="2026-08-29-default-125";
+  const fontScalePreferenceVersion="2026-08-29-responsive-defaults";
   let viewerPhotoShare=50;
   try {
     const savedPhotoShare = localStorage.getItem("storkViewerPhotoShare");
     const parsedPhotoShare=Number(savedPhotoShare);if(Number.isFinite(parsedPhotoShare)&&parsedPhotoShare>=20&&parsedPhotoShare<=80){viewerPhotoShare=parsedPhotoShare;if(validPhotoShares.has(String(parsedPhotoShare)))layoutSplitEl.value=String(parsedPhotoShare);else{const custom=layoutSplitEl.querySelector('option[value="custom"]');custom.hidden=false;custom.textContent=`Custom (${Math.round(parsedPhotoShare)}% photo)`;layoutSplitEl.value="custom";}}
-    const savedFontScale = localStorage.getItem("storkViewerFontScale"),savedFontVersion=localStorage.getItem("storkViewerFontScaleVersion"),recommendedScale="1.25";
-    if(savedFontVersion===fontScalePreferenceVersion&&validFontScales.has(savedFontScale))fontScaleEl.value=savedFontScale;
+    const savedFontScale = localStorage.getItem("storkViewerFontScale"),recommendedScale=isMobile()?"1":"1.25";
+    if(validFontScales.has(savedFontScale))fontScaleEl.value=savedFontScale;
     else{fontScaleEl.value=recommendedScale;localStorage.setItem("storkViewerFontScale",recommendedScale);localStorage.setItem("storkViewerFontScaleVersion",fontScalePreferenceVersion);}
   } catch(e) {}
 
   const applyFontScale = ({ persist = true } = {}) => {
-    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : "1.25";
+    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : (isMobile()?"1":"1.25");
     const multiplier = Number(scale);
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty("--ui-font-scale", scale);
@@ -3742,6 +3783,11 @@ loopCurrentEl.checked = false;
   let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false,collectionOrderPreference="bird_time";
   try{const savedOrder=localStorage.getItem("storkPhotoSafeOrderV1");if(["bird_time","custom","date_asc"].includes(savedOrder))collectionOrderPreference=savedOrder;const savedInterval=Number(localStorage.getItem("storkCollectionIntervalV1"));if(Number.isFinite(savedInterval)&&savedInterval>=1&&savedInterval<=120)collectionIntervalEl.value=String(savedInterval);}catch(error){}
   collectionOrderEl.value=collectionOrderPreference;
+  const setCollectionDetailsOpen=(open)=>{const visible=!!open&&document.body.classList.contains("collectionMode");collectionDetailsEl.hidden=!visible;collectionDetailsToggleBtn.setAttribute("aria-expanded",String(visible));collectionDetailsToggleBtn.classList.toggle("active",visible);};
+  collectionDetailsToggleBtn.addEventListener("click",()=>setCollectionDetailsOpen(collectionDetailsEl.hidden));
+  collectionDetailsCloseBtn.addEventListener("click",()=>setCollectionDetailsOpen(false));
+  document.addEventListener("pointerdown",(event)=>{if(collectionDetailsEl.hidden||collectionModeBarEl.contains(event.target))return;setCollectionDetailsOpen(false);});
+  window.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!collectionDetailsEl.hidden)setCollectionDetailsOpen(false);});
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
   const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
   const orderPhotoSafeSequence=(photos,order=collectionOrderPreference)=>photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
@@ -3749,7 +3795,7 @@ loopCurrentEl.checked = false;
   const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0){updatePhotoNavButtons();return false;}await showPhotoAtIndex(trackIndex,{skipAccess:!!photoSafeViewerContext?.readOnly});const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;collectionModeLabelEl.title=safe?"My photo safe":"Top rated";collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);updatePhotoNavButtons(trackIndex);return true;};
   const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5)),delay=seconds*1000;collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
   const publicSafeIntroKey=()=>`storkPublicSafeIntroSeen:${photoSafeViewerContext?.shareId||"unknown"}`;
-  const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY"&&!sessionStorage.getItem(publicSafeIntroKey())){publicProjectIntroEl.classList.add("open");publicProjectIntroEl.setAttribute("aria-hidden","false");return;}stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
+  const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;setCollectionDetailsOpen(false);if(photoSafeViewerContext?.mode==="PUBLIC_READONLY"&&!sessionStorage.getItem(publicSafeIntroKey())){publicProjectIntroEl.classList.add("open");publicProjectIntroEl.setAttribute("aria-hidden","false");return;}stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
   const loadPhotoSafeViewerSource=async(options={})=>{if(options.payload)return options.payload;if(options.mode==="SHARED_READONLY")return apiFetch(`/api/photo-safe/shares/${encodeURIComponent(options.shareId)}`);if(options.mode==="PUBLIC_READONLY")return apiFetch(`/api/public/photo-safe?token=${encodeURIComponent(options.publicToken||"")}`,{}, {auth:false});return apiFetch("/api/me/photo-collection?collection=favorites&sort=custom");};
   let sharedSafeRefreshTimer=null;
   const stopSharedSafeRefresh=()=>{if(sharedSafeRefreshTimer)clearTimeout(sharedSafeRefreshTimer);sharedSafeRefreshTimer=null;};
@@ -3798,6 +3844,7 @@ loopCurrentEl.checked = false;
       collectionOrderEl.value=collectionOrderPreference;
       updateBirdSelectors(idsSorted());
       document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;
+      setCollectionDetailsOpen(false);
       collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);
       await showCollectionSequencePhoto(collectionSequenceIndex);
     }catch(error){
@@ -3807,7 +3854,7 @@ loopCurrentEl.checked = false;
   };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";stopCollectionPlayback();stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
   collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
   collectionOrderEl.addEventListener("change",async()=>{if(activeCollectionType!=="favorites"||!collectionSequence.length)return;collectionOrderPreference=collectionOrderEl.value;try{localStorage.setItem("storkPhotoSafeOrderV1",collectionOrderPreference);}catch(error){}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderPhotoSafeSequence(collectionSequence,collectionOrderPreference);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
@@ -3873,7 +3920,7 @@ loopCurrentEl.checked = false;
     if(context?.readOnly){await openPhotoCollection("favorites",targetPhotoId,{mode:context.mode,shareId:context.shareId,publicToken:context.publicToken});return;}
     await openPhotoCollection(activeCollectionType,targetPhotoId);
   };
-  const openCollectionTableView=async()=>{closeAccountWorkspace();closeAppNavigation();stopCollectionPlayback();collectionModeBarEl.hidden=true;dataWorkspaceEl.classList.add("open");dataWorkspaceEl.setAttribute("aria-hidden","false");document.body.classList.add("dataWorkspaceOpen","sharedSafeTableMode");await loadCollectionPhotosPanel();};
+  const openCollectionTableView=async()=>{setCollectionDetailsOpen(false);closeAccountWorkspace();closeAppNavigation();stopCollectionPlayback();collectionModeBarEl.hidden=true;dataWorkspaceEl.classList.add("open");dataWorkspaceEl.setAttribute("aria-hidden","false");document.body.classList.add("dataWorkspaceOpen","sharedSafeTableMode");await loadCollectionPhotosPanel();};
   collectionViewerModeBtn.addEventListener("click",()=>returnToCollectionViewer());
   collectionPlayBtn.addEventListener("click",toggleCollectionPlayback);
   collectionTableModeBtn.addEventListener("click",openCollectionTableView);

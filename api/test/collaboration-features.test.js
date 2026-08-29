@@ -135,20 +135,37 @@ test("all photo viewers use keyboard arrows and the photo safe has presentation 
   assert.match(server,/sort==="custom"\?"f\.sort_order NULLS LAST/);
 });
 
-test("the mobile collection show uses only a responsive icon and photo counter",()=>{
+test("the mobile collection show keeps a compact touch-friendly primary bar",()=>{
   assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
   assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{safe\?"🔐":"☆"\} \$\{position\}`/);
   assert.match(ui,/collectionModeLabelEl\.title=safe\?"My photo safe":"Top rated"/);
-  assert.match(ui,/\.collectionModeBar \{ left:max\(7px,env\(safe-area-inset-left\)\)/);
-  assert.match(ui,/font-size:clamp\(14px,4\.2vw,19px\)/);
+  assert.match(ui,/\.collectionModeBar \{ left:max\(6px,env\(safe-area-inset-left\)\)/);
+  assert.match(ui,/min-width:42px; min-height:42px/);
+  assert.match(ui,/flex-wrap:nowrap/);
   assert.match(ui,/@keyframes collectionBarMobileEnter/);
 });
 
 test("responsive defaults and mobile editor controls remain compact",()=>{
   assert.match(ui,/<option value="1\.25" selected>125%/);
-  assert.match(ui,/@media\(max-width:700px\)\{:root\{--ui-font-scale:1\.25;/);
+  assert.match(ui,/@media\(max-width:700px\)\{:root\{--ui-font-scale:1;/);
+  assert.match(ui,/recommendedScale=isMobile\(\)\?"1":"1\.25"/);
+  assert.match(ui,/if\(validFontScales\.has\(savedFontScale\)\)fontScaleEl\.value=savedFontScale/);
   assert.match(ui,/id="adminRecoveryDetails"[^>]*hidden aria-hidden="true"/);
   assert.match(ui,/<select id="editorEnvDesc" data-field="Env_desc_en">/);
+});
+
+test("all Photo Safe viewer modes share compact collapsible presentation details",()=>{
+  assert.match(ui,/id="collectionDetailsToggle"[^>]*aria-expanded="false"/);
+  assert.match(ui,/id="collectionDetails"[^>]*hidden/);
+  assert.match(ui,/const setCollectionDetailsOpen=/);
+  assert.match(ui,/setCollectionDetailsOpen\(false\)/);
+  assert.match(ui,/id="collectionInterval"/);
+  assert.match(ui,/id="collectionOrder"/);
+  assert.match(ui,/id="collectionTableMode"/);
+  assert.match(ui,/id="collectionShare"/);
+  assert.match(ui,/--slideshow-font:clamp\(12px,var\(--ui-font-control\),14px\)/);
+  assert.match(ui,/body\.collectionMode #sliderOverlay \{ display:none!important; \}/);
+  assert.equal((ui.match(/id="collectionDetails"/g)||[]).length,1);
 });
 
 test("contribution dashboard reveals only earned badges and progress to the next one",()=>{
