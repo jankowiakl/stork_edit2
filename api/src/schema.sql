@@ -217,8 +217,12 @@ CREATE TABLE IF NOT EXISTS contribution_stats (
   completed_annotations INTEGER NOT NULL DEFAULT 0,
   verified_annotations INTEGER NOT NULL DEFAULT 0,
   browsed_photos INTEGER NOT NULL DEFAULT 0,
+  browse_cycle_no BIGINT NOT NULL DEFAULT 1,
+  browse_cycle_started_at TIMESTAMPTZ,
   recalculated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE contribution_stats ADD COLUMN IF NOT EXISTS browse_cycle_no BIGINT NOT NULL DEFAULT 1;
+ALTER TABLE contribution_stats ADD COLUMN IF NOT EXISTS browse_cycle_started_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS contribution_milestones (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -238,6 +242,26 @@ CREATE TABLE IF NOT EXISTS user_photo_access (
   PRIMARY KEY(user_id,photo_id)
 );
 CREATE INDEX IF NOT EXISTS idx_user_photo_access_allowance ON user_photo_access(user_id,counts_against_allowance);
+
+CREATE TABLE IF NOT EXISTS user_browse_cycle_state (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  cycle_no BIGINT NOT NULL DEFAULT 1 CHECK(cycle_no>0),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_completed_photo_id TEXT REFERENCES photos(id) ON DELETE SET NULL,
+  last_completed_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_browse_cycle_photos (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cycle_no BIGINT NOT NULL CHECK(cycle_no>0),
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  first_accessed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_accessed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(user_id,cycle_no,photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_browse_cycle_photos_current ON user_browse_cycle_photos(user_id,cycle_no);
+CREATE INDEX IF NOT EXISTS idx_browse_cycle_photos_photo ON user_browse_cycle_photos(user_id,photo_id);
 
 CREATE TABLE IF NOT EXISTS restricted_annotation_focus (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

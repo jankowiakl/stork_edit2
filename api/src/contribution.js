@@ -40,7 +40,7 @@ export function mergeContributionSettings(globalSettings={},override={}){
   });
 }
 
-export const browseAllowance=(completed,settings)=>settings.initialBrowsingAllowance+Math.max(0,Number(completed)||0)*settings.photosPerCompleted;
+export const browseAllowance=(_completed,settings)=>settings.initialBrowsingAllowance;
 
 export function contributionLevel(completed,settings){
   const count=Math.max(0,Number(completed)||0),names=settings.levelNames;
@@ -51,10 +51,10 @@ export function contributionLevel(completed,settings){
   return{key:"nestling",name:names.nestling,index:0,threshold:0,next:settings.bestPicturesThreshold,description:"You are just starting your contribution to the White Stork photo archive."};
 }
 
-export function contributionProfile({user,completed=0,verified=0,browsed=0,settings}){
+export function contributionProfile({user,completed=0,verified=0,browsed=0,browseCycleNo=1,browseCycleStartedAt=null,settings}){
   const normalized=normalizeContributionSettings(settings),level=contributionLevel(completed,normalized),fullAccess=user?.role!=="annotator"||!user?.restricted_contributor||completed>=normalized.fullAccessThreshold;
   const allowance=fullAccess?null:browseAllowance(completed,normalized),remaining=allowance==null?null:Math.max(0,allowance-browsed);
-  return{completed:Number(completed),verified:Number(verified),browsed:Number(browsed),restricted:!!user?.restricted_contributor&&!fullAccess,fullAccess,browseAllowance:allowance,browseRemaining:remaining,browseLimitReached:remaining===0,unlockedByWork:Number(completed)*normalized.photosPerCompleted,bestPicturesUnlocked:fullAccess||completed>=normalized.bestPicturesThreshold,level,nextReward:level.next==null?null:{threshold:level.next,remaining:Math.max(0,level.next-Number(completed))},settings:normalized};
+  return{completed:Number(completed),verified:Number(verified),browsed:Number(browsed),browseCycleNo:Number(browseCycleNo||1),browseCycleStartedAt:browseCycleStartedAt||null,restricted:!!user?.restricted_contributor&&!fullAccess,fullAccess,browseAllowance:allowance,browseRemaining:remaining,browseLimitReached:remaining===0,unlockedByWork:0,bestPicturesUnlocked:fullAccess||completed>=normalized.bestPicturesThreshold,level,nextReward:level.next==null?null:{threshold:level.next,remaining:Math.max(0,level.next-Number(completed))},settings:normalized};
 }
 
 export function decideMediaAccess({profile,hasGrant=false,purpose="browse"}){

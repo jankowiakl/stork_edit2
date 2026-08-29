@@ -57,13 +57,15 @@ test("category proposals and review requests keep an audit workflow",()=>{
   assert.match(server,/\/api\/review-requests/);
 });
 
-test("photo media is private and restricted access is recorded per user and photo",()=>{
+test("photo media is private and restricted access is bound to the active browsing cycle",()=>{
   assert.match(server,/app\.get\("\/api\/public\/photos\/:id\/image",authenticateMediaUser,authorizeMediaAndServe\)/);
   assert.match(server,/app\.get\("\/api\/photos\/:id\/image",authenticateUser,authorizeMediaAndServe\)/);
   assert.match(server,/app\.get\("\/api\/public\/individuals\/:id\/photos",\(_req,res\)=>res\.status\(401\)/);
   assert.match(schema,/CREATE TABLE IF NOT EXISTS user_photo_access/);
   assert.match(schema,/PRIMARY KEY\(user_id,photo_id\)/);
-  assert.match(server,/x\.user_id=\$\$\{userParam\} AND x\.photo_id=p\.id AND \(x\.counts_against_allowance/);
+  assert.match(schema,/CREATE TABLE IF NOT EXISTS user_browse_cycle_state/);
+  assert.match(schema,/CREATE TABLE IF NOT EXISTS user_browse_cycle_photos/);
+  assert.match(server,/user_browse_cycle_state cycle JOIN user_browse_cycle_photos unlocked/);
 });
 
 test("restricted tables do not preload media that has not been unlocked",()=>{
@@ -111,4 +113,22 @@ test("contribution dashboard reveals only earned badges and progress to the next
   assert.match(renderer,/Progress to the next badge/);
   assert.match(renderer,/c-currentLevel\.threshold/);
   assert.doesNotMatch(renderer,/class="levelBox locked/);
+});
+
+test("photo information remains enabled across manual and playback navigation",()=>{
+  assert.match(ui,/let currentPhotoDetails=null,photoInfoEnabled=false/);
+  assert.match(ui,/setPhotoInfoEnabled\(!photoInfoEnabled\)/);
+  assert.match(ui,/framePhotoId&&framePhotoId!==socialPhotoId/);
+  assert.doesNotMatch(ui,/Geographical description not recorded/);
+  assert.doesNotMatch(ui,/No descriptive information for this photo/);
+  assert.doesNotMatch(ui,/photoInfoOverlayEl\.hidden=true/);
+  assert.match(ui,/\.photoInfoToggle \{ right:12px; bottom:calc\(92px/);
+});
+
+test("navigation tiles and panel grids scale with the selected font",()=>{
+  assert.match(ui,/\.appNavDrawer \{ width:min\(20em/);
+  assert.match(ui,/\.appNavTiles \{ grid-template-columns:repeat\(auto-fit/);
+  assert.match(ui,/\.appNavTile \{ min-height:4em; height:auto/);
+  assert.match(ui,/\.userGrid,\.importGrid \{ grid-template-columns:repeat\(auto-fit/);
+  assert.match(ui,/\.contributionMetric,\.nextRewardBox,\.progressCard,\.userCard,\.importCard,\.optionsSection,\.appNavTile \{ height:auto/);
 });
