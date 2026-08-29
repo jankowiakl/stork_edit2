@@ -800,6 +800,10 @@
     .collectionBack { padding:4px 7px !important; font-size:var(--ui-font-small) !important; }
     .collectionModeBar[hidden],.viewerReturnBar[hidden],.ratingClear[hidden] { display:none !important; }
     .collectionModeLabel { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffe18a; }
+    .collectionOption { display:flex; align-items:center; gap:4px; min-width:0; color:var(--muted); font-size:var(--ui-font-small); white-space:nowrap; }
+    .collectionOption select { width:auto; min-width:132px; padding:4px 7px; }
+    .collectionOption input { width:58px; padding:4px 6px; text-align:center; }
+    .collectionOption[hidden] { display:none!important; }
     .ratingClear { color:#ffb9b9; min-width:27px; }
     .ratedTable { width:100%; border-collapse:collapse; min-width:760px; }
     .ratedTable th,.ratedTable td { padding:8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; }
@@ -1208,6 +1212,8 @@
   .collectionModeBar { left:max(7px,env(safe-area-inset-left)); right:max(7px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); width:auto; max-width:none; transform:none; justify-content:center; flex-wrap:wrap; gap:clamp(4px,1.4vw,7px); padding:clamp(5px,1.5vw,7px); animation:collectionBarMobileEnter .22s ease both; }
   .collectionModeBar .collectionModeLabel { flex:0 0 auto; min-width:3.6em; text-align:center; font-size:clamp(14px,4.2vw,19px); line-height:1; }
   .collectionModeBar button { flex:0 1 auto; min-width:0; padding-inline:clamp(5px,1.8vw,9px)!important; font-size:clamp(12px,3.2vw,15px)!important; }
+  .collectionModeBar .collectionOption { flex:0 1 auto; font-size:clamp(11px,2.9vw,14px); }
+  .collectionModeBar .collectionOption select { min-width:min(38vw,150px); }
   .dataWorkspace { padding:6px; }
   .dataWorkspace.open { grid-template-rows:auto minmax(0,1fr); }
   .dataTopbar { position:sticky; top:0; z-index:20; padding:6px; border:1px solid rgba(119,209,255,.18); border-radius:12px; background:rgba(7,11,20,.96); }
@@ -1379,7 +1385,7 @@ button { white-space:normal; line-height:1.2; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
-<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
+<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><label class="collectionOption">Every <input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</label><label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
@@ -2249,6 +2255,9 @@ button { white-space:normal; line-height:1.2; }
   const collectionModeBarEl = el("collectionModeBar");
   const collectionModeLabelEl = el("collectionModeLabel");
   const collectionPlayBtn = el("collectionPlay");
+  const collectionIntervalEl = el("collectionInterval");
+  const collectionOrderWrapEl = el("collectionOrderWrap");
+  const collectionOrderEl = el("collectionOrder");
   const leaveCollectionModeBtn = el("leaveCollectionMode");
   const collectionViewerModeBtn = el("collectionViewerMode");
   const collectionTableModeBtn = el("collectionTableMode");
@@ -3694,34 +3703,41 @@ loopCurrentEl.checked = false;
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private photo safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update photo safe: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
 
-  let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false;
+  let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false,collectionOrderPreference="bird_time";
+  try{const savedOrder=localStorage.getItem("storkPhotoSafeOrderV1");if(["bird_time","custom","date_asc"].includes(savedOrder))collectionOrderPreference=savedOrder;const savedInterval=Number(localStorage.getItem("storkCollectionIntervalV1"));if(Number.isFinite(savedInterval)&&savedInterval>=1&&savedInterval<=120)collectionIntervalEl.value=String(savedInterval);}catch(error){}
+  collectionOrderEl.value=collectionOrderPreference;
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
+  const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
+  const orderPhotoSafeSequence=(photos,order=collectionOrderPreference)=>photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
   const stopCollectionPlayback=()=>{collectionPlaying=false;if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;if(collectionPlayBtn)collectionPlayBtn.textContent="Play";};
   const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0){updatePhotoNavButtons();return false;}await showPhotoAtIndex(trackIndex);const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;collectionModeLabelEl.title=safe?"My photo safe":"Top rated";collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);updatePhotoNavButtons(trackIndex);return true;};
-  const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const delay=Math.max(1800,Number(holdSecondsEl.value||1)*1000+1200);collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
+  const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5)),delay=seconds*1000;collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
   const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
-  const openPhotoCollection=async(collection="favorites",targetPhotoId=null)=>{if(!editorHasConnection()){openAccountWorkspace();return;}activeCollectionType=collection;stopCollectionPlayback();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();const label=collection==="favorites"?"My photo safe":"Top rated";setStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];if(!photos.length){setStatus(`${label} is empty.`);return;}if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};stopAnim();groupedFiles.clear();trackCache.clear();collectionSequence=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);await leaveCollectionMode();return;}updateBirdSelectors(idsSorted());document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);await showCollectionSequencePhoto(collectionSequenceIndex);}catch(error){setStatus(`Could not load ${label}: ${error.message}`);}};
+  const openPhotoCollection=async(collection="favorites",targetPhotoId=null)=>{if(!editorHasConnection()){openAccountWorkspace();return;}activeCollectionType=collection;stopCollectionPlayback();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();const label=collection==="favorites"?"My photo safe":"Top rated";setStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"custom":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];if(!photos.length){setStatus(`${label} is empty.`);return;}if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};stopAnim();groupedFiles.clear();trackCache.clear();const usable=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));collectionSequence=collection==="favorites"?orderPhotoSafeSequence(usable):usable;for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);await leaveCollectionMode();return;}collectionOrderWrapEl.hidden=collection!=="favorites";collectionOrderEl.value=collectionOrderPreference;updateBirdSelectors(idsSorted());document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);await showCollectionSequencePhoto(collectionSequenceIndex);}catch(error){setStatus(`Could not load ${label}: ${error.message}`);}};
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
   const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;stopCollectionPlayback();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
+  collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
+  collectionOrderEl.addEventListener("change",async()=>{if(activeCollectionType!=="favorites"||!collectionSequence.length)return;collectionOrderPreference=collectionOrderEl.value;try{localStorage.setItem("storkPhotoSafeOrderV1",collectionOrderPreference);}catch(error){}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderPhotoSafeSequence(collectionSequence,collectionOrderPreference);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
 
   const formatRating=(value)=>value===null||value===undefined?"—":Number(value).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1});
   const downloadApiFile=async(url,fallbackName)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
   const loadCollectionPhotosPanel=async()=>{
     const collection=activeCollectionType,isSafe=collection==="favorites",label=isSafe?"My photo safe":"Top rated";setDataStatus(`Loading ${label}…`);
     try{
-      const sort=isSafe?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];
+      const sort=isSafe?"custom":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];
       const bulk=isSafe?`<button class="primarySave" id="downloadSafeZip" type="button">Download my photo safe (ZIP)</button>`:`<label>Minimum average <input id="ratedDownloadThreshold" type="number" min="1" max="5" step="0.1" value="4.0" style="width:82px"></label><button class="primarySave" id="downloadRatedZip" type="button">Download matching photos (ZIP)</button>`;
-      const header=isSafe?"<tr><th>Actions</th><th>Photo</th><th>Bird</th></tr>":"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Average</th><th>Votes</th><th>Your rating</th></tr>";
-      const rows=photos.map((photo)=>{const preview=authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`,actions=`${isSafe?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove from safe</button> ':""}<button class="secondary tiny collectionDownload" type="button">Download</button>`;if(isSafe)return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td></tr>`;const ratingSelect=`<select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select>`;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions} ${ratingSelect}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td class="ratedStars">★ ${escapeHtml(formatRating(photo.social?.averageRating))}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0,0":`★ ${formatRating(photo.social.ownRating)}`}</td></tr>`;}).join("");
+      const header=isSafe?"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>My order</th></tr>":"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Average</th><th>Votes</th><th>Your rating</th></tr>";
+      const rows=photos.map((photo,index)=>{const preview=authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`,orderActions=isSafe?` <button class="secondary tiny safeMove" data-delta="-1" type="button" title="Move earlier" ${index===0?"disabled":""}>↑</button><button class="secondary tiny safeMove" data-delta="1" type="button" title="Move later" ${index===photos.length-1?"disabled":""}>↓</button>`:"",actions=`${isSafe?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove from safe</button> ':""}<button class="secondary tiny collectionDownload" type="button">Download</button>${orderActions}`;if(isSafe)return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td>${index+1}</td></tr>`;const ratingSelect=`<select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select>`;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions} ${ratingSelect}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td class="ratedStars">★ ${escapeHtml(formatRating(photo.social?.averageRating))}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0,0":`★ ${formatRating(photo.social.ownRating)}`}</td></tr>`;}).join("");
       dataPanelEl.innerHTML=`<div class="btnrow"><button class="secondary" id="collectionBackToViewer" type="button">Map viewer</button>${bulk}</div><h3>${isSafe?"🔐 ":""}${escapeHtml(label)}</h3><div class="dataTableWrap"><table class="ratedTable"><thead>${header}</thead><tbody>${rows}</tbody></table></div>`;
       el("collectionBackToViewer").addEventListener("click",()=>openPhotoCollection(collection));
       el("downloadSafeZip")?.addEventListener("click",async()=>{const button=el("downloadSafeZip");button.disabled=true;try{await downloadApiFile("/api/me/photo-collection/download?collection=favorites","my-photo-safe.zip");}catch(error){setDataStatus(`Photo safe download failed: ${error.message}`);}finally{button.disabled=false;}});
       el("downloadRatedZip")?.addEventListener("click",async()=>{const button=el("downloadRatedZip"),minimum=Math.max(1,Math.min(5,Number(el("ratedDownloadThreshold").value)||4));button.disabled=true;try{await downloadApiFile(`/api/me/photo-collection/download?collection=rated&minimumRating=${encodeURIComponent(minimum)}`,`top-rated-${String(minimum).replace(".","-")}.zip`);}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}});
       dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");openPhotoCollection(collection,row.dataset.photoId);}));
       dataPanelEl.querySelectorAll(".collectionDownload").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");button.disabled=true;try{await downloadApiFile(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/download`,"stork-photo.jpg");}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}}));
-      dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});row.remove();}));
+      dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});await loadCollectionPhotosPanel();}));
+      dataPanelEl.querySelectorAll(".safeMove").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr"),photoIds=Array.from(dataPanelEl.querySelectorAll("tbody tr[data-photo-id]"),(item)=>item.dataset.photoId),index=photoIds.indexOf(row.dataset.photoId),next=index+Number(button.dataset.delta);if(index<0||next<0||next>=photoIds.length)return;[photoIds[index],photoIds[next]]=[photoIds[next],photoIds[index]];button.disabled=true;try{await apiFetch("/api/me/photo-collection/favorites/order",{method:"PUT",body:JSON.stringify({photoIds})});collectionOrderPreference="custom";collectionOrderEl.value="custom";try{localStorage.setItem("storkPhotoSafeOrderV1","custom");}catch(error){}await loadCollectionPhotosPanel();}catch(error){setDataStatus(`Could not save photo order: ${error.message}`);button.disabled=false;}}));
       dataPanelEl.querySelectorAll(".collectionRating").forEach((select)=>select.addEventListener("change",async()=>{const row=select.closest("tr"),rating=Number(select.value);await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/rating`,{method:rating?"PUT":"DELETE",body:rating?JSON.stringify({rating}):undefined});await loadCollectionPhotosPanel();}));
       setDataStatus(`${photos.length} ${label.toLowerCase()} photo(s)`);
     }catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus(`${label} failed`);}
@@ -3790,18 +3806,14 @@ loopCurrentEl.checked = false;
     syncModalPhotos();
   };
 
-  prevPhotoBtn.addEventListener("click", () => {
-    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();void showCollectionSequencePhoto(collectionSequenceIndex-1);return;}
-    if(document.body.classList.contains("editorOpen")){moveEditorPhoto(-1);return;}
-    const index = currentPhotoIndex();
-    if (index > 0) showPhotoAtIndex(index - 1);
-  });
-  nextPhotoBtn.addEventListener("click", () => {
-    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();void showCollectionSequencePhoto(collectionSequenceIndex+1);return;}
-    if(document.body.classList.contains("editorOpen")){moveEditorPhoto(1);return;}
-    const index = currentPhotoIndex();
-    if (index >= 0 && index < track.length - 1) showPhotoAtIndex(index + 1);
-  });
+  const navigatePhotoSequenceBy=async(delta)=>{
+    const direction=delta<0?-1:1;
+    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();await showCollectionSequencePhoto(collectionSequenceIndex+direction);return;}
+    if(document.body.classList.contains("editorOpen")){await moveEditorPhoto(direction);return;}
+    const index=currentPhotoIndex(),next=index+direction;if(index>=0&&next>=0&&next<track.length)await showPhotoAtIndex(next);
+  };
+  prevPhotoBtn.addEventListener("click",()=>{void navigatePhotoSequenceBy(-1);});
+  nextPhotoBtn.addEventListener("click",()=>{void navigatePhotoSequenceBy(1);});
 
   // --- Editor mode: authenticated SQL-backed photo annotation ---
   const editorFieldEls = Array.from(editorFormEl.querySelectorAll("[data-field]"));
@@ -4474,18 +4486,19 @@ loopCurrentEl.checked = false;
       closeEditorMode();
       return;
     }
-    const tag = String(event.target && event.target.tagName || "").toLowerCase();
-    const isEditingText = tag === "input" || tag === "textarea" || tag === "select";
-    if (!isEditingText && event.key === "ArrowLeft") {
-      event.preventDefault();
-      moveEditorPhoto(-1);
-    } else if (!isEditingText && event.key === "ArrowRight") {
-      event.preventDefault();
-      moveEditorPhoto(1);
-    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
       saveEditorRecord({ markAnalysed: false, advance: false });
     }
+  });
+
+  window.addEventListener("keydown",(event)=>{
+    if(!["ArrowLeft","ArrowRight"].includes(event.key)||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey)return;
+    const target=event.target,tag=String(target?.tagName||"").toLowerCase();
+    if(target?.isContentEditable||["input","textarea","select"].includes(tag))return;
+    if(accountWorkspaceEl.classList.contains("open")||exportWorkspaceEl.classList.contains("open")||installWorkspaceEl.classList.contains("open")||dataWorkspaceEl.classList.contains("open")||appNavDrawerEl.classList.contains("open"))return;
+    if(!track.length&&!document.body.classList.contains("editorOpen")&&!document.body.classList.contains("collectionMode"))return;
+    event.preventDefault();void navigatePhotoSequenceBy(event.key==="ArrowLeft"?-1:1);
   });
 
   editorSetBusy(false);

@@ -14,6 +14,9 @@ test("user photo collections are server-side and cascade with photos",()=>{
   assert.match(schema,/photo_id TEXT NOT NULL REFERENCES photos\(id\) ON DELETE CASCADE/);
   assert.match(server,/\/api\/me\/photo-collection/);
   assert.match(server,/app\.delete\("\/api\/photos\/:id\/rating"/);
+  assert.match(schema,/ALTER TABLE user_photo_favorites ADD COLUMN IF NOT EXISTS sort_order INTEGER/);
+  assert.match(schema,/idx_favorites_user_order/);
+  assert.match(server,/\/api\/me\/photo-collection\/favorites\/order/);
 });
 
 test("manual invitations provide a Gmail compose link and role permissions",()=>{
@@ -110,13 +113,26 @@ test("collections provide jump playback, compact tables and authenticated downlo
   assert.match(tableRenderer,/if\(isSafe\)return/);
 });
 
-test("photo safe previous and next buttons follow the complete cross-bird collection",()=>{
+test("photo safe navigation follows the complete cross-bird collection",()=>{
   assert.match(ui,/classList\.contains\("collectionMode"\)&&collectionSequence\.length/);
   assert.match(ui,/const canStep=collectionSequence\.length>1/);
   assert.match(ui,/prevPhotoBtn\.disabled=!canStep/);
   assert.match(ui,/nextPhotoBtn\.disabled=!canStep/);
-  assert.match(ui,/showCollectionSequencePhoto\(collectionSequenceIndex-1\)/);
-  assert.match(ui,/showCollectionSequencePhoto\(collectionSequenceIndex\+1\)/);
+  assert.match(ui,/showCollectionSequencePhoto\(collectionSequenceIndex\+direction\)/);
+  assert.match(ui,/navigatePhotoSequenceBy\(-1\)/);
+  assert.match(ui,/navigatePhotoSequenceBy\(1\)/);
+});
+
+test("all photo viewers use keyboard arrows and the photo safe has presentation controls",()=>{
+  assert.match(ui,/\["ArrowLeft","ArrowRight"\]\.includes\(event\.key\)/);
+  assert.match(ui,/navigatePhotoSequenceBy\(event\.key==="ArrowLeft"\?-1:1\)/);
+  assert.match(ui,/id="collectionInterval" type="number" min="1" max="120"/);
+  assert.match(ui,/id="collectionOrder" aria-label="Photo safe presentation order"/);
+  assert.match(ui,/const orderPhotoSafeSequence=/);
+  assert.match(ui,/String\(a\.bird\|\|""\)\.localeCompare/);
+  assert.match(ui,/collectionOrderPreference="custom"/);
+  assert.match(ui,/class="secondary tiny safeMove"/);
+  assert.match(server,/sort==="custom"\?"f\.sort_order NULLS LAST/);
 });
 
 test("the mobile collection show uses only a responsive icon and photo counter",()=>{

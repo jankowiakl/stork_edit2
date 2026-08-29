@@ -151,10 +151,19 @@ CREATE INDEX IF NOT EXISTS idx_annotation_options_status ON annotation_options(s
 CREATE TABLE IF NOT EXISTS user_photo_favorites (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  sort_order INTEGER,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id,photo_id)
 );
+ALTER TABLE user_photo_favorites ADD COLUMN IF NOT EXISTS sort_order INTEGER;
+WITH ordered AS (
+  SELECT user_id,photo_id,row_number() OVER(PARTITION BY user_id ORDER BY created_at,photo_id)::integer position
+  FROM user_photo_favorites
+)
+UPDATE user_photo_favorites favorite SET sort_order=ordered.position
+FROM ordered WHERE favorite.user_id=ordered.user_id AND favorite.photo_id=ordered.photo_id AND favorite.sort_order IS NULL;
 CREATE INDEX IF NOT EXISTS idx_favorites_user_created ON user_photo_favorites(user_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_favorites_user_order ON user_photo_favorites(user_id,sort_order,created_at);
 
 CREATE TABLE IF NOT EXISTS photo_ratings (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
