@@ -4,9 +4,13 @@ import fsp from "node:fs/promises";
 
 export function sendOriginalPhoto(res,next,{file,mimeType="image/jpeg"}) {
   res.type(mimeType);
-  res.sendFile(file,{dotfiles:"deny"},(error)=>{
-    if(error)next(error);
+  const stream=fs.createReadStream(file);
+  stream.once("error",(error)=>{
+    if(!res.headersSent)next(error);
+    else res.destroy(error);
   });
+  res.once("close",()=>stream.destroy());
+  stream.pipe(res);
 }
 
 export async function sendPreviewOrOriginal(res,next,{

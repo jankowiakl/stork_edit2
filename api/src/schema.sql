@@ -165,6 +165,30 @@ FROM ordered WHERE favorite.user_id=ordered.user_id AND favorite.photo_id=ordere
 CREATE INDEX IF NOT EXISTS idx_favorites_user_created ON user_photo_favorites(user_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_favorites_user_order ON user_photo_favorites(user_id,sort_order,created_at);
 
+CREATE TABLE IF NOT EXISTS photo_safe_user_shares (
+  id TEXT PRIMARY KEY,
+  owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  shared_with_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  revoked_at TIMESTAMPTZ,
+  UNIQUE(owner_user_id,shared_with_user_id),
+  CHECK(owner_user_id<>shared_with_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_photo_safe_user_shares_recipient ON photo_safe_user_shares(shared_with_user_id,revoked_at,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_photo_safe_user_shares_owner ON photo_safe_user_shares(owner_user_id,revoked_at,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS photo_safe_public_shares (
+  id TEXT PRIMARY KEY,
+  owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  CHECK(expires_at>created_at)
+);
+CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_owner ON photo_safe_public_shares(owner_user_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_active ON photo_safe_public_shares(token_hash,expires_at) WHERE revoked_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS photo_ratings (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,

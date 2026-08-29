@@ -69,6 +69,23 @@ After verification, SQL becomes the source of truth. Keep the old Google Sheet a
 
 The API runs `schema.sql` at startup. This migration only adds columns with safe defaults and new tables; it does not delete or rewrite photos, GPS, stopovers, annotation values or history. Existing accounts remain standard accounts because `restricted_contributor` defaults to `false`.
 
+## Photo Safe sharing
+
+Photo Safe sharing adds two live-reference tables:
+
+- `photo_safe_user_shares` for read-only access granted to another active account;
+- `photo_safe_public_shares` for expiring public links.
+
+Run the normal schema migration (`npm run migrate`, or restart the API when deployment already runs the migration at startup). The migration is additive. It does not copy or alter `user_photo_favorites`; every share resolves the owner's current favourites and `sort_order` when it is read.
+
+Public link secrets are generated from 32 cryptographically random bytes. Only their SHA-256 hashes are stored in PostgreSQL. Revocation sets `revoked_at`; expiry is enforced with `expires_at > now()`. Shared media use separate short-lived signed URLs, and every media request still checks the active share and current membership of the photo in the owner's safe.
+
+Optional central contact configuration for the public scientific-project dialog:
+
+- `PROJECT_CONTACT_NAME`
+- `PROJECT_CONTACT_EMAIL`
+- `PROJECT_CONTACT_URL`
+
 Existing complete annotations are attributed to their original `created_by`/`updated_by` user where possible. Future progress is calculated from the current annotation state, so moving a record from `complete` to `needs_review` immediately removes it from completed and verified counters. Administrators can enable restricted mode per user after deployment and configure global or per-user limits in **Contributors**.
 
 `user_photo_access` remains as an access-history table. Active ordinary browsing access is now stored separately in `user_browse_cycle_state` and `user_browse_cycle_photos`. Each restricted user has one active `cycle_no`; only unique ordinary photos recorded for that number count against `initial_browsing_allowance`. Reopening a current-cycle photo does not consume another slot. Completing one new annotation atomically advances `cycle_no`, begins a fresh allowance and invalidates ordinary grants from the previous cycle without deleting their history. Photos completed by that same user, active annotation focus photos and explicit tasks remain accessible without consuming the cycle.

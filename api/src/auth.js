@@ -19,6 +19,9 @@ export const verifyPassword = (password, hash) => bcrypt.compare(String(password
 export const temporaryPassword = () => `${crypto.randomBytes(9).toString("base64url")}!a7`;
 export const signToken = (user) => jwt.sign({ sub:user.id }, JWT_SECRET, { expiresIn:JWT_EXPIRES_IN });
 export const signMediaToken = (user,photoId) => jwt.sign({sub:user.id,photoId:String(photoId),scope:"photo-media"},JWT_SECRET,{expiresIn:"15m"});
+export const signSharedSafeMediaToken = ({shareId,photoId,shareType,viewerId=null}) => jwt.sign({shareId:String(shareId),photoId:String(photoId),shareType:String(shareType),viewerId:viewerId?String(viewerId):null,scope:"shared-photo-safe-media"},JWT_SECRET,{expiresIn:"5m"});
+export const signSharedSafeViewerToken = ({shareId,shareType,viewerId=null}) => jwt.sign({shareId:String(shareId),shareType:String(shareType),viewerId:viewerId?String(viewerId):null,scope:"shared-photo-safe-viewer"},JWT_SECRET,{expiresIn:"15m"});
+export const verifySharedSafeToken = (token) => jwt.verify(String(token||""),JWT_SECRET);
 
 export function publicUser(user) {
   return user ? {

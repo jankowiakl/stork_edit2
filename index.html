@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="referrer" content="same-origin" />
   <title>White Stork Photo Flight Viewer</title>
   <meta name="theme-color" content="#0f2740" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -804,6 +805,19 @@
     .collectionOption select { width:auto; min-width:132px; padding:4px 7px; }
     .collectionOption input { width:58px; padding:4px 6px; text-align:center; }
     .collectionOption[hidden] { display:none!important; }
+    .collectionSharedBy { color:#cfe5f4; font-size:var(--ui-font-small); white-space:nowrap; }
+    .sharedSafeGrid { display:grid; gap:8px; margin:10px 0 14px; }
+    .sharedSafeCard { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid rgba(119,209,255,.22); border-radius:11px; background:rgba(119,209,255,.05); }
+    .shareSafeWorkspace,.publicProjectIntro { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:14px; background:rgba(3,8,15,.82); backdrop-filter:blur(12px); }
+    .shareSafeWorkspace.open,.publicProjectIntro.open { display:grid; }
+    .shareSafeCard,.publicProjectIntroCard { width:min(720px,96vw); max-height:94dvh; overflow:auto; padding:18px; border:1px solid var(--border); border-radius:16px; background:#0d1625; box-shadow:var(--shadow); }
+    .shareSafeList { display:grid; gap:7px; margin-top:9px; }
+    .shareSafeRow { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px; border:1px solid rgba(255,255,255,.09); border-radius:9px; }
+    body.sharedPhotoSafeReadOnly .photoSocialControls,body.sharedPhotoSafeReadOnly #editorModeBtn,body.sharedPhotoSafeReadOnly #collectionShare { display:none!important; }
+    body.publicSharedSafeMode .appNavDrawer,body.publicSharedSafeMode .appNavHandle,body.publicSharedSafeMode .quickLogin,body.publicSharedSafeMode header,body.publicSharedSafeMode #mobilePanelBtn,body.publicSharedSafeMode .publicLanding { display:none!important; }
+    body.loggedOut.publicSharedSafeMode .wrap,body.loggedOut.publicSharedSafeMode .collectionModeBar { visibility:visible; }
+    body.publicSharedSafeMode .wrap { height:100dvh; padding:0; }
+    body.sharedSafeTableMode .dataTabs,body.sharedSafeTableMode .dataActions > :not(#dataWorkspaceStatus):not(#returnToMain),body.publicSharedSafeMode.sharedSafeTableMode .appNavHandle { display:none!important; }
     .ratingClear { color:#ffb9b9; min-width:27px; }
     .ratedTable { width:100%; border-collapse:collapse; min-width:760px; }
     .ratedTable th,.ratedTable td { padding:8px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; vertical-align:middle; }
@@ -1385,7 +1399,7 @@ button { white-space:normal; line-height:1.2; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
-<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><label class="collectionOption">Every <input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</label><label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
+<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong><span class="collectionSharedBy" id="collectionSharedBy" hidden></span><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><label class="collectionOption">Every <input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</label><label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="collectionShare" type="button">Share</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
@@ -1981,9 +1995,13 @@ button { white-space:normal; line-height:1.2; }
     <div class="accountHero" id="accountHero"><div class="accountAvatar" id="accountAvatar">?</div><div><strong id="accountName">Not logged in</strong><span id="accountRole">Public photo viewer</span><span id="accountEmail">Log in to edit descriptions and use data tools.</span></div></div>
     <div class="contributionDashboard" id="contributionDashboard" hidden></div>
     <div class="accountCollections" id="accountCollections"><button class="secondary accountCollectionBtn" type="button" data-open-collection="favorites"><strong>🔐 My photo safe</strong><br><span class="muted">Your private selection without ratings</span></button><button class="secondary accountCollectionBtn" type="button" data-open-collection="rated"><strong>☆ Top rated</strong><br><span class="muted">Ranking table ordered by average score</span></button></div>
+    <section id="sharedWithMe" hidden><h3>Shared with me</h3><div class="sharedSafeGrid" id="sharedWithMeList"></div></section>
     <div class="accountWorkspaceBody" id="accountWorkspaceBody"></div>
   </section>
 </div>
+
+<div class="shareSafeWorkspace" id="shareSafeWorkspace" aria-hidden="true"><section class="shareSafeCard" role="dialog" aria-modal="true" aria-labelledby="shareSafeTitle"><div class="appPanelTopbar"><div><h2 id="shareSafeTitle">Share Photo Safe</h2><div class="muted">Read-only access to the current contents of your safe</div></div><button class="danger tiny" id="closeShareSafe" type="button">← Back</button></div><h3>Shared with users</h3><div class="btnrow"><select id="shareSafeUser" aria-label="Select user"></select><button class="primarySave" id="shareSafeAddUser" type="button">Share</button></div><div class="shareSafeList" id="shareSafeUsers"></div><h3>Public links</h3><div class="btnrow"><select id="shareSafeDuration"><option value="1">1 hour</option><option value="24" selected>24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="720">30 days</option></select><input id="shareSafeExpiresAt" type="datetime-local" aria-label="Optional exact expiry"><button class="primarySave" id="createShareSafeLink" type="button">Create public link</button></div><div class="miniNote" id="shareSafeCreatedLink"></div><div class="shareSafeList" id="shareSafePublicLinks"></div></section></div>
+<div class="publicProjectIntro" id="publicProjectIntro" aria-hidden="true"><section class="publicProjectIntroCard" role="dialog" aria-modal="true" aria-labelledby="publicProjectIntroTitle"><h2 id="publicProjectIntroTitle">White Stork scientific photo project</h2><p>These photographs are part of a scientific project based on images collected by tracking devices mounted on White Storks.</p><p>If you would like to support the project, please contact the research team. Volunteers can contribute by helping us classify and describe photographs.</p><div class="btnrow"><button class="primarySave" id="continuePublicSlideshow" type="button">Continue to slideshow</button><a class="secondary tiny" id="contactPublicProject" href="#">Contact the project</a></div></section></div>
 
 <div class="appPanelWorkspace" id="exportWorkspace" aria-hidden="true">
   <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="exportWorkspaceTitle">
@@ -2244,6 +2262,8 @@ button { white-space:normal; line-height:1.2; }
   const accountEmailEl = el("accountEmail");
   const accountCollectionsEl = el("accountCollections");
   const contributionDashboardEl = el("contributionDashboard");
+  const sharedWithMeEl = el("sharedWithMe");
+  const sharedWithMeListEl = el("sharedWithMeList");
   const landingLoginBtn = el("landingLogin");
   const browseLockEl = el("browseLock");
   const browseLockMessageEl = el("browseLockMessage");
@@ -2258,6 +2278,21 @@ button { white-space:normal; line-height:1.2; }
   const collectionIntervalEl = el("collectionInterval");
   const collectionOrderWrapEl = el("collectionOrderWrap");
   const collectionOrderEl = el("collectionOrder");
+  const collectionSharedByEl = el("collectionSharedBy");
+  const collectionShareBtn = el("collectionShare");
+  const shareSafeWorkspaceEl = el("shareSafeWorkspace");
+  const closeShareSafeBtn = el("closeShareSafe");
+  const shareSafeUserEl = el("shareSafeUser");
+  const shareSafeAddUserBtn = el("shareSafeAddUser");
+  const shareSafeUsersEl = el("shareSafeUsers");
+  const shareSafeDurationEl = el("shareSafeDuration");
+  const shareSafeExpiresAtEl = el("shareSafeExpiresAt");
+  const createShareSafeLinkBtn = el("createShareSafeLink");
+  const shareSafeCreatedLinkEl = el("shareSafeCreatedLink");
+  const shareSafePublicLinksEl = el("shareSafePublicLinks");
+  const publicProjectIntroEl = el("publicProjectIntro");
+  const continuePublicSlideshowBtn = el("continuePublicSlideshow");
+  const contactPublicProjectEl = el("contactPublicProject");
   const leaveCollectionModeBtn = el("leaveCollectionMode");
   const collectionViewerModeBtn = el("collectionViewerMode");
   const collectionTableModeBtn = el("collectionTableMode");
@@ -2352,7 +2387,7 @@ button { white-space:normal; line-height:1.2; }
     contributionDashboardEl.hidden=false;contributionDashboardEl.innerHTML=`<div class="contributionMetrics"><div class="contributionMetric">Completed annotations<b>${c.toLocaleString()}</b></div><div class="contributionMetric">Verified annotations<b>${profile.verified.toLocaleString()}</b></div><div class="contributionMetric">New photos left in cycle<b>${profile.fullAccess?"All":profile.browseRemaining.toLocaleString()}</b></div><div class="contributionMetric">Current level<b>${escapeHtml(profile.level.name)}</b></div></div>${currentBadge}${progressBox}${taskHtml||requestHtml?`<h3>Your requests and tasks</h3>${taskHtml}${requestHtml}`:""}`;
     contributionDashboardEl.querySelectorAll(".accountOpenRecord").forEach((button)=>button.addEventListener("click",()=>{closeAccountWorkspace();openWorkspacePhoto(button.dataset.photoId,button.dataset.bird,true,"account");}));
   };
-  const loadContributionDashboard=async()=>{if(!authState.user||authState.user.mustChangePassword)return renderContributionDashboard(null);try{const [profile,requests,tasks]=await Promise.all([apiFetch("/api/me/contribution"),apiFetch("/api/me/review-requests"),apiFetch("/api/me/tasks")]);authState.contribution=profile.contribution;saveAuth();renderContributionDashboard(profile.contribution,requests.requests,tasks.tasks);updateAppNavigation();}catch(error){contributionDashboardEl.hidden=false;contributionDashboardEl.innerHTML=`<div class="editorStatus error">Could not load contribution progress: ${escapeHtml(error.message)}</div>`;}};
+  const loadContributionDashboard=async()=>{if(!authState.user||authState.user.mustChangePassword){sharedWithMeEl.hidden=true;return renderContributionDashboard(null);}try{const [profile,requests,tasks]=await Promise.all([apiFetch("/api/me/contribution"),apiFetch("/api/me/review-requests"),apiFetch("/api/me/tasks")]);authState.contribution=profile.contribution;saveAuth();renderContributionDashboard(profile.contribution,requests.requests,tasks.tasks);updateAppNavigation();void loadSharedWithMe();}catch(error){contributionDashboardEl.hidden=false;contributionDashboardEl.innerHTML=`<div class="editorStatus error">Could not load contribution progress: ${escapeHtml(error.message)}</div>`;void loadSharedWithMe();}};
 
   let deferredInstallPrompt=null;
   const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches||window.navigator.standalone===true;
@@ -2934,6 +2969,7 @@ loopCurrentEl.checked = false;
 
   let track = [];
   let birdId = null;
+  let photoSafeViewerContext=null;
 
   let playing = false;
   let rafId = null;
@@ -3109,7 +3145,7 @@ loopCurrentEl.checked = false;
   const optionList=(values,current,allLabel)=>`<option value="">${escapeHtml(allLabel)}</option>${(values||[]).map((value)=>`<option value="${escapeHtml(value)}" ${String(current)===String(value)?"selected":""}>${escapeHtml(value)}</option>`).join("")}`;
   const tableColumnManagerHtml=()=>`<details class="tableColumnManager"><summary>Columns: visibility, order and width</summary><div class="btnrow"><button id="tableShowAllColumns" class="secondary tiny" type="button">Show all</button><button id="tableResetColumns" class="secondary tiny" type="button">Reset layout</button></div><div class="tableColumnGrid">${orderedTableColumns().map((column,index)=>`<div class="tableColumnItem" data-column-key="${escapeHtml(column.key)}"><label><input class="tableColumnVisible" type="checkbox" ${tableColumnConfig.hidden.includes(column.key)?"":"checked"}> <span>${escapeHtml(column.label)}</span></label><button class="secondary tiny tableColumnUp" type="button" ${index===0?"disabled":""}>↑</button><button class="secondary tiny tableColumnDown" type="button" ${index===tableColumnDefs.length-1?"disabled":""}>↓</button><input class="tableColumnWidth" type="number" min="60" max="600" step="10" value="${Number(tableColumnConfig.widths[column.key]||column.width)}" title="Width in pixels"></div>`).join("")}</div></details>`;
   const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
-  const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true");document.body.classList.remove("dataWorkspaceOpen"); };
+  const closeDataWorkspace = () => { const returningToSafe=document.body.classList.contains("sharedSafeTableMode");dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true");document.body.classList.remove("dataWorkspaceOpen","sharedSafeTableMode");if(returningToSafe&&document.body.classList.contains("collectionMode"))collectionModeBarEl.hidden=false; };
   let editorReturnDataMode=null,editorContributorReview=null,contributorReviewSwitchToken=0;
   const contributorReviewLazyBirds=new Set();
   let viewerReturnState=null;
@@ -3540,7 +3576,7 @@ loopCurrentEl.checked = false;
   const loadGpsDataset = async (id) => {
     if (!id) return false;
     try {
-      const authenticated=editorHasConnection(),base=authenticated?"/api/individuals":"/api/public/individuals",data = await apiFetch(`${base}/${encodeURIComponent(id)}/route?detail=full&max=100000`, {}, { auth:authenticated });
+      const shared=photoSafeViewerContext?.readOnly,authenticated=!shared&&editorHasConnection(),url=shared?`/api/public/photo-safe-shares/${encodeURIComponent(photoSafeViewerContext.shareId)}/individuals/${encodeURIComponent(id)}/route?max=5000&viewer_token=${encodeURIComponent(photoSafeViewerContext.viewerToken)}`:`${authenticated?"/api/individuals":"/api/public/individuals"}/${encodeURIComponent(id)}/route?detail=full&max=100000`,data = await apiFetch(url, {}, { auth:authenticated });
       const points = (data.points || []).map((point, index) => ({
         id, lon:Number(point.lon), lat:Number(point.lat), dt:point.time ? new Date(point.time) : null,
         dateTimeRaw:point.time || "", timeAgg:index, countN:point.countN ?? null, type:point.type || ""
@@ -3562,7 +3598,7 @@ loopCurrentEl.checked = false;
   const loadStopoverDataset = async (id) => {
     if (!id) return false;
     try {
-      const authenticated=editorHasConnection(),base=authenticated?"/api/individuals":"/api/public/individuals",data = await apiFetch(`${base}/${encodeURIComponent(id)}/stopovers`, {}, { auth:authenticated });
+      const shared=photoSafeViewerContext?.readOnly,authenticated=!shared&&editorHasConnection(),url=shared?`/api/public/photo-safe-shares/${encodeURIComponent(photoSafeViewerContext.shareId)}/individuals/${encodeURIComponent(id)}/stopovers?viewer_token=${encodeURIComponent(photoSafeViewerContext.viewerToken)}`:`${authenticated?"/api/individuals":"/api/public/individuals"}/${encodeURIComponent(id)}/stopovers`,data = await apiFetch(url, {}, { auth:authenticated });
       stopoverFeatures = (data.features || []).filter((feature) => String(feature.properties?.id || "") === String(id));
       stopoverLoadSummary = `Stopovers: ${stopoverFeatures.length} polygons for ${id}`;
       updateBackgroundDataStatus(); renderBackgroundLayers(birdId); return true;
@@ -3674,7 +3710,7 @@ loopCurrentEl.checked = false;
       const canStep=collectionSequence.length>1,selected=collectionSequence[collectionSequenceIndex],selectedTrackIndex=selected?track.findIndex((point)=>point.photoId===selected.id):-1;
       prevPhotoBtn.disabled=!canStep;
       nextPhotoBtn.disabled=!canStep;
-      editorModeBtn.disabled=selectedTrackIndex<0||!track[selectedTrackIndex]?.photoId||!editorHasConnection();
+      editorModeBtn.disabled=!!photoSafeViewerContext?.readOnly||selectedTrackIndex<0||!track[selectedTrackIndex]?.photoId||!editorHasConnection();
       tableModeBtn.disabled=!editorHasConnection();
       progressModeBtn.disabled=!editorHasConnection();
       return;
@@ -3691,7 +3727,7 @@ loopCurrentEl.checked = false;
   let activeCollectionType="favorites";
   let socialPhotoId=null,socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0},socialLoadToken=0;
   const removeOwnRating=async()=>{if(!socialPhotoId||socialState.ownRating==null)return;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"DELETE"});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not remove rating: ${error.message}`);}};
-  const renderPhotoSocial=()=>{const photoSafeMode=document.body.classList.contains("collectionMode")&&activeCollectionType==="favorites";photoSocialEl.hidden=!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"🔐":"🔒";favoritePhotoBtn.title=socialState.favorite?"Remove from my photo safe":"Save in my photo safe";photoRatingEl.hidden=photoSafeMode;ratingClearBtn.hidden=photoSafeMode||socialState.ownRating==null;ratingAverageEl.hidden=photoSafeMode;photoRatingEl.replaceChildren();if(!photoSafeMode)for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${Number(socialState.averageRating).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1})} (${socialState.ratingCount})`;};
+  const renderPhotoSocial=()=>{const readOnlySafe=!!photoSafeViewerContext?.readOnly,photoSafeMode=document.body.classList.contains("collectionMode")&&activeCollectionType==="favorites";photoSocialEl.hidden=readOnlySafe||!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=readOnlySafe||authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"🔐":"🔒";favoritePhotoBtn.title=socialState.favorite?"Remove from my photo safe":"Save in my photo safe";photoRatingEl.hidden=photoSafeMode;if(readOnlySafe)photoRatingEl.hidden=true;ratingClearBtn.hidden=readOnlySafe||photoSafeMode||socialState.ownRating==null;ratingAverageEl.hidden=readOnlySafe||photoSafeMode;photoRatingEl.replaceChildren();if(!readOnlySafe&&!photoSafeMode)for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${Number(socialState.averageRating).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1})} (${socialState.ratingCount})`;};
   let currentPhotoDetails=null,photoInfoEnabled=false;
   const countryShort=(country)=>{const value=String(country||"").trim();if(!value)return"";const known={poland:"PL",germany:"DE",czechia:"CZ","czech republic":"CZ",slovakia:"SK",ukraine:"UA",belarus:"BY",lithuania:"LT",latvia:"LV",estonia:"EE",romania:"RO",bulgaria:"BG",hungary:"HU",croatia:"HR",serbia:"RS",turkey:"TR",türkiye:"TR",israel:"IL",jordan:"JO",egypt:"EG",sudan:"SD",chad:"TD",ethiopia:"ET",kenya:"KE",tanzania:"TZ",spain:"ES",france:"FR",italy:"IT",austria:"AT",greece:"GR"};return value.length<=3?value.toUpperCase():(known[value.toLowerCase()]||value.slice(0,3).toUpperCase());};
   const hasInfoNumber=(value)=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value)),infoNumber=(value)=>String(Math.round(Number(value)*100)/100);
@@ -3699,7 +3735,7 @@ loopCurrentEl.checked = false;
   const renderPhotoInfo=()=>{photoInfoOverlayEl.hidden=!photoInfoEnabled;if(!photoInfoEnabled)return;if(!currentPhotoDetails){photoInfoOverlayEl.replaceChildren();return;}const annotation=currentPhotoDetails.annotation||{},country=countryShort(currentPhotoDetails.country),place=String(currentPhotoDetails.closeCity||currentPhotoDetails.country||"").trim(),geo=String(currentPhotoDetails.geoDescription||"").trim(),remarks=String(annotation.Remarks||"").trim(),placeHtml=country||place?`<div class="photoInfoSide photoInfoPlace">${country?`<b>${escapeHtml(country)}</b>`:""}${country&&place?"<br>":""}${place?`<span>${escapeHtml(place)}</span>`:""}</div>`:"",aboveGround=photoAboveGround(currentPhotoDetails),gpsAltitude=currentPhotoDetails.altitudeM,heightHtml=hasInfoNumber(aboveGround)||hasInfoNumber(gpsAltitude)?`<div class="photoInfoSide photoInfoHeight">${hasInfoNumber(gpsAltitude)?`<div><b>GPS altitude (m):</b> ${escapeHtml(infoNumber(gpsAltitude))}</div>`:""}${hasInfoNumber(aboveGround)?`<div><b>Above ground (m):</b> ${escapeHtml(infoNumber(aboveGround))}</div>`:""}</div>`:"",descriptionHtml=geo||remarks?`<div class="photoInfoDescription">${geo?escapeHtml(geo):""}${remarks?`<span class="remarks">${escapeHtml(remarks)}</span>`:""}</div>`:"";photoInfoOverlayEl.innerHTML=placeHtml+heightHtml+descriptionHtml;};
   const setPhotoInfoEnabled=(enabled)=>{photoInfoEnabled=!!enabled;photoInfoToggleBtn.setAttribute("aria-expanded",String(photoInfoEnabled));photoInfoToggleBtn.setAttribute("aria-pressed",String(photoInfoEnabled));photoInfoToggleBtn.title=photoInfoEnabled?"Hide photo information":"Show photo information";renderPhotoInfo();};
   photoInfoToggleBtn.addEventListener("click",()=>setPhotoInfoEnabled(!photoInfoEnabled));
-  const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;const token=++socialLoadToken;if(!editorHasConnection()||!socialPhotoId){currentPhotoDetails=null;renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();return;}try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();};
+  const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;const token=++socialLoadToken;if(photoSafeViewerContext?.readOnly){currentPhotoDetails=collectionSequence.find((photo)=>photo.id===socialPhotoId)||null;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();return;}if(!editorHasConnection()||!socialPhotoId){currentPhotoDetails=null;renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();return;}try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();};
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private photo safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update photo safe: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
 
@@ -3710,31 +3746,118 @@ loopCurrentEl.checked = false;
   const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
   const orderPhotoSafeSequence=(photos,order=collectionOrderPreference)=>photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
   const stopCollectionPlayback=()=>{collectionPlaying=false;if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;if(collectionPlayBtn)collectionPlayBtn.textContent="Play";};
-  const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0){updatePhotoNavButtons();return false;}await showPhotoAtIndex(trackIndex);const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;collectionModeLabelEl.title=safe?"My photo safe":"Top rated";collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);updatePhotoNavButtons(trackIndex);return true;};
+  const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0){updatePhotoNavButtons();return false;}await showPhotoAtIndex(trackIndex,{skipAccess:!!photoSafeViewerContext?.readOnly});const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;collectionModeLabelEl.title=safe?"My photo safe":"Top rated";collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);updatePhotoNavButtons(trackIndex);return true;};
   const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5)),delay=seconds*1000;collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
-  const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
-  const openPhotoCollection=async(collection="favorites",targetPhotoId=null)=>{if(!editorHasConnection()){openAccountWorkspace();return;}activeCollectionType=collection;stopCollectionPlayback();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();const label=collection==="favorites"?"My photo safe":"Top rated";setStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"custom":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];if(!photos.length){setStatus(`${label} is empty.`);return;}if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};stopAnim();groupedFiles.clear();trackCache.clear();const usable=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));collectionSequence=collection==="favorites"?orderPhotoSafeSequence(usable):usable;for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);await leaveCollectionMode();return;}collectionOrderWrapEl.hidden=collection!=="favorites";collectionOrderEl.value=collectionOrderPreference;updateBirdSelectors(idsSorted());document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);await showCollectionSequencePhoto(collectionSequenceIndex);}catch(error){setStatus(`Could not load ${label}: ${error.message}`);}};
+  const publicSafeIntroKey=()=>`storkPublicSafeIntroSeen:${photoSafeViewerContext?.shareId||"unknown"}`;
+  const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY"&&!sessionStorage.getItem(publicSafeIntroKey())){publicProjectIntroEl.classList.add("open");publicProjectIntroEl.setAttribute("aria-hidden","false");return;}stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
+  const loadPhotoSafeViewerSource=async(options={})=>{if(options.payload)return options.payload;if(options.mode==="SHARED_READONLY")return apiFetch(`/api/photo-safe/shares/${encodeURIComponent(options.shareId)}`);if(options.mode==="PUBLIC_READONLY")return apiFetch(`/api/public/photo-safe?token=${encodeURIComponent(options.publicToken||"")}`,{}, {auth:false});return apiFetch("/api/me/photo-collection?collection=favorites&sort=custom");};
+  let sharedSafeRefreshTimer=null;
+  const stopSharedSafeRefresh=()=>{if(sharedSafeRefreshTimer)clearTimeout(sharedSafeRefreshTimer);sharedSafeRefreshTimer=null;};
+  const scheduleSharedSafeRefresh=()=>{stopSharedSafeRefresh();if(!photoSafeViewerContext?.readOnly)return;sharedSafeRefreshTimer=setTimeout(async()=>{const context={...photoSafeViewerContext};try{const result=await loadPhotoSafeViewerSource({mode:context.mode,shareId:context.shareId,publicToken:context.publicToken}),currentId=collectionSequence[collectionSequenceIndex]?.id,fresh=(result.photos||[]).filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));if(!photoSafeViewerContext||photoSafeViewerContext.shareId!==context.shareId)return;photoSafeViewerContext={...photoSafeViewerContext,viewerToken:result.viewerToken,contact:result.contact||photoSafeViewerContext.contact};collectionSequence=orderPhotoSafeSequence(fresh);groupedFiles.clear();trackCache.clear();for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));const freshById=new Map(collectionSequence.map((photo)=>[photo.id,photo]));for(const point of track){const photo=freshById.get(point.photoId);if(photo){point.url=photo.imageUrl;point.previewUrl=photo.previewUrl;}}collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));scheduleSharedSafeRefresh();}catch(error){stopCollectionPlayback();stopSharedSafeRefresh();setStatus(error.status===403?"This Photo Safe is no longer shared or the public link has expired.":`Could not refresh shared Photo Safe: ${error.message}`);}},4*60*1000);};
+  const openPhotoCollection=async(collection="favorites",targetPhotoId=null,options={})=>{
+    const requestedMode=options.mode||photoSafeViewerContext?.mode;
+    const readOnly=["SHARED_READONLY","PUBLIC_READONLY"].includes(requestedMode);
+    if(!readOnly&&!editorHasConnection()){openAccountWorkspace();return;}
+    activeCollectionType=collection;
+    stopCollectionPlayback();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();
+    document.body.classList.remove("sharedSafeTableMode");
+    const label=readOnly?"Shared Photo Safe":collection==="favorites"?"My photo safe":"Top rated";
+    setStatus(`Loading ${label}…`);
+    try{
+      const sourceOptions=readOnly?{...options,mode:requestedMode}:options;
+      const result=readOnly?await loadPhotoSafeViewerSource(sourceOptions):await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${collection==="favorites"?"custom":"rating_desc"}`);
+      const photos=result.photos||[];
+      if(!photos.length){setStatus(`${label} is empty.`);return;}
+      photoSafeViewerContext=readOnly?{
+        mode:result.mode||requestedMode,readOnly:true,shareId:result.share.id,
+        ownerName:result.share.owner.name,viewerToken:result.viewerToken,
+        publicToken:options.publicToken||photoSafeViewerContext?.publicToken||null,
+        contact:result.contact||{}
+      }:collection==="favorites"?{mode:"OWNER",readOnly:false}:null;
+      if(readOnly)scheduleSharedSafeRefresh();else stopSharedSafeRefresh();
+      const contact=photoSafeViewerContext?.contact||{};
+      contactPublicProjectEl.href=contact.url||(contact.email?`mailto:${contact.email}`:"#");
+      contactPublicProjectEl.textContent=contact.name?`Contact ${contact.name}`:"Contact the project";
+      document.body.classList.toggle("sharedPhotoSafeReadOnly",readOnly);
+      document.body.classList.toggle("publicSharedSafeMode",photoSafeViewerContext?.mode==="PUBLIC_READONLY");
+      collectionSharedByEl.hidden=!readOnly;
+      collectionSharedByEl.textContent=readOnly?`Shared by: ${photoSafeViewerContext.ownerName}`:"";
+      collectionShareBtn.hidden=readOnly||collection!=="favorites";
+      leaveCollectionModeBtn.hidden=photoSafeViewerContext?.mode==="PUBLIC_READONLY";
+      if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};
+      stopAnim();groupedFiles.clear();trackCache.clear();gpsTracksByBird.clear();gpsDatasetPromises.clear();stopoverFeatures=[];
+      const usable=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));
+      collectionSequence=collection==="favorites"?orderPhotoSafeSequence(usable):usable;
+      for(const photo of collectionSequence){
+        if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);
+        groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});
+      }
+      for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));
+      if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);return;}
+      collectionOrderWrapEl.hidden=collection!=="favorites";
+      collectionOrderEl.value=collectionOrderPreference;
+      updateBirdSelectors(idsSorted());
+      document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;
+      collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);
+      await showCollectionSequencePhoto(collectionSequenceIndex);
+    }catch(error){
+      setStatus(`Could not load ${label}: ${error.message}`);
+      if(readOnly&&error.status===403&&requestedMode==="SHARED_READONLY"){photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","collectionMode");collectionModeBarEl.hidden=true;openAccountWorkspace();}
+    }
+  };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;stopCollectionPlayback();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";stopCollectionPlayback();stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
   collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
   collectionOrderEl.addEventListener("change",async()=>{if(activeCollectionType!=="favorites"||!collectionSequence.length)return;collectionOrderPreference=collectionOrderEl.value;try{localStorage.setItem("storkPhotoSafeOrderV1",collectionOrderPreference);}catch(error){}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderPhotoSafeSequence(collectionSequence,collectionOrderPreference);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
+  continuePublicSlideshowBtn.addEventListener("click",()=>{sessionStorage.setItem(publicSafeIntroKey(),"1");publicProjectIntroEl.classList.remove("open");publicProjectIntroEl.setAttribute("aria-hidden","true");void toggleCollectionPlayback();});
+
+  const closeShareSafeWorkspace=()=>{shareSafeWorkspaceEl.classList.remove("open");shareSafeWorkspaceEl.setAttribute("aria-hidden","true");};
+  const shareStatusLabel=(share)=>share.status==="active"?"Active":share.status==="expired"?"Expired":"Revoked";
+  const loadPhotoSafeShares=async()=>{
+    const [candidateResult,shareResult]=await Promise.all([apiFetch("/api/me/photo-safe/share-candidates"),apiFetch("/api/me/photo-safe/shares")]);
+    const activeRecipients=new Set((shareResult.userShares||[]).filter((share)=>share.status==="active").map((share)=>share.recipient.id));
+    const candidates=(candidateResult.users||[]).filter((user)=>!activeRecipients.has(user.id));
+    shareSafeUserEl.innerHTML=candidates.length?candidates.map((user)=>`<option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} • ${escapeHtml(user.role)}</option>`).join(""):'<option value="">No users available</option>';
+    shareSafeAddUserBtn.disabled=!candidates.length;
+    shareSafeUsersEl.innerHTML=(shareResult.userShares||[]).map((share)=>`<div class="shareSafeRow"><div><b>${escapeHtml(share.recipient.name)}</b><br><span class="muted">${escapeHtml(share.recipient.email)} • ${share.photoCount} photos • ${shareStatusLabel(share)}</span></div>${share.status==="active"?`<button class="danger tiny revokeUserSafeShare" data-share-id="${escapeHtml(share.id)}" type="button">Revoke</button>`:""}</div>`).join("")||'<div class="muted">Not shared with another user yet.</div>';
+    shareSafePublicLinksEl.innerHTML=(shareResult.publicShares||[]).map((share)=>`<div class="shareSafeRow"><div><b>${shareStatusLabel(share)}</b><br><span class="muted">${share.photoCount} photos • expires ${escapeHtml(new Date(share.expiresAt).toLocaleString())}</span></div>${share.status==="active"?`<button class="danger tiny revokePublicSafeShare" data-share-id="${escapeHtml(share.id)}" type="button">Revoke</button>`:""}</div>`).join("")||'<div class="muted">No public links created.</div>';
+    shareSafeUsersEl.querySelectorAll(".revokeUserSafeShare").forEach((button)=>button.addEventListener("click",async()=>{if(!confirm("Revoke this user\'s read-only access immediately?"))return;button.disabled=true;try{await apiFetch(`/api/me/photo-safe/shares/users/${encodeURIComponent(button.dataset.shareId)}`,{method:"DELETE"});await loadPhotoSafeShares();}catch(error){button.disabled=false;setStatus(`Could not revoke share: ${error.message}`);}}));
+    shareSafePublicLinksEl.querySelectorAll(".revokePublicSafeShare").forEach((button)=>button.addEventListener("click",async()=>{if(!confirm("Revoke this public link immediately?"))return;button.disabled=true;try{await apiFetch(`/api/me/photo-safe/shares/public/${encodeURIComponent(button.dataset.shareId)}`,{method:"DELETE"});await loadPhotoSafeShares();}catch(error){button.disabled=false;setStatus(`Could not revoke link: ${error.message}`);}}));
+  };
+  const openShareSafeWorkspace=async()=>{if(photoSafeViewerContext?.readOnly||activeCollectionType!=="favorites")return;shareSafeCreatedLinkEl.replaceChildren();shareSafeWorkspaceEl.classList.add("open");shareSafeWorkspaceEl.setAttribute("aria-hidden","false");try{await loadPhotoSafeShares();}catch(error){shareSafeUsersEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;}};
+  collectionShareBtn.addEventListener("click",openShareSafeWorkspace);
+  closeShareSafeBtn.addEventListener("click",closeShareSafeWorkspace);
+  shareSafeWorkspaceEl.addEventListener("pointerdown",(event)=>{if(event.target===shareSafeWorkspaceEl)closeShareSafeWorkspace();});
+  shareSafeAddUserBtn.addEventListener("click",async()=>{const sharedWithUserId=shareSafeUserEl.value;if(!sharedWithUserId)return;shareSafeAddUserBtn.disabled=true;try{await apiFetch("/api/me/photo-safe/shares/users",{method:"POST",body:JSON.stringify({sharedWithUserId})});await loadPhotoSafeShares();}catch(error){setStatus(`Could not share Photo Safe: ${error.message}`);}finally{shareSafeAddUserBtn.disabled=false;}});
+  createShareSafeLinkBtn.addEventListener("click",async()=>{createShareSafeLinkBtn.disabled=true;try{const expiresValue=String(shareSafeExpiresAtEl.value||"").trim(),body=expiresValue?{expiresAt:new Date(expiresValue).toISOString()}:{durationHours:Number(shareSafeDurationEl.value)||24},result=await apiFetch("/api/me/photo-safe/shares/public",{method:"POST",body:JSON.stringify(body)}),link=result.share.link;shareSafeCreatedLinkEl.innerHTML=`<b>New link (shown only now):</b><div class="btnrow"><input id="newPublicSafeLink" readonly value="${escapeHtml(link)}"><button class="secondary tiny" id="copyPublicSafeLink" type="button">Copy link</button></div>`;el("copyPublicSafeLink").addEventListener("click",async()=>{await navigator.clipboard.writeText(link);el("copyPublicSafeLink").textContent="Copied";});await loadPhotoSafeShares();}catch(error){shareSafeCreatedLinkEl.innerHTML=`<span class="editorStatus error">${escapeHtml(error.message)}</span>`;}finally{createShareSafeLinkBtn.disabled=false;}});
+
+  const loadSharedWithMe=async()=>{
+    if(!authState.user||authState.user.mustChangePassword){sharedWithMeEl.hidden=true;sharedWithMeListEl.replaceChildren();return;}
+    try{
+      const result=await apiFetch("/api/photo-safe/shared-with-me"),shares=result.shares||[];
+      sharedWithMeEl.hidden=!shares.length;
+      sharedWithMeListEl.innerHTML=shares.map((share)=>`<article class="sharedSafeCard"><div><b>${escapeHtml(share.owner.name)} — Photo Safe</b><br><span class="muted">${share.photoCount} photos • shared ${escapeHtml(new Date(share.createdAt).toLocaleDateString())}</span></div><button class="primarySave tiny openSharedSafe" data-share-id="${escapeHtml(share.id)}" type="button">Open</button></article>`).join("");
+      sharedWithMeListEl.querySelectorAll(".openSharedSafe").forEach((button)=>button.addEventListener("click",()=>openPhotoCollection("favorites",null,{mode:"SHARED_READONLY",shareId:button.dataset.shareId})));
+    }catch(error){sharedWithMeEl.hidden=false;sharedWithMeListEl.innerHTML=`<div class="editorStatus error">Could not load shared Photo Safes: ${escapeHtml(error.message)}</div>`;}
+  };
 
   const formatRating=(value)=>value===null||value===undefined?"—":Number(value).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1});
   const downloadApiFile=async(url,fallbackName)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
   const loadCollectionPhotosPanel=async()=>{
-    const collection=activeCollectionType,isSafe=collection==="favorites",label=isSafe?"My photo safe":"Top rated";setDataStatus(`Loading ${label}…`);
+    const collection=activeCollectionType,isSafe=collection==="favorites";
+    const readOnly=!!photoSafeViewerContext?.readOnly,label=readOnly?`${photoSafeViewerContext.ownerName}'s Photo Safe`:isSafe?"My photo safe":"Top rated";setDataStatus(`Loading ${label}…`);
     try{
-      const sort=isSafe?"custom":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];
-      const bulk=isSafe?`<button class="primarySave" id="downloadSafeZip" type="button">Download my photo safe (ZIP)</button>`:`<label>Minimum average <input id="ratedDownloadThreshold" type="number" min="1" max="5" step="0.1" value="4.0" style="width:82px"></label><button class="primarySave" id="downloadRatedZip" type="button">Download matching photos (ZIP)</button>`;
-      const header=isSafe?"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>My order</th></tr>":"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Average</th><th>Votes</th><th>Your rating</th></tr>";
-      const rows=photos.map((photo,index)=>{const preview=authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`,orderActions=isSafe?` <button class="secondary tiny safeMove" data-delta="-1" type="button" title="Move earlier" ${index===0?"disabled":""}>↑</button><button class="secondary tiny safeMove" data-delta="1" type="button" title="Move later" ${index===photos.length-1?"disabled":""}>↓</button>`:"",actions=`${isSafe?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove from safe</button> ':""}<button class="secondary tiny collectionDownload" type="button">Download</button>${orderActions}`;if(isSafe)return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td>${index+1}</td></tr>`;const ratingSelect=`<select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select>`;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions} ${ratingSelect}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td class="ratedStars">★ ${escapeHtml(formatRating(photo.social?.averageRating))}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0,0":`★ ${formatRating(photo.social.ownRating)}`}</td></tr>`;}).join("");
-      dataPanelEl.innerHTML=`<div class="btnrow"><button class="secondary" id="collectionBackToViewer" type="button">Map viewer</button>${bulk}</div><h3>${isSafe?"🔐 ":""}${escapeHtml(label)}</h3><div class="dataTableWrap"><table class="ratedTable"><thead>${header}</thead><tbody>${rows}</tbody></table></div>`;
-      el("collectionBackToViewer").addEventListener("click",()=>openPhotoCollection(collection));
+      const sort=isSafe?"custom":"rating_desc",result=readOnly?{photos:collectionSequence}:await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];
+      const bulk=readOnly?"":isSafe?`<button class="primarySave" id="downloadSafeZip" type="button">Download my photo safe (ZIP)</button>`:`<label>Minimum average <input id="ratedDownloadThreshold" type="number" min="1" max="5" step="0.1" value="4.0" style="width:82px"></label><button class="primarySave" id="downloadRatedZip" type="button">Download matching photos (ZIP)</button>`;
+      const header=isSafe?`<tr><th>${readOnly?"Open":"Actions"}</th><th>Photo</th><th>Bird</th><th>My order</th></tr>`:"<tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Average</th><th>Votes</th><th>Your rating</th></tr>";
+      const rows=photos.map((photo,index)=>{const preview=readOnly?`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`:authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`,orderActions=isSafe&&!readOnly?` <button class="secondary tiny safeMove" data-delta="-1" type="button" title="Move earlier" ${index===0?"disabled":""}>↑</button><button class="secondary tiny safeMove" data-delta="1" type="button" title="Move later" ${index===photos.length-1?"disabled":""}>↓</button>`:"",actions=readOnly?'<button class="secondary tiny collectionOpenPhoto" type="button">Open</button>':`${isSafe?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove from safe</button> ':""}<button class="secondary tiny collectionDownload" type="button">Download</button>${orderActions}`;if(isSafe)return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td>${index+1}</td></tr>`;const ratingSelect=`<select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select>`;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${actions} ${ratingSelect}</td><td>${preview}</td><td>${escapeHtml(photo.bird)}</td><td class="ratedStars">★ ${escapeHtml(formatRating(photo.social?.averageRating))}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0,0":`★ ${formatRating(photo.social.ownRating)}`}</td></tr>`;}).join("");
+      dataPanelEl.innerHTML=`<div class="btnrow"><button class="secondary" id="collectionBackToViewer" type="button">← Map viewer</button>${bulk}</div><h3>${isSafe?"🔐 ":""}${escapeHtml(label)}</h3><div class="dataTableWrap"><table class="ratedTable"><thead>${header}</thead><tbody>${rows}</tbody></table></div>`;
+      el("collectionBackToViewer").addEventListener("click",()=>returnToCollectionViewer());
       el("downloadSafeZip")?.addEventListener("click",async()=>{const button=el("downloadSafeZip");button.disabled=true;try{await downloadApiFile("/api/me/photo-collection/download?collection=favorites","my-photo-safe.zip");}catch(error){setDataStatus(`Photo safe download failed: ${error.message}`);}finally{button.disabled=false;}});
       el("downloadRatedZip")?.addEventListener("click",async()=>{const button=el("downloadRatedZip"),minimum=Math.max(1,Math.min(5,Number(el("ratedDownloadThreshold").value)||4));button.disabled=true;try{await downloadApiFile(`/api/me/photo-collection/download?collection=rated&minimumRating=${encodeURIComponent(minimum)}`,`top-rated-${String(minimum).replace(".","-")}.zip`);}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}});
-      dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");openPhotoCollection(collection,row.dataset.photoId);}));
+      dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");returnToCollectionViewer(row.dataset.photoId);}));
       dataPanelEl.querySelectorAll(".collectionDownload").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");button.disabled=true;try{await downloadApiFile(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/download`,"stork-photo.jpg");}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}}));
       dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});await loadCollectionPhotosPanel();}));
       dataPanelEl.querySelectorAll(".safeMove").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr"),photoIds=Array.from(dataPanelEl.querySelectorAll("tbody tr[data-photo-id]"),(item)=>item.dataset.photoId),index=photoIds.indexOf(row.dataset.photoId),next=index+Number(button.dataset.delta);if(index<0||next<0||next>=photoIds.length)return;[photoIds[index],photoIds[next]]=[photoIds[next],photoIds[index]];button.disabled=true;try{await apiFetch("/api/me/photo-collection/favorites/order",{method:"PUT",body:JSON.stringify({photoIds})});collectionOrderPreference="custom";collectionOrderEl.value="custom";try{localStorage.setItem("storkPhotoSafeOrderV1","custom");}catch(error){}await loadCollectionPhotosPanel();}catch(error){setDataStatus(`Could not save photo order: ${error.message}`);button.disabled=false;}}));
@@ -3744,9 +3867,16 @@ loopCurrentEl.checked = false;
   };
   const loadRatedPhotosPanel=loadCollectionPhotosPanel;
   const openRatedTable=async()=>{activeCollectionType="rated";if(collectionBrowseState)await leaveCollectionMode();closeAccountWorkspace();await openDataWorkspace("rated");};
-  collectionViewerModeBtn.addEventListener("click",()=>openPhotoCollection(activeCollectionType));
+  const returnToCollectionViewer=async(targetPhotoId=null)=>{
+    const context=photoSafeViewerContext?{...photoSafeViewerContext}:null;
+    closeDataWorkspace();document.body.classList.remove("sharedSafeTableMode");
+    if(context?.readOnly){await openPhotoCollection("favorites",targetPhotoId,{mode:context.mode,shareId:context.shareId,publicToken:context.publicToken});return;}
+    await openPhotoCollection(activeCollectionType,targetPhotoId);
+  };
+  const openCollectionTableView=async()=>{closeAccountWorkspace();closeAppNavigation();stopCollectionPlayback();collectionModeBarEl.hidden=true;dataWorkspaceEl.classList.add("open");dataWorkspaceEl.setAttribute("aria-hidden","false");document.body.classList.add("dataWorkspaceOpen","sharedSafeTableMode");await loadCollectionPhotosPanel();};
+  collectionViewerModeBtn.addEventListener("click",()=>returnToCollectionViewer());
   collectionPlayBtn.addEventListener("click",toggleCollectionPlayback);
-  collectionTableModeBtn.addEventListener("click",async()=>{const collection=activeCollectionType;if(collectionBrowseState)await leaveCollectionMode();activeCollectionType=collection;await openDataWorkspace("rated");});
+  collectionTableModeBtn.addEventListener("click",openCollectionTableView);
   returnToPreviousWindowBtn.addEventListener("click",async()=>{viewerReturnBarEl.hidden=true;if(viewerReturnState?.mode==="table"){const state=viewerReturnState;viewerReturnState=null;tablePage=state.page;await openDataWorkspace("table");requestAnimationFrame(()=>{dataPanelEl.scrollTop=state.scrollTop||0;});return;}await openDataWorkspace("rated");});
   document.querySelectorAll("[data-open-collection]").forEach((button)=>button.addEventListener("click",()=>button.dataset.openCollection==="favorites"?openBestPictures():openRatedPictures()));
 
@@ -4762,6 +4892,13 @@ loopCurrentEl.checked = false;
   // Automatically load the lightweight individual list on page load.
   window.addEventListener("load", async () => {
     updateAuthUi();
+    const publicSafeToken=new URLSearchParams(window.location.search).get("photo_safe");
+    if(publicSafeToken){
+      document.body.classList.add("publicSharedSafeMode");
+      closeAccountWorkspace();loadEditorHelp();
+      await openPhotoCollection("favorites",null,{mode:"PUBLIC_READONLY",publicToken:publicSafeToken});
+      return;
+    }
     if (authState.token) {
       try { const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || [];authState.contribution=me.contribution||null; saveAuth(); updateAuthUi();await loadContributionDashboard(); }
       catch(error) { clearAuth(); }

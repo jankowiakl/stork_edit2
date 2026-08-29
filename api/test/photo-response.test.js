@@ -39,7 +39,8 @@ before(async()=>{
 
 after(async()=>{
   if(server)await new Promise((resolve)=>server.close(resolve));
-  if(root&&path.basename(root).startsWith("stork-photo-response-"))await fsp.rm(root,{recursive:true,force:true});
+  sharp.cache(false);
+  if(root&&path.basename(root).startsWith("stork-photo-response-"))await fsp.rm(root,{recursive:true,force:true,maxRetries:8,retryDelay:125});
 });
 
 test("original public photo endpoint returns HTTP 200",async()=>{
