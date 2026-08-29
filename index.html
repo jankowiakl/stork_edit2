@@ -662,6 +662,11 @@
     .contributorReviewToolbar select { width:min(310px,42vw); min-width:160px; }
     .contributorReviewCount { white-space:nowrap; color:var(--muted); font-size:var(--ui-font-small); }
     body.contributorReviewMode .photoBirdPicker > label[for="birdSelectOverlay"],body.contributorReviewMode #birdSelectOverlay { display:none!important; }
+    body.contributorReviewMode .editorPanelHeaderBar { flex-wrap:wrap; }
+    body.contributorReviewMode .contributorReviewToolbar { order:10; flex:1 1 100%; justify-content:flex-start; }
+    body.contributorReviewMode .contributorReviewToolbar select { flex:1 1 170px; width:auto; min-width:0; }
+    body.contributorReviewMode #sliderOverlay .sliderRow { justify-content:center; }
+    body.contributorReviewMode #timeSlider { display:none; }
     .editorPanelHeader.compact { padding:6px 8px; }
     .editorPanelHeader.compact .editorHeaderDetails { display:none; }
     .editorPanelHeader.compact .editorPanelHeaderBar h2 { font-size:12px; margin:0; }
@@ -825,6 +830,7 @@
     body.editorOpen .side #metaBird, body.editorOpen .side #metaInfo { display:none; }
     body.editorOpen .side #metaTime, body.editorOpen .side #metaCoords { font-size:var(--ui-font-label); }
     body.editorOpen .side .photoCard, body.editorOpen .side .photoStage { grid-row:1; width:100%; height:100%; min-height:0; }
+    body.editorOpen.contributorReviewMode .wrap { grid-template-columns:minmax(140px,var(--editor-map-pane,18fr)) 9px minmax(280px,var(--editor-form-pane,30fr)) 9px minmax(260px,var(--editor-photo-pane,52fr)); }
     body.editorOpen .editorPanelHeaderBar > #closeEditorMode { margin:0; padding:5px 7px; }
     body.editorOpen .editorPanelHeaderBar .editorVisualNav { position:static; transform:none; margin:0; padding:3px; justify-content:center; background:rgba(0,0,0,.18); }
     body.editorOpen .editorPanelHeaderBar .editorVisualNav button { padding:4px 7px; }
@@ -2922,6 +2928,7 @@ loopCurrentEl.checked = false;
 
   let playing = false;
   let rafId = null;
+  let contributorReviewPlayTimer = null;
   let segIndex = 0;
   let segT = 0;
   let lastTs = null;
@@ -3095,6 +3102,7 @@ loopCurrentEl.checked = false;
   const setDataStatus = (message) => { dataWorkspaceStatusEl.textContent = message || ""; };
   const closeDataWorkspace = () => { dataWorkspaceEl.classList.remove("open"); dataWorkspaceEl.setAttribute("aria-hidden","true");document.body.classList.remove("dataWorkspaceOpen"); };
   let editorReturnDataMode=null,editorContributorReview=null,contributorReviewSwitchToken=0;
+  const contributorReviewLazyBirds=new Set();
   let viewerReturnState=null;
   const openDataWorkspace = async (mode = "table") => {
     if (!editorHasConnection()) { openAccountWorkspace(); return; }
@@ -3164,8 +3172,31 @@ loopCurrentEl.checked = false;
 
   const contributorReviewPhotoPoint=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,url:photo.imageUrl,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted});
   const renderContributorReviewPicker=()=>{const contributors=editorContributorReview?.contributors||[],selectedId=editorContributorReview?.userId||"";contributorReviewUserEl.replaceChildren(...contributors.map((user)=>new Option(`${user.name} (${Number(user.photoCount).toLocaleString()} photos)`,user.id,false,user.id===selectedId)));contributorReviewUserEl.disabled=!contributors.length;contributorReviewCountEl.textContent=editorContributorReview?.points?.length?`${editorContributorReview.points.length.toLocaleString()} photos`:"";};
-  const resetContributorReviewUi=()=>{document.body.classList.remove("contributorReviewMode");contributorReviewToolbarEl.hidden=true;contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent="";editorPanelTitleEl.textContent="Photo editor";updateBirdSelectors();};
-  const selectContributorForReview=async(userId,{openEditor=false}={})=>{const previousId=editorContributorReview?.userId||"";if(!userId)return false;if(document.body.classList.contains("editorOpen")&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved){contributorReviewUserEl.value=previousId;return false;}}const token=++contributorReviewSwitchToken;contributorReviewUserEl.disabled=true;contributorReviewCountEl.textContent="Loading…";try{const result=await apiFetch(`/api/manager/contributors/${encodeURIComponent(userId)}/photos`);if(token!==contributorReviewSwitchToken)return false;const contributors=editorContributorReview?.contributors||[],selected=contributors.find((user)=>user.id===userId)||result.contributor,points=(result.photos||[]).map(contributorReviewPhotoPoint);editorContributorReview={contributors,userId,userName:selected?.name||result.contributor?.name||"Contributor",points};document.body.classList.add("contributorReviewMode");contributorReviewToolbarEl.hidden=false;editorPanelTitleEl.textContent="Contributor review";renderContributorReviewPicker();try{localStorage.setItem("storkContributorReviewUserV1",userId);}catch(error){}if(!points.length){contributorReviewCountEl.textContent="No completed photos";setStatus("This contributor has no completed photos to review.");return false;}const first=points[0];if(!groupedFiles.has(first.bird))await loadGithubFiles();if(token!==contributorReviewSwitchToken)return false;setBirdSelection(first.bird);await loadTrackFor(first.bird,{autoplay:false,deferInitialAccess:true});if(token!==contributorReviewSwitchToken)return false;editorPhotoIndex=0;if(openEditor||!document.body.classList.contains("editorOpen")){editorReturnDataMode=null;await openEditorMode();}else await editorLoadPhoto(0);contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent=`${points.length.toLocaleString()} photos`;editorSetStatus(`Reviewing ${points.length.toLocaleString()} completed photos by ${editorContributorReview.userName}.`,"ok");return true;}catch(error){if(token===contributorReviewSwitchToken){contributorReviewUserEl.disabled=false;contributorReviewUserEl.value=previousId;contributorReviewCountEl.textContent="Could not load";setStatus(`Could not load contributor photos: ${error.message}`);}return false;}};
+  const resetContributorReviewUi=()=>{for(const bird of contributorReviewLazyBirds){const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);trackCache.delete(bird);}contributorReviewLazyBirds.clear();document.body.classList.remove("contributorReviewMode");contributorReviewToolbarEl.hidden=true;contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent="";editorPanelTitleEl.textContent="Photo editor";updateBirdSelectors();};
+  const prepareContributorReviewBirds=(points)=>{for(const bird of new Set(points.map((point)=>point.bird).filter(Boolean))){if(groupedFiles.has(bird))continue;const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);}updateBirdSelectors(idsSorted());};
+  const selectContributorForReview=async(userId,{openEditor=false}={})=>{
+    const previousId=editorContributorReview?.userId||"";
+    if(!userId)return false;
+    if(document.body.classList.contains("editorOpen")&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved){contributorReviewUserEl.value=previousId;return false;}}
+    stopAnim();syncSliderPlayPause();
+    const token=++contributorReviewSwitchToken;
+    contributorReviewUserEl.disabled=true;contributorReviewCountEl.textContent="Loading…";
+    try{
+      const result=await apiFetch(`/api/manager/contributors/${encodeURIComponent(userId)}/photos`);
+      if(token!==contributorReviewSwitchToken)return false;
+      const contributors=editorContributorReview?.contributors||[],selected=contributors.find((user)=>user.id===userId)||result.contributor,points=(result.photos||[]).map(contributorReviewPhotoPoint);
+      editorContributorReview={contributors,userId,userName:selected?.name||result.contributor?.name||"Contributor",points};
+      document.body.classList.add("contributorReviewMode");contributorReviewToolbarEl.hidden=false;editorPanelTitleEl.textContent="Contributor review";renderContributorReviewPicker();
+      try{localStorage.setItem("storkContributorReviewUserV1",userId);}catch(error){}
+      if(!points.length){contributorReviewCountEl.textContent="No completed photos";setStatus("This contributor has no completed photos to review.");return false;}
+      prepareContributorReviewBirds(points);setBirdSelection(points[0].bird);editorPhotoIndex=0;
+      if(openEditor||!document.body.classList.contains("editorOpen")){editorReturnDataMode=null;await openEditorMode();}else await editorLoadPhoto(0);
+      if(token!==contributorReviewSwitchToken)return false;
+      contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent=`${points.length.toLocaleString()} photos`;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>applyEditorPaneRatios()));
+      editorSetStatus(`Reviewing ${points.length.toLocaleString()} completed photos by ${editorContributorReview.userName}.`,"ok");return true;
+    }catch(error){if(token===contributorReviewSwitchToken){contributorReviewUserEl.disabled=false;contributorReviewUserEl.value=previousId;contributorReviewCountEl.textContent="Could not load";setStatus(`Could not load contributor photos: ${error.message}`);}return false;}
+  };
   const openContributorReviewMode=async()=>{if(!["admin","coordinator"].includes(authState.user?.role)){setStatus("Contributor review is available to coordinators and administrators.");return;}if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();setStatus("Loading contributors…");try{const result=await apiFetch("/api/manager/contributors"),contributors=result.contributors||[];if(!contributors.length){setStatus("No completed photos are attributed to any contributor yet.");return;}let preferred="";try{preferred=localStorage.getItem("storkContributorReviewUserV1")||"";}catch(error){}const selected=contributors.some((user)=>user.id===preferred)?preferred:contributors[0].id;editorContributorReview={contributors,userId:selected,userName:"",points:[]};document.body.classList.add("contributorReviewMode");contributorReviewToolbarEl.hidden=false;editorPanelTitleEl.textContent="Contributor review";renderContributorReviewPicker();await selectContributorForReview(selected,{openEditor:true});}catch(error){editorContributorReview=null;resetContributorReviewUi();setStatus(`Could not open contributor review: ${error.message}`);}};
   contributorReviewUserEl.addEventListener("change",()=>{void selectContributorForReview(contributorReviewUserEl.value);});
 
@@ -3616,7 +3647,9 @@ loopCurrentEl.checked = false;
   const stopAnim = () => {
     playing = false;
     if (rafId) cancelAnimationFrame(rafId);
+    if (contributorReviewPlayTimer) clearTimeout(contributorReviewPlayTimer);
     rafId = null;
+    contributorReviewPlayTimer = null;
     lastTs = null;
   };
 
@@ -3707,7 +3740,7 @@ loopCurrentEl.checked = false;
   const grantTrackPhotoAccess=async(point,purpose="browse")=>{if(!point?.photoId||!editorHasConnection())return true;const requestAccess=(requestedPurpose)=>apiFetch(`/api/photos/${encodeURIComponent(point.photoId)}/access`,{method:"POST",body:JSON.stringify({purpose:requestedPurpose})});try{let access;try{access=await requestAccess(purpose);}catch(error){if(purpose==="annotation"&&error.message==="annotation_read_only")access=await requestAccess("browse");else throw error;}if(access.photo){point.url=access.photo.imageUrl;point.previewUrl=access.photo.previewUrl;}point.accessGranted=true;if(access.contribution){authState.contribution=access.contribution;saveAuth();updateAppNavigation();}hideBrowseLock();return true;}catch(error){if(error.message==="browsing_limit_reached"){authState.contribution=error.data?.contribution||authState.contribution;stopAnim();showBrowseLock(error.data?.contribution);updateAppNavigation();return false;}throw error;}};
   startAnnotatingLockedBtn.addEventListener("click",async()=>{try{const result=await apiFetch("/api/next-unfinished"),queue=result.photos?.length?result.photos:(result.photo?[result.photo]:[]);if(!queue.length){setStatus("No available unannotated photo with a usable location is assigned to you.");return;}hideBrowseLock();const queueBird=queue[0].bird||queue[0].individual_id;setBirdSelection(queueBird);await loadTrackFor(queueBird,{autoplay:false,deferInitialAccess:true});const queueById=new Map(queue.map((photo)=>[photo.id,photo])),focusedTrack=queue.map((photo)=>track.find((point)=>point.photoId===photo.id)).filter(Boolean);for(const point of focusedTrack){const photo=queueById.get(point.photoId);point.url=photo.imageUrl;point.previewUrl=photo.previewUrl;point.accessGranted=true;}if(!focusedTrack.length){showBrowseLock(result.contribution);setStatus("The photos available for annotation could not be displayed. Please try again.");return;}activateTrack(focusedTrack);overviewLine.setLatLngs(track.map((point)=>[point.lat,point.lon]));fitOverviewToFullRoute();updateSliderMax();await showPhotoAtIndex(0,{purpose:"annotation"});await openEditorMode();setStatus(`${track.length} photo${track.length===1?" is":"s are"} available for annotation.`);}catch(error){setStatus(`Could not start annotation: ${error.message}`);}});
 
-  const showPhotoAtIndex = async (requestedIndex,{purpose="browse",skipAccess=false}={}) => {
+  const showPhotoAtIndex = async (requestedIndex,{purpose="browse",skipAccess=false,preservePlayback=false}={}) => {
     if (!track.length) return;
     const index = Math.max(0, Math.min(requestedIndex, track.length - 1));
     const lastIndex = track.length - 1;
@@ -3716,7 +3749,7 @@ loopCurrentEl.checked = false;
 
     if(!skipAccess&&!await grantTrackPhotoAccess(point,purpose))return;
 
-    stopAnim();
+    if(!preservePlayback)stopAnim();
     playBtn.disabled = track.length < 2;
     pauseBtn.disabled = true;
     syncSliderPlayPause();
@@ -3798,11 +3831,12 @@ loopCurrentEl.checked = false;
 
   const resizeEditorPaneBoundary = (boundary,delta) => {
     const mapWidth=mapStackEl.getBoundingClientRect().width,formWidth=editorPanelEl.getBoundingClientRect().width,photoWidth=sideEl.getBoundingClientRect().width,total=mapWidth+formWidth+photoWidth;if(!total)return;
+    const reviewMode=!!editorContributorReview,minMap=reviewMode?140:180,minForm=reviewMode?280:360,minPhoto=reviewMode?260:320;
     let nextMap=mapWidth,nextForm=formWidth,nextPhoto=photoWidth;
     if(boundary==="map"){
-      const change=Math.max(180-mapWidth,Math.min(formWidth-360,delta));nextMap+=change;nextForm-=change;
+      const change=Math.max(minMap-mapWidth,Math.min(formWidth-minForm,delta));nextMap+=change;nextForm-=change;
     }else{
-      const change=Math.max(360-formWidth,Math.min(photoWidth-320,delta));nextForm+=change;nextPhoto-=change;
+      const change=Math.max(minForm-formWidth,Math.min(photoWidth-minPhoto,delta));nextForm+=change;nextPhoto-=change;
     }
     editorPaneRatios=[nextMap/total,nextForm/total,nextPhoto/total];applyEditorPaneRatios();
   };
@@ -4252,7 +4286,7 @@ loopCurrentEl.checked = false;
     const filename = editorLookupFilename(point);
 
     if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus("Browsing limit reached. Use Start annotating to open a photo available for your work.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
-    if(syncViewer){if(pointBird&&(birdId!==pointBird||!track.some((candidate)=>candidate.photoId===point.photoId))){setBirdSelection(pointBird);await loadTrackFor(pointBird,{autoplay:false,deferInitialAccess:true});}const viewerIndex=track.findIndex((candidate)=>candidate.photoId===point.photoId);if(viewerIndex>=0)await showPhotoAtIndex(viewerIndex,{purpose:"annotation",skipAccess:true});else loadPhotoSocial(point.photoId);}else loadPhotoSocial(point.photoId);
+    if(syncViewer){if(pointBird&&(birdId!==pointBird||!track.some((candidate)=>candidate.photoId===point.photoId))){setBirdSelection(pointBird);await loadTrackFor(pointBird,{autoplay:false,deferInitialAccess:true,preservePlayback:!!editorContributorReview&&playing,lazyMedia:!!editorContributorReview});}const viewerIndex=track.findIndex((candidate)=>candidate.photoId===point.photoId);if(viewerIndex>=0){track[viewerIndex].url=point.url;track[viewerIndex].previewUrl=point.previewUrl;track[viewerIndex].accessGranted=true;await showPhotoAtIndex(viewerIndex,{purpose:"annotation",skipAccess:true,preservePlayback:!!editorContributorReview&&playing});}else loadPhotoSocial(point.photoId);}else loadPhotoSocial(point.photoId);
     editorPhotoEl.src = point.url || "";
     editorBirdBadgeEl.textContent = "Bird: " + (pointBird || "—")+(editorContributorReview?` • ${editorContributorReview.userName}`:"");
     editorTimeBadgeEl.textContent = "Time: " + fmtTime(point.dt);
@@ -4293,6 +4327,7 @@ loopCurrentEl.checked = false;
     } finally {
       if (token === editorLoadToken) editorSetBusy(false);
     }
+    if(editorContributorReview&&!playing){playBtn.disabled=sequence.length<2;pauseBtn.disabled=true;sliderOverlay.style.display=sequence.length<2?"none":"block";syncSliderPlayPause();}
   };
 
   const openEditorMode = async () => {
@@ -4321,6 +4356,7 @@ loopCurrentEl.checked = false;
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
     editorWorkspaceEl.appendChild(editorPanelEl);
     editorVisualTopEl.appendChild(closeEditorModeBtn);
@@ -4340,6 +4376,7 @@ loopCurrentEl.checked = false;
 
   const moveEditorPhoto = async (delta, { force = false } = {}) => {
     if (editorSaving) return;
+    if(editorContributorReview&&playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();}
     if(!force&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved)return;}
     const nextIndex = Math.max(0, Math.min(editorPhotoIndex + delta, activeEditorSequence().length - 1));
     if (nextIndex === editorPhotoIndex) return;
@@ -4767,14 +4804,14 @@ loopCurrentEl.checked = false;
     timeSlider.value = currentProgress;
   };
 
-  const loadTrackFor = async (id, {autoplay=false,deferInitialAccess=false} = {}) => {
+  const loadTrackFor = async (id, {autoplay=false,deferInitialAccess=false,preservePlayback=false,lazyMedia=false} = {}) => {
     if (!ensureLibs()) {
       setStatus("Leaflet or exifr failed to load. Check internet connection and refresh.");
       return;
     }
     if (!id || !groupedFiles.has(id)) return;
 
-    stopAnim();
+    if(!preservePlayback)stopAnim();
     setLoadingUI(true);
 
     birdId = id;
@@ -4783,7 +4820,7 @@ loopCurrentEl.checked = false;
     let files = groupedFiles.get(id);
     if (files.serverPlaceholder) {
       try {
-        const response = await apiFetch(`/api/individuals/${encodeURIComponent(id)}/photos?limit=10000`);
+        const response = await apiFetch(`/api/individuals/${encodeURIComponent(id)}/photos?limit=10000${lazyMedia?"&media=lazy":""}`);
         if(response.contribution){authState.contribution=response.contribution;saveAuth();updateAppNavigation();}
         files = (response.photos || []).map((photo) => ({
           file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
@@ -4791,11 +4828,12 @@ loopCurrentEl.checked = false;
           altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
         }));
         groupedFiles.set(id, files);
+        if(lazyMedia)contributorReviewLazyBirds.add(id);
       } catch(error) {
         setStatus(`Failed to load photos for ${id}: ${error.message}`); setLoadingUI(false); return;
       }
     }
-    const remoteFiles = files.every(entry => typeof entry.file === "string");
+    const remoteFiles = files.every(entry => !(entry.file instanceof File));
     const backgroundLoads = loadBackgroundData(id);
 
     if (trackCache.has(id)) {
@@ -4914,8 +4952,28 @@ loopCurrentEl.checked = false;
     await loadTrackFor(id, {autoplay:false});
   });
 
+  const finishContributorReviewPlayback=(message)=>{stopAnim();playBtn.disabled=activeEditorSequence().length<2;pauseBtn.disabled=true;syncSliderPlayPause();if(message)editorSetStatus(message,"ok");};
+  const scheduleContributorReviewPlayback=()=>{
+    if(!playing||!editorContributorReview||!document.body.classList.contains("editorOpen"))return;
+    const speed=Math.max(.1,Number(speedEl.value)||1),hold=Math.max(0,Number(holdSecondsEl.value)||1),leg=Math.max(.3,Number(legSecondsEl.value)||3),delay=Math.max(700,(hold+leg)*1000/speed);
+    contributorReviewPlayTimer=setTimeout(async()=>{
+      contributorReviewPlayTimer=null;
+      if(!playing||!editorContributorReview)return;
+      const sequence=activeEditorSequence();let nextIndex=editorPhotoIndex+1;
+      if(nextIndex>=sequence.length){if(loopCurrentEl.checked||loopAllEl.checked)nextIndex=0;else{finishContributorReviewPlayback(`Finished review playback for ${editorContributorReview.userName}.`);return;}}
+      await editorLoadPhoto(nextIndex);
+      if(!playing||!editorContributorReview)return;
+      playBtn.disabled=true;pauseBtn.disabled=false;syncSliderPlayPause();scheduleContributorReviewPlayback();
+    },delay);
+  };
+
   const startPlayback = async () => {
     if(document.body.classList.contains("collectionMode")){await toggleCollectionPlayback();return;}
+    if(editorContributorReview&&document.body.classList.contains("editorOpen")){
+      const sequence=activeEditorSequence();if(sequence.length<2)return;
+      if(editorDirty){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();editorSetStatus("Save or finish the current changes before starting playback.","error");return;}
+      stopAnim();playing=true;playBtn.disabled=true;pauseBtn.disabled=false;syncSliderPlayPause();scheduleContributorReviewPlayback();return;
+    }
     if (!track || track.length < 2) return;
     if(document.body.classList.contains("editorOpen")&&editorDirty){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();editorSetStatus("Save or finish the current changes before starting playback.","error");return;}
     if(authState.contribution?.restricted){const currentIndex=Math.max(0,Math.min(segIndex,track.length-1)),nextIndex=Math.min(track.length-1,currentIndex+1);if(!await grantTrackPhotoAccess(track[currentIndex])||!await grantTrackPhotoAccess(track[nextIndex]))return;imgA.src=track[currentIndex].url;imgB.src=track[nextIndex].url;}
@@ -4982,6 +5040,7 @@ loopCurrentEl.checked = false;
 
   resetBtn.addEventListener("click", () => {
     stopAnim();
+    if(editorContributorReview&&document.body.classList.contains("editorOpen")){playBtn.disabled=activeEditorSequence().length<2;pauseBtn.disabled=true;syncSliderPlayPause();void editorLoadPhoto(0);return;}
     if (!track.length) return;
     restartCurrentBird();
     playBtn.disabled = (track.length < 2);
@@ -5135,7 +5194,7 @@ loopCurrentEl.checked = false;
     if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(curTime);
 
     const frameIndex=Math.min(track.length-1,i+(t>=.5?1:0)),framePhotoId=track[frameIndex]?.photoId;if(framePhotoId&&framePhotoId!==socialPhotoId)void loadPhotoSocial(framePhotoId);
-    if(document.body.classList.contains("editorOpen")&&!editorDirty&&frameIndex!==editorPhotoIndex)void editorLoadPhoto(frameIndex,{syncViewer:false});
+    if(document.body.classList.contains("editorOpen")&&!editorContributorReview&&!editorDirty&&frameIndex!==editorPhotoIndex)void editorLoadPhoto(frameIndex,{syncViewer:false});
 
     syncModalPhotos();
   };
