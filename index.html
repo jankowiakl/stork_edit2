@@ -1213,11 +1213,16 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 #metaTime, #metaCoords { font-size: var(--ui-font-display); }
 
 /* Sieweczka-inspired navigation and separated account panels. */
-.appNavDrawer { position:fixed; z-index:6950; inset:12px auto 12px 0; width:min(330px,calc(100vw - 42px)); box-sizing:border-box; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:10px; padding:13px; border:1px solid rgba(119,209,255,.25); border-left:0; border-radius:0 18px 18px 0; background:rgba(8,14,25,.82); color:var(--text); box-shadow:18px 0 46px rgba(0,0,0,.38); backdrop-filter:blur(18px) saturate(125%); transform:translateX(calc(-100% - 4px)); transition:transform .24s ease,background .2s ease; }
+.appNavDrawer { position:fixed; z-index:6950; inset:12px auto 12px 0; width:min(330px,calc(100vw - 42px)); box-sizing:border-box; display:grid; grid-template-rows:auto auto minmax(0,1fr) auto; gap:10px; padding:13px; border:1px solid rgba(119,209,255,.25); border-left:0; border-radius:0 18px 18px 0; background:rgba(8,14,25,.82); color:var(--text); box-shadow:18px 0 46px rgba(0,0,0,.38); backdrop-filter:blur(18px) saturate(125%); transform:translateX(calc(-100% - 4px)); transition:transform .24s ease,background .2s ease; }
 .appNavDrawer.open, .appNavDrawer:focus-within { transform:translateX(0); background:rgba(8,14,25,.92); }
 .appNavHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .appNavHeader h2 { margin:0; font-size:var(--ui-font-heading); }
 .appNavUser { margin-top:3px; color:var(--muted); font-size:var(--ui-font-small); line-height:1.35; }
+.appNavWelcome { padding:11px; border:1px solid rgba(119,209,255,.38); border-radius:12px; background:linear-gradient(145deg,rgba(42,132,190,.18),rgba(57,217,138,.08)); box-shadow:0 7px 22px rgba(0,0,0,.18); }
+.appNavWelcome[hidden] { display:none!important; }
+.appNavWelcome b { display:block; color:#e9f8ff; }
+.appNavWelcome p { margin:5px 0 9px; color:#c6dce9; font-size:var(--ui-font-small); line-height:1.4; }
+.appNavWelcomeActions { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .appNavTiles { min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:8px; padding:2px; }
 .appNavTile { position:relative; min-height:64px; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:8px; padding:10px !important; text-align:left; border-color:rgba(119,209,255,.18); background:rgba(255,255,255,.055); }
 .appNavTile[hidden] { display:none !important; }
@@ -1228,11 +1233,12 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavTile small { position:absolute; z-index:20; left:10px; right:10px; top:calc(100% - 3px); padding:7px 9px; border:1px solid rgba(119,209,255,.3); border-radius:9px; background:rgba(6,13,23,.96); color:#dcebf5; font-size:var(--ui-font-small); line-height:1.25; box-shadow:0 8px 24px rgba(0,0,0,.36); opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s ease,transform .16s ease; pointer-events:none; }
 .appNavTile:hover small,.appNavTile:focus-visible small { opacity:1; visibility:visible; transform:translateY(0); }
 .appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
-.appNavHandle { position:fixed; z-index:6960; left:0; top:50%; transform:translateY(-50%); width:32px; height:78px; padding:0 !important; display:grid; place-items:center; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
+.appNavHandle { position:fixed; z-index:6960; left:0; top:50%; transform:translateY(-50%); width:42px; min-width:42px; height:104px; padding:8px 5px!important; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
 .appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
 .appNavDrawer.open + .appNavHandle { left:min(330px,calc(100vw - 42px)); }
-.appNavHandle span { transition:transform .2s ease; }
-.appNavDrawer.open + .appNavHandle span { transform:rotate(180deg); }
+.appNavHandleArrow { font-size:18px; line-height:1; transition:transform .2s ease; }
+.appNavHandleLabel { writing-mode:vertical-rl; transform:rotate(180deg); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.appNavDrawer.open + .appNavHandle .appNavHandleArrow { transform:rotate(180deg); }
 .quickLogin { position:fixed; z-index:6940; top:12px; right:12px; padding:9px 14px !important; border-color:rgba(119,209,255,.58); background:rgba(9,28,48,.88); color:#fff; box-shadow:0 8px 26px rgba(0,0,0,.34); backdrop-filter:blur(10px); }
 .quickLogin[hidden] { display:none !important; }
 .appPanelWorkspace { position:fixed; inset:0; z-index:7100; display:none; place-items:center; padding:18px; box-sizing:border-box; background:rgba(3,7,14,.68); backdrop-filter:blur(9px); }
@@ -1271,10 +1277,10 @@ body.appPanelOpen #mobilePanelBtn,body.dataWorkspaceOpen #mobilePanelBtn,body.co
 /* Controls and panels follow the selected font size instead of clipping text. */
 button,select,input,textarea { max-width:100%; overflow-wrap:anywhere; }
 button { white-space:normal; line-height:1.2; }
-.appNavDrawer { width:min(20em,calc(100vw - 42px)); padding:.8em; gap:.65em; }
-.appNavDrawer.open + .appNavHandle { left:min(20em,calc(100vw - 42px)); }
-.appNavTiles { grid-template-columns:repeat(auto-fit,minmax(min(100%,8.4em),1fr)); gap:.55em; }
-.appNavTile { min-height:4em; height:auto; grid-template-columns:1.65em minmax(0,1fr); gap:.55em; padding:.65em !important; line-height:1.16; }
+.appNavDrawer { width:min(22em,calc(100vw - 52px)); padding:.8em; gap:.65em; }
+.appNavDrawer.open + .appNavHandle { left:min(22em,calc(100vw - 52px)); }
+.appNavTiles { grid-template-columns:1fr; gap:.5em; }
+.appNavTile { min-height:3.65em; height:auto; grid-template-columns:1.8em minmax(0,1fr); gap:.65em; padding:.7em .8em!important; line-height:1.16; }
 .appNavTile strong,.appNavTile span { min-width:0; overflow-wrap:anywhere; }
 .appNavIcon { font-size:1.35em; }
 .appPanelCard { width:min(43em,100%); padding:1em; }
@@ -1306,6 +1312,8 @@ button { white-space:normal; line-height:1.2; }
   .appNavDrawer.open + .appNavHandle { left:91vw; }
   .appNavTiles { grid-template-columns:1fr; }
   .appNavTile { min-height:3.6em; }
+  .appNavHandle { width:36px;min-width:36px;height:82px;padding:0!important; }
+  .appNavHandleLabel { display:none; }
   .appPanelCard { width:100%; }
   .levelBox { grid-template-columns:auto minmax(0,1fr); }
   .levelNumbers { grid-column:2; text-align:left; }
@@ -1322,6 +1330,7 @@ button { white-space:normal; line-height:1.2; }
 
 <nav class="appNavDrawer" id="appNavDrawer" aria-label="Main application menu" aria-hidden="true" inert>
   <div class="appNavHeader"><div><h2>Stork Photo Editor</h2><div class="appNavUser" id="appNavUser">Public photo viewer</div></div><button class="secondary tiny" id="closeAppNav" type="button">← Back</button></div>
+  <section class="appNavWelcome" id="appNavWelcome" hidden aria-label="Getting started"><b>Start here</b><p>All sections are available in this menu. Use Photo editor for daily annotation work; your account contains personal progress and rewards.</p><div class="appNavWelcomeActions"><button class="primarySave tiny" id="appNavWelcomeEdit" type="button">Open Photo editor</button><button class="secondary tiny" id="appNavWelcomeDismiss" type="button">Explore menu</button></div></section>
   <div class="appNavTiles">
     <button class="appNavTile primary" type="button" data-app-nav="browse"><span class="appNavIcon">⌖</span><strong>Map &amp; photos</strong><small>Browse the current individual</small></button>
     <button class="appNavTile" type="button" data-app-nav="edit"><span class="appNavIcon">✎</span><strong>Photo editor</strong><small>Describe the selected photo</small></button>
@@ -1341,7 +1350,7 @@ button { white-space:normal; line-height:1.2; }
   </div>
   <div class="appNavFooter"><span class="miniNote" id="appNavAccess">Public access</span><button class="danger tiny" id="appNavLogout" type="button" hidden>Log out</button></div>
 </nav>
-<button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span>›</span></button>
+<button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
 <div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel">My photo safe</strong><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
@@ -2181,6 +2190,9 @@ button { white-space:normal; line-height:1.2; }
   const appNavDrawerEl = el("appNavDrawer");
   const appNavHandleEl = el("appNavHandle");
   const closeAppNavBtn = el("closeAppNav");
+  const appNavWelcomeEl = el("appNavWelcome");
+  const appNavWelcomeEditBtn = el("appNavWelcomeEdit");
+  const appNavWelcomeDismissBtn = el("appNavWelcomeDismiss");
   const quickLoginBtn = el("quickLogin");
   const appNavUserEl = el("appNavUser");
   const appNavAccessEl = el("appNavAccess");
@@ -2236,6 +2248,7 @@ button { white-space:normal; line-height:1.2; }
 
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
   const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
+  const NAV_INTRO_STORAGE_PREFIX = "stork-nav-intro-v1:";
   let authState = { token: "", user: null, individualIds: [], contribution:null };
   try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
   const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
@@ -2268,9 +2281,13 @@ button { white-space:normal; line-height:1.2; }
   let appNavCloseTimer=null;
   function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
   function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
+  const dismissNavigationIntro=()=>{appNavWelcomeEl.hidden=true;};
+  const maybeShowNavigationIntro=()=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${NAV_INTRO_STORAGE_PREFIX}${authState.user.id}`;try{if(localStorage.getItem(key))return;localStorage.setItem(key,"shown");}catch(error){}appNavWelcomeEl.hidden=false;openAppNavigation();};
   const scheduleAppNavigationClose=()=>{if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
   appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
   appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
+  appNavWelcomeDismissBtn.addEventListener("click",()=>{dismissNavigationIntro();appNavDrawerEl.querySelector("[data-app-nav]")?.focus();});
+  appNavWelcomeEditBtn.addEventListener("click",()=>{dismissNavigationIntro();appNavDrawerEl.querySelector('[data-app-nav="edit"]')?.click();});
   quickLoginBtn.addEventListener("click",openAccountWorkspace);
   landingLoginBtn.addEventListener("click",openAccountWorkspace);
   closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);closeInstallWorkspaceBtn.addEventListener("click",closeInstallWorkspace);
@@ -3839,6 +3856,7 @@ loopCurrentEl.checked = false;
         await loadContributionDashboard();
         await loadGithubFiles();
         if(track.length&&!authState.contribution?.browseLimitReached)await openEditorMode();
+        setTimeout(maybeShowNavigationIntro,250);
       }
     } catch(error) {
       clearAuth();
@@ -3859,7 +3877,7 @@ loopCurrentEl.checked = false;
     try {
       await apiFetch("/api/me/change-password", { method:"POST", body:JSON.stringify({ currentPassword, newPassword }) });
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || [];authState.contribution=me.contribution||null; saveAuth();
-      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true); await loadGithubFiles();
+      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true); await loadGithubFiles();setTimeout(maybeShowNavigationIntro,250);
     } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
     finally { changeEditorPasswordBtn.disabled = false; }
   });
@@ -4660,6 +4678,7 @@ loopCurrentEl.checked = false;
     if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
     loadEditorHelp();
     if(editorHasConnection())await loadGithubFiles();
+    maybeShowNavigationIntro();
   });
 
   const handleBirdSelectionChange = async (sourceSelect) => {

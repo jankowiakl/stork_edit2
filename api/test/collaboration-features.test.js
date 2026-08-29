@@ -145,9 +145,20 @@ test("photo information remains enabled across manual and playback navigation",(
 });
 
 test("navigation tiles and panel grids scale with the selected font",()=>{
-  assert.match(ui,/\.appNavDrawer \{ width:min\(20em/);
-  assert.match(ui,/\.appNavTiles \{ grid-template-columns:repeat\(auto-fit/);
-  assert.match(ui,/\.appNavTile \{ min-height:4em; height:auto/);
+  assert.match(ui,/\.appNavDrawer \{ width:min\(22em/);
+  assert.match(ui,/\.appNavTiles \{ grid-template-columns:1fr/);
+  assert.match(ui,/\.appNavTile \{ min-height:3\.65em; height:auto/);
   assert.match(ui,/\.userGrid,\.importGrid \{ grid-template-columns:repeat\(auto-fit/);
   assert.match(ui,/\.contributionMetric,\.nextRewardBox,\.progressCard,\.userCard,\.importCard,\.optionsSection,\.appNavTile \{ height:auto/);
+});
+
+test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{
+  assert.match(ui,/class="appNavHandleLabel">Menu</);
+  assert.match(ui,/id="appNavWelcome" hidden/);
+  assert.match(ui,/All sections are available in this menu/);
+  assert.match(ui,/NAV_INTRO_STORAGE_PREFIX = "stork-nav-intro-v1:"/);
+  assert.match(ui,/localStorage\.setItem\(key,"shown"\)/);
+  assert.match(ui,/appNavWelcomeEl\.hidden=false;openAppNavigation\(\)/);
+  assert.match(ui,/setTimeout\(maybeShowNavigationIntro,250\)/);
+  assert.match(ui,/appNavWelcomeEditBtn\.addEventListener/);
 });
