@@ -37,18 +37,28 @@ export async function contributionForUser(client,user){
   return{...profile,milestones:milestones.map((row)=>({key:row.milestone_key,reachedAt:row.reached_at,completedAtReach:Number(row.completed_at_reach)}))};
 }
 
+export async function getPhotoGrant(client,userId,photoId){
+  return(await client.query(`SELECT x.*,
+    EXISTS(SELECT 1 FROM restricted_annotation_focus f WHERE f.user_id=x.user_id AND f.photo_id=x.photo_id) focus_active,
+    EXISTS(SELECT 1 FROM annotation_tasks t WHERE t.assigned_to=x.user_id AND t.photo_id=x.photo_id AND t.status='assigned') task_active
+    FROM user_photo_access x WHERE x.user_id=$1 AND x.photo_id=$2`,[userId,photoId])).rows[0]||null;
+}
+
 export async function hasPhotoGrant(client,userId,photoId){
-  return!!(await client.query("SELECT 1 FROM user_photo_access WHERE user_id=$1 AND photo_id=$2",[userId,photoId])).rows[0];
+  return!!await getPhotoGrant(client,userId,photoId);
 }
 
 export async function ensurePhotoAccess(client,user,photoId,{purpose="browse"}={}){
   await client.query("SELECT pg_advisory_xact_lock(hashtext($1))",[`media:${user.id}`]);
   const photo=(await client.query("SELECT id,individual_id FROM photos WHERE id=$1",[photoId])).rows[0];
   if(!photo)return{allowed:false,http:404,error:"photo_not_found"};
-  const hasGrant=await hasPhotoGrant(client,user.id,photoId),profile=await refreshContribution(client,user),decision=decideMediaAccess({profile,hasGrant,purpose});
+  const grant=await getPhotoGrant(client,user.id,photoId),profile=await refreshContribution(client,user),annotationGrantActive=!!grant&&(grant.counts_against_allowance||grant.access_source!=="annotation"||grant.focus_active||grant.task_active),hasGrant=!!grant&&(!profile.restricted||annotationGrantActive),decision=decideMediaAccess({profile,hasGrant,purpose});
   if(!decision.allowed)return{allowed:false,http:403,error:"browsing_limit_reached",profile,photo};
   if(!hasGrant&&(decision.consume||purpose==="annotation"))await client.query(`INSERT INTO user_photo_access(user_id,photo_id,access_source,counts_against_allowance)
-    VALUES($1,$2,$3,$4) ON CONFLICT(user_id,photo_id) DO UPDATE SET last_accessed_at=now()`,[user.id,photoId,purpose==="annotation"?"annotation":"browse",!!decision.consume]);
+    VALUES($1,$2,$3,$4) ON CONFLICT(user_id,photo_id) DO UPDATE SET
+      access_source=CASE WHEN EXCLUDED.counts_against_allowance THEN 'browse' ELSE user_photo_access.access_source END,
+      counts_against_allowance=user_photo_access.counts_against_allowance OR EXCLUDED.counts_against_allowance,
+      last_accessed_at=now()`,[user.id,photoId,purpose==="annotation"?"annotation":"browse",!!decision.consume]);
   else if(hasGrant)await client.query("UPDATE user_photo_access SET last_accessed_at=now() WHERE user_id=$1 AND photo_id=$2",[user.id,photoId]);
   return{allowed:true,profile:decision.consume?await refreshContribution(client,user):profile,photo,decision};
 }

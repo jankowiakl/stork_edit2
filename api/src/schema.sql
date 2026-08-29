@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS contribution_settings (
   best_pictures_threshold INTEGER NOT NULL DEFAULT 50 CHECK (best_pictures_threshold>0),
   full_access_threshold INTEGER NOT NULL DEFAULT 400 CHECK (full_access_threshold>0),
   acknowledgement_threshold INTEGER NOT NULL DEFAULT 600 CHECK (acknowledgement_threshold>0),
-  scientific_threshold INTEGER NOT NULL DEFAULT 1000 CHECK (scientific_threshold>0),
+  scientific_threshold INTEGER NOT NULL DEFAULT 2000 CHECK (scientific_threshold>0),
   auto_promote_full_access BOOLEAN NOT NULL DEFAULT true,
   scientific_message TEXT NOT NULL DEFAULT 'Your contribution qualifies you for individual consideration for co-authorship in publications substantially using your annotated data.',
   level_names JSONB NOT NULL DEFAULT '{"nestling":"Nestling","fieldHelper":"Field Helper","fullContributor":"Full Contributor","acknowledgedContributor":"Acknowledged Contributor","scientificContributor":"Scientific Contributor"}'::jsonb,
@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS contribution_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 INSERT INTO contribution_settings(id) VALUES(1) ON CONFLICT(id) DO NOTHING;
+UPDATE contribution_settings SET scientific_threshold=2000 WHERE scientific_threshold=1000;
 
 CREATE TABLE IF NOT EXISTS user_contribution_overrides (
   user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -209,6 +210,7 @@ CREATE TABLE IF NOT EXISTS user_contribution_overrides (
   updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+UPDATE user_contribution_overrides SET scientific_threshold=2000 WHERE scientific_threshold=1000;
 
 CREATE TABLE IF NOT EXISTS contribution_stats (
   user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -236,6 +238,13 @@ CREATE TABLE IF NOT EXISTS user_photo_access (
   PRIMARY KEY(user_id,photo_id)
 );
 CREATE INDEX IF NOT EXISTS idx_user_photo_access_allowance ON user_photo_access(user_id,counts_against_allowance);
+
+CREATE TABLE IF NOT EXISTS restricted_annotation_focus (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_restricted_annotation_focus_photo ON restricted_annotation_focus(photo_id);
 
 CREATE TABLE IF NOT EXISTS annotation_tasks (
   id TEXT PRIMARY KEY,

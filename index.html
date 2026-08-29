@@ -20,14 +20,14 @@
       --border: rgba(255,255,255,0.10);
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 16px;
-      --ui-font-scale: 1.6;
-      --ui-font-body: 22.4px;
-      --ui-font-control: 20.8px;
-      --ui-font-label: 19.2px;
-      --ui-font-small: 17.6px;
-      --ui-font-title: 20.8px;
-      --ui-font-heading: 25.6px;
-      --ui-font-display: 38.4px;
+      --ui-font-scale: 1.25;
+      --ui-font-body: 17.5px;
+      --ui-font-control: 16.25px;
+      --ui-font-label: 15px;
+      --ui-font-small: 13.75px;
+      --ui-font-title: 16.25px;
+      --ui-font-heading: 20px;
+      --ui-font-display: 30px;
       --mobile-map-height: 50dvh;
       --mobile-photo-height: 50dvh;
     }
@@ -775,7 +775,8 @@
     .editorMobileTabs { display:none; position:fixed; z-index:6750; top:8px; left:50%; transform:translateX(-50%); width:min(390px,calc(100vw - 110px)); gap:5px; padding:5px; border:1px solid rgba(119,209,255,.28); border-radius:13px; background:rgba(8,14,25,.84); box-shadow:0 10px 30px rgba(0,0,0,.32); backdrop-filter:blur(14px); }
     .editorMobileTabs button { flex:1; opacity:.72; transition:background .2s ease,color .2s ease,opacity .2s ease,transform .2s ease; }
     .editorMobileTabs button.active { opacity:1; color:#fff; border-color:rgba(119,209,255,.62); background:rgba(52,161,255,.30); transform:translateY(-1px); }
-    .photoSocialControls { position:absolute; z-index:45; right:10px; top:10px; display:flex; align-items:center; gap:6px; padding:5px 7px; border:1px solid rgba(255,255,255,.18); border-radius:999px; background:rgba(5,10,18,.68); backdrop-filter:blur(10px); }
+    .photoSocialControls { position:absolute; z-index:45; right:10px; top:54px; display:flex; align-items:center; gap:6px; padding:5px 7px; border:1px solid rgba(255,255,255,.18); border-radius:999px; background:rgba(5,10,18,.68); backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:opacity .25s ease; }
+    .photoStage.socialControlsVisible .photoSocialControls,.photoSocialControls:hover,.photoSocialControls:focus-within { opacity:1; pointer-events:auto; }
     .photoSocialControls[hidden],.accountCollections[hidden] { display:none !important; }
     .favoritePhotoBtn { color:#ffe18a; min-width:34px; }
     .photoRating { display:flex; align-items:center; gap:1px; }
@@ -784,7 +785,8 @@
     .ratingAverage { min-width:38px; color:#ffe18a; font-size:var(--ui-font-small); text-align:center; }
     .accountCollections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:12px; }
     .accountCollectionBtn { min-height:70px; text-align:left; }
-    .collectionModeBar,.viewerReturnBar { position:fixed; z-index:6945; left:50%; bottom:14px; transform:translateX(-50%); display:flex; align-items:center; gap:10px; max-width:calc(100vw - 28px); padding:8px 10px; border:1px solid rgba(255,225,138,.48); border-radius:14px; background:rgba(8,14,25,.90); box-shadow:0 12px 36px rgba(0,0,0,.42); backdrop-filter:blur(14px); animation:collectionBarEnter .24s ease both; }
+    .collectionModeBar,.viewerReturnBar { position:fixed; z-index:6945; left:50%; bottom:14px; transform:translateX(-50%); display:flex; align-items:center; gap:7px; max-width:calc(100vw - 28px); padding:6px 8px; border:1px solid rgba(255,225,138,.48); border-radius:12px; background:rgba(8,14,25,.90); box-shadow:0 12px 36px rgba(0,0,0,.42); backdrop-filter:blur(14px); animation:collectionBarEnter .24s ease both; }
+    .collectionBack { padding:4px 7px !important; font-size:var(--ui-font-small) !important; }
     .collectionModeBar[hidden],.viewerReturnBar[hidden],.ratingClear[hidden] { display:none !important; }
     .collectionModeLabel { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffe18a; }
     .ratingClear { color:#ffb9b9; min-width:27px; }
@@ -1217,13 +1219,14 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavHeader h2 { margin:0; font-size:var(--ui-font-heading); }
 .appNavUser { margin-top:3px; color:var(--muted); font-size:var(--ui-font-small); line-height:1.35; }
 .appNavTiles { min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:8px; padding:2px; }
-.appNavTile { min-height:76px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; padding:11px !important; text-align:left; border-color:rgba(119,209,255,.18); background:rgba(255,255,255,.055); }
+.appNavTile { position:relative; min-height:64px; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:8px; padding:10px !important; text-align:left; border-color:rgba(119,209,255,.18); background:rgba(255,255,255,.055); }
 .appNavTile[hidden] { display:none !important; }
 .appNavTile:hover,.appNavTile:focus-visible { background:rgba(119,209,255,.16); border-color:rgba(119,209,255,.48); }
 .appNavTile.primary { background:linear-gradient(145deg,rgba(52,161,255,.28),rgba(57,217,138,.12)); }
 .appNavIcon { font-size:22px; line-height:1; color:var(--accent); }
 .appNavTile strong { font-size:var(--ui-font-title); }
-.appNavTile small { color:var(--muted); font-size:var(--ui-font-small); line-height:1.2; }
+.appNavTile small { position:absolute; z-index:20; left:10px; right:10px; top:calc(100% - 3px); padding:7px 9px; border:1px solid rgba(119,209,255,.3); border-radius:9px; background:rgba(6,13,23,.96); color:#dcebf5; font-size:var(--ui-font-small); line-height:1.25; box-shadow:0 8px 24px rgba(0,0,0,.36); opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s ease,transform .16s ease; pointer-events:none; }
+.appNavTile:hover small,.appNavTile:focus-visible small { opacity:1; visibility:visible; transform:translateY(0); }
 .appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
 .appNavHandle { position:fixed; z-index:6960; left:0; top:50%; transform:translateY(-50%); width:32px; height:78px; padding:0 !important; display:grid; place-items:center; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; }
 .appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
@@ -1255,12 +1258,15 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .dataTabGroup { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:4px 6px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(0,0,0,.12); }
 .dataTabGroupLabel { color:var(--muted); font-size:var(--ui-font-small); padding:0 3px; }
 body.appPanelOpen { overflow:hidden; }
+body.appPanelOpen #mobilePanelBtn,body.dataWorkspaceOpen #mobilePanelBtn,body.collectionMode #mobilePanelBtn,body.photoModalOpen #mobilePanelBtn { display:none!important; }
+.appNavDrawer.open ~ #mobilePanelBtn { display:none!important; }
+#adminRecoveryDetails { display:none!important; }
 @media (max-width:700px){.appNavDrawer{inset:6px auto 6px 0;width:min(91vw,350px)}.appNavDrawer.open + .appNavHandle{left:min(91vw,350px)}.appNavHandle{top:50%;width:36px;height:82px}.appNavTiles{grid-template-columns:1fr}.appNavTile{min-height:62px}.appPanelWorkspace{padding:8px}.appPanelCard{max-height:calc(100dvh - 16px);padding:12px}.accountHero{grid-template-columns:1fr}.appNavDrawer{transition-duration:.18s}.quickLogin{top:max(8px,env(safe-area-inset-top));right:8px}}
 @media (hover:none){.appNavDrawer{background:rgba(8,14,25,.94)}}
 
 .publicLanding{position:fixed;inset:0;z-index:1200;display:none;place-items:center;padding:24px;background:radial-gradient(circle at 70% 15%,rgba(54,127,177,.22),transparent 42%),linear-gradient(145deg,#07101d,#101b2b);color:#edf7ff}.loggedOut .publicLanding{display:grid}.loggedOut .wrap,.loggedOut .collectionModeBar,.loggedOut .viewerReturnBar,.loggedOut #mobilePanelBtn{visibility:hidden}.publicLandingCard{width:min(760px,94vw);padding:clamp(24px,5vw,52px);border:1px solid rgba(151,211,247,.28);border-radius:22px;background:rgba(7,15,27,.82);box-shadow:0 24px 80px rgba(0,0,0,.38);backdrop-filter:blur(16px)}.publicLandingMark{display:flex;gap:14px;align-items:center}.publicLandingMark img{width:68px;height:68px}.publicLanding h1{margin:0 0 8px;font-size:clamp(30px,6vw,58px)}.publicLanding p{max-width:62ch;line-height:1.65;color:#bcd1e3}.publicLanding .primarySave{font-size:1.08rem;padding:12px 22px}
-.contributionDashboard{display:grid;gap:12px;margin-bottom:16px}.contributionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.contributionMetric,.nextRewardBox{padding:12px;border:1px solid rgba(133,194,231,.22);border-radius:12px;background:rgba(121,199,244,.055)}.contributionMetric b{display:block;font-size:1.45rem;margin-top:5px}.nextRewardBox{border-color:rgba(221,185,96,.32)}.contributionPath{display:grid;gap:9px}.levelBox{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(144,181,207,.22);border-radius:13px;background:linear-gradient(120deg,rgba(236,247,255,.045),rgba(87,139,178,.035));box-shadow:0 6px 18px rgba(0,0,0,.12)}.levelBox.locked{filter:saturate(.5);opacity:.65}.levelBox.active{border-color:#64b9ec;background:linear-gradient(120deg,rgba(81,174,232,.14),rgba(231,193,103,.055))}.levelBox.unlocked{border-color:rgba(231,193,103,.5)}.storkBadge{width:58px;height:58px;border-radius:10px;border:2px solid rgba(154,197,225,.32);display:grid;place-items:center;background:#152638;image-rendering:pixelated;font-size:31px}.levelBox.unlocked .storkBadge{border-color:#d7b866}.levelNumbers{text-align:right;white-space:nowrap}.levelProgress{grid-column:2/-1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.levelProgress span{display:block;height:100%;background:linear-gradient(90deg,#5ab5e8,#d7ba66)}.milestoneNotice{padding:11px;border-radius:10px;border:1px solid rgba(95,207,155,.38);background:rgba(56,176,119,.11);color:#b8f2d3}.browseLock{position:absolute;inset:0;z-index:16;display:none;place-items:center;text-align:center;padding:20px;background:linear-gradient(145deg,rgba(8,16,29,.94),rgba(13,31,49,.96));backdrop-filter:blur(12px)}.browseLock.show{display:grid}.browseLockCard{max-width:520px}.browseLockIcon{font-size:48px}.photoInfoToggle{position:absolute;right:12px;bottom:12px;z-index:15;border-radius:50%!important;width:38px;height:38px;padding:0!important}.photoInfoOverlay{position:absolute;left:12px;right:12px;bottom:58px;z-index:14;padding:13px;border:1px solid rgba(160,215,246,.3);border-radius:12px;background:rgba(4,13,24,.76);backdrop-filter:blur(12px);color:#eef8ff;line-height:1.5}.photoInfoOverlay[hidden]{display:none}.editorMobileMeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:flex;gap:12px;justify-content:center;padding:7px 10px;border-radius:9px;background:rgba(2,10,18,.67);backdrop-filter:blur(8px);color:#fff;font-size:var(--ui-font-small)}.dataWorkspaceOpen #mobilePanelBtn{display:none!important}
-@media(max-width:700px){.contributionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.levelBox{grid-template-columns:54px minmax(0,1fr)}.levelNumbers{grid-column:2;text-align:left}.levelProgress{grid-column:1/-1}.editorMobileMeta{display:flex}}
+.contributionDashboard{display:grid;gap:12px;margin-bottom:16px}.contributionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.contributionMetric,.nextRewardBox{padding:12px;border:1px solid rgba(133,194,231,.22);border-radius:12px;background:rgba(121,199,244,.055)}.contributionMetric b{display:block;font-size:1.45rem;margin-top:5px}.nextRewardBox{border-color:rgba(221,185,96,.32)}.contributionPath{display:grid;gap:9px}.levelBox{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(144,181,207,.22);border-radius:13px;background:linear-gradient(120deg,rgba(236,247,255,.045),rgba(87,139,178,.035));box-shadow:0 6px 18px rgba(0,0,0,.12)}.levelBox.locked{filter:saturate(.5);opacity:.65}.levelBox.active{border-color:#64b9ec;background:linear-gradient(120deg,rgba(81,174,232,.14),rgba(231,193,103,.055))}.levelBox.unlocked{border-color:rgba(231,193,103,.5)}.storkBadge{width:58px;height:58px;border-radius:10px;border:2px solid rgba(154,197,225,.32);display:grid;place-items:center;background:#152638;image-rendering:pixelated;font-size:31px}.levelBox.unlocked .storkBadge{border-color:#d7b866}.levelNumbers{text-align:right;white-space:nowrap}.levelProgress{grid-column:2/-1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.levelProgress span{display:block;height:100%;background:linear-gradient(90deg,#5ab5e8,#d7ba66)}.milestoneNotice{padding:11px;border-radius:10px;border:1px solid rgba(95,207,155,.38);background:rgba(56,176,119,.11);color:#b8f2d3}.browseLock{position:absolute;inset:0;z-index:46;display:none;place-items:center;text-align:center;padding:20px;background:linear-gradient(145deg,rgba(8,16,29,.94),rgba(13,31,49,.96));backdrop-filter:blur(12px)}.browseLock.show{display:grid}.browseLockCard{max-width:520px}.browseLockIcon{font-size:48px}.photoInfoToggle{position:absolute;right:12px;bottom:12px;z-index:45;border-radius:50%!important;width:38px;height:38px;padding:0!important}.photoInfoOverlay{position:absolute;inset:12px;z-index:44;pointer-events:none;color:#eef8ff;line-height:1.4}.photoInfoOverlay[hidden]{display:none}.photoInfoSide,.photoInfoDescription{position:absolute;padding:8px 10px;border:1px solid rgba(160,215,246,.24);border-radius:10px;background:rgba(4,13,24,.58);backdrop-filter:blur(9px);box-shadow:0 5px 18px rgba(0,0,0,.2)}.photoInfoPlace{left:0;top:48px}.photoInfoHeight{right:0;top:94px;text-align:right}.photoInfoDescription{left:4%;right:4%;bottom:48px;text-align:center}.photoInfoDescription .remarks{display:block;margin-top:5px;color:#cfe3f1}.editorMobileMeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:flex;gap:12px;justify-content:center;padding:7px 10px;border-radius:9px;background:rgba(2,10,18,.67);backdrop-filter:blur(8px);color:#fff;font-size:var(--ui-font-small)}
+@media(max-width:700px){:root{--ui-font-scale:1;--ui-font-body:14px;--ui-font-control:13px;--ui-font-label:12px;--ui-font-small:11px;--ui-font-title:13px;--ui-font-heading:16px;--ui-font-display:24px}.contributionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.levelBox{grid-template-columns:54px minmax(0,1fr)}.levelNumbers{grid-column:2;text-align:left}.levelProgress{grid-column:1/-1}.editorMobileMeta{display:flex}.photoInfoOverlay{inset:8px}.photoInfoPlace{top:40px}.photoInfoHeight{top:82px}.photoInfoDescription{bottom:54px}}
 
   </style>
 </head>
@@ -1292,7 +1298,7 @@ body.appPanelOpen { overflow:hidden; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span>›</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
-<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel">Best pictures</strong><button class="secondary tiny" id="collectionViewerMode" type="button">Map viewer</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="leaveCollectionMode" type="button">← Back to previous photos</button></div>
+<div class="collectionModeBar" id="collectionModeBar" hidden><strong class="collectionModeLabel" id="collectionModeLabel">Best pictures</strong><button class="primarySave tiny" id="collectionPlay" type="button">Play</button><button class="secondary tiny" id="collectionViewerMode" type="button">Map</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny collectionBack" id="leaveCollectionMode" type="button">← Back</button></div>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
@@ -1347,9 +1353,9 @@ body.appPanelOpen { overflow:hidden; }
             <select id="fontScale">
               <option value="1">100% — compact</option>
               <option value="1.15">115%</option>
-              <option value="1.25">125%</option>
+              <option value="1.25" selected>125% — default desktop</option>
               <option value="1.4">140% — large</option>
-              <option value="1.6" selected>160% — default</option>
+              <option value="1.6">160% — very large</option>
             </select>
           </div>
           <div class="miniNote" style="align-self:end;margin-bottom:8px;">Saved automatically in this browser.</div>
@@ -1429,7 +1435,7 @@ body.appPanelOpen { overflow:hidden; }
               <div class="editorField full"><button id="changeEditorPassword" class="secondary tiny" type="button">Change password</button></div>
             </div>
             <div class="miniNote" id="editorConnectionStatus">Log in to edit descriptions, open the table and view progress.</div>
-            <details class="subSettings" id="adminRecoveryDetails" style="margin-top:10px;">
+            <details class="subSettings" id="adminRecoveryDetails" style="margin-top:10px;" hidden aria-hidden="true">
               <summary>Cannot log in? <span style="font-weight:500; opacity:.72;">administrator recovery</span></summary>
               <div class="subSettingsBody">
                 <p class="miniNote">Use the private BOOTSTRAP_TOKEN from the server's .env file. It is sent only to the API over HTTPS and is never stored in this browser.</p>
@@ -1803,7 +1809,7 @@ body.appPanelOpen { overflow:hidden; }
           <div class="editorFields">
             <div class="editorField full">
               <label for="editorEnvDesc">Environment description <span class="required">*</span></label>
-              <input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvironmentOptions" autocomplete="off">
+              <select id="editorEnvDesc" data-field="Env_desc_en"><option value="">— select —</option><option>field</option><option>landfill</option><option>landfill slope</option><option>building</option><option>savanna/field</option><option>meadow</option><option>wastewater treatment plant</option><option>tree</option><option>savanna/tree</option><option>roof</option><option>nest</option><option>desert</option><option>river island</option><option>savanna</option><option>tree/shrub</option><option>semi-desert/field</option><option>landfill fence</option><option>dike</option><option>meadow/pasture</option><option>riverbank</option><option>field/pasture</option><option>arable field</option><option>urban area</option><option>dry riverbed</option></select>
             </div>
             <div class="editorField full">
               <label for="editorRemarks">Remarks</label>
@@ -1901,10 +1907,10 @@ body.appPanelOpen { overflow:hidden; }
 
 <div class="appPanelWorkspace" id="installWorkspace" aria-hidden="true">
   <section class="appPanelCard" role="dialog" aria-modal="true" aria-labelledby="installWorkspaceTitle">
-    <div class="appPanelTopbar"><div><h2 id="installWorkspaceTitle">Install Stork Journey</h2><div class="muted">Use the application from the phone home screen</div></div><button class="danger tiny" id="closeInstallWorkspace" type="button">← Back</button></div>
+    <div class="appPanelTopbar"><div><h2 id="installWorkspaceTitle">Install Stork Journey</h2><div class="muted">Use it from a phone home screen or the Windows desktop</div></div><button class="danger tiny" id="closeInstallWorkspace" type="button">← Back</button></div>
     <p id="installStatus" class="muted">Checking installation options…</p>
     <div class="btnrow"><button class="primarySave" id="installApp" type="button">Install application</button><button class="secondary" id="checkAppUpdate" type="button">Check for updates</button><button class="secondary" id="refreshAppVersion" type="button">Refresh application version</button></div>
-    <details class="optionsSection" open><summary>Manual installation</summary><div class="optionsSectionBody"><p>Android / Chrome or Brave: menu ⋮ → <b>Install application</b> or <b>Add to Home screen</b>.</p><p>iPhone / Safari: Share → <b>Add to Home Screen</b>.</p></div></details>
+    <details class="optionsSection" open><summary>Manual installation</summary><div class="optionsSectionBody"><p><b>Windows:</b> open this page in Chrome or Edge, click the installation icon in the address bar, choose <b>Install</b>, then enable <b>Create desktop shortcut</b> if the browser shows that option.</p><p>Android / Chrome or Brave: menu ⋮ → <b>Install application</b> or <b>Add to Home screen</b>.</p><p>iPhone / Safari: Share → <b>Add to Home Screen</b>.</p></div></details>
   </section>
 </div>
 
@@ -2152,6 +2158,7 @@ body.appPanelOpen { overflow:hidden; }
   const photoInfoOverlayEl = el("photoInfoOverlay");
   const collectionModeBarEl = el("collectionModeBar");
   const collectionModeLabelEl = el("collectionModeLabel");
+  const collectionPlayBtn = el("collectionPlay");
   const leaveCollectionModeBtn = el("leaveCollectionMode");
   const collectionViewerModeBtn = el("collectionViewerMode");
   const collectionTableModeBtn = el("collectionTableMode");
@@ -2206,11 +2213,11 @@ body.appPanelOpen { overflow:hidden; }
   const syncAppPanelBodyState=()=>document.body.classList.toggle("appPanelOpen",accountWorkspaceEl.classList.contains("open")||exportWorkspaceEl.classList.contains("open")||installWorkspaceEl.classList.contains("open"));
   const closeOtherPanelWorkspaces=(keep=null)=>{for(const panel of [accountWorkspaceEl,exportWorkspaceEl,installWorkspaceEl])if(panel!==keep){panel.classList.remove("open");panel.setAttribute("aria-hidden","true");}};
   const closeAccountWorkspace=()=>{accountWorkspaceEl.classList.remove("open");accountWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
-  const openAccountWorkspace=()=>{closeAppNavigation();closeOtherPanelWorkspaces(accountWorkspaceEl);accountWorkspaceEl.classList.add("open");accountWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();if(authState.user&&!authState.user.mustChangePassword)void loadContributionDashboard();setTimeout(()=>{(authState.user?editorCurrentPasswordEl:editorWebAppUrlEl).focus();},0);};
+  const openAccountWorkspace=()=>{closeMobilePanel();closeAppNavigation();closeOtherPanelWorkspaces(accountWorkspaceEl);accountWorkspaceEl.classList.add("open");accountWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();if(authState.user&&!authState.user.mustChangePassword)void loadContributionDashboard();setTimeout(()=>{(authState.user?editorCurrentPasswordEl:editorWebAppUrlEl).focus();},0);};
   const closeExportWorkspace=()=>{exportWorkspaceEl.classList.remove("open");exportWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
-  const openExportWorkspace=()=>{if(!authState.user||authState.user.mustChangePassword||!["admin","coordinator"].includes(authState.user.role)){openAccountWorkspace();return;}closeAppNavigation();closeOtherPanelWorkspaces(exportWorkspaceEl);exportWorkspaceEl.classList.add("open");exportWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();};
+  const openExportWorkspace=()=>{if(!authState.user||authState.user.mustChangePassword||!["admin","coordinator"].includes(authState.user.role)){openAccountWorkspace();return;}closeMobilePanel();closeAppNavigation();closeOtherPanelWorkspaces(exportWorkspaceEl);exportWorkspaceEl.classList.add("open");exportWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();};
   const closeInstallWorkspace=()=>{installWorkspaceEl.classList.remove("open");installWorkspaceEl.setAttribute("aria-hidden","true");syncAppPanelBodyState();};
-  const openInstallWorkspace=()=>{closeAppNavigation();closeDataWorkspace();closeOtherPanelWorkspaces(installWorkspaceEl);installWorkspaceEl.classList.add("open");installWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();updateInstallStatus();};
+  const openInstallWorkspace=()=>{closeMobilePanel();closeAppNavigation();closeDataWorkspace();closeOtherPanelWorkspaces(installWorkspaceEl);installWorkspaceEl.classList.add("open");installWorkspaceEl.setAttribute("aria-hidden","false");syncAppPanelBodyState();updateInstallStatus();};
   let appNavCloseTimer=null;
   function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
   function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
@@ -2232,7 +2239,7 @@ body.appPanelOpen { overflow:hidden; }
   let deferredInstallPrompt=null;
   const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches||window.navigator.standalone===true;
   function updateInstallStatus(message=""){installStatusEl.textContent=message||(isStandaloneApp()?"The application is already installed and running in standalone mode.":deferredInstallPrompt?"This device is ready to install the application.":"If the automatic installer is unavailable, use the browser menu or the manual instructions below.");installAppBtn.disabled=isStandaloneApp();}
-  installAppBtn.addEventListener("click",async()=>{if(isStandaloneApp())return updateInstallStatus("The application is already installed.");if(deferredInstallPrompt){const promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;promptEvent.prompt();const choice=await promptEvent.userChoice;updateInstallStatus(choice?.outcome==="accepted"?"Installation was started.":"Installation was cancelled. You can try again from the browser menu.");return;}const manual="Android: Chrome/Brave menu ⋮ → Install application or Add to Home screen. iPhone: Safari Share → Add to Home Screen.";updateInstallStatus(manual);window.alert(manual);});
+  installAppBtn.addEventListener("click",async()=>{if(isStandaloneApp())return updateInstallStatus("The application is already installed.");if(deferredInstallPrompt){const promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;promptEvent.prompt();const choice=await promptEvent.userChoice;updateInstallStatus(choice?.outcome==="accepted"?"Installation was started. On Windows you can also enable a desktop shortcut in the installed app settings.":"Installation was cancelled. You can try again from the browser menu.");return;}const manual=isMobile()?"Android: Chrome/Brave menu ⋮ → Install application or Add to Home screen. iPhone: Safari Share → Add to Home Screen.":"Windows: open this page in Chrome or Edge, use the installation icon in the address bar, choose Install, then enable Create desktop shortcut if offered.";updateInstallStatus(manual);window.alert(manual);});
   checkAppUpdateBtn.addEventListener("click",async()=>{if(!("serviceWorker" in navigator))return updateInstallStatus("This browser does not support application updates.");const registration=await navigator.serviceWorker.getRegistration();if(!registration)return updateInstallStatus("The application worker is not installed yet. Reload the page and try again.");await registration.update();updateInstallStatus(registration.waiting||registration.installing?"A new application version is available. Use Refresh application version.":"The application is up to date.");});
   refreshAppVersionBtn.addEventListener("click",async()=>{refreshAppVersionBtn.disabled=true;try{if("serviceWorker" in navigator){const registration=await navigator.serviceWorker.getRegistration();await registration?.update();registration?.waiting?.postMessage({type:"SKIP_WAITING"});}if("caches" in window){const keys=await caches.keys();await Promise.all(keys.filter((key)=>key.startsWith("stork-edit2-")).map((key)=>caches.delete(key)));}window.location.reload();}finally{refreshAppVersionBtn.disabled=false;}});
   window.addEventListener("beforeinstallprompt",(event)=>{event.preventDefault();deferredInstallPrompt=event;updateInstallStatus("The application can be installed on this device. Click Install application.");});
@@ -2384,18 +2391,21 @@ loopCurrentEl.checked = false;
 
   // Photo modal behavior
   const openPhoto = () => {
+    closeMobilePanel();
     modalImgA.src = imgA.src || "";
     modalImgB.src = imgB.src || "";
     modalImgA.style.opacity = imgA.style.opacity || "1";
     modalImgB.style.opacity = imgB.style.opacity || "0";
     modalChip.textContent = `${metaBird.textContent} • ${metaTime.textContent}`;
     photoModal.classList.add("open");
+    document.body.classList.add("photoModalOpen");
     photoModal.setAttribute("aria-hidden", "false");
     prevSettingsCollapsed = settingsCard.classList.contains("settingsCollapsed");
     setSettingsCollapsed(true);
   };
   const closePhoto = () => {
     photoModal.classList.remove("open");
+    document.body.classList.remove("photoModalOpen");
     photoModal.setAttribute("aria-hidden", "true");
     // Release the modal's decoded-image references when it is not visible.
     modalImgA.removeAttribute("src");
@@ -2986,7 +2996,7 @@ loopCurrentEl.checked = false;
   const openDataWorkspace = async (mode = "table") => {
     if (!editorHasConnection()) { openAccountWorkspace(); return; }
     if (document.body.classList.contains("editorOpen") && !closeEditorMode({returnPrevious:false})) return;
-    viewerReturnBarEl.hidden=true;
+    closeMobilePanel();viewerReturnBarEl.hidden=true;
     closeAppNavigation();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();
     dataWorkspaceEl.classList.add("open"); dataWorkspaceEl.setAttribute("aria-hidden","false");document.body.classList.add("dataWorkspaceOpen");
     if (mode === "progress") await loadProgressPanel(); else if (mode === "users") await loadUsersPanel(); else if(mode==="contributors")await loadContributorsPanel();else if (mode === "imports") await loadImportsPanel(); else if(mode==="reviews")await loadReviewRequestsPanel();else if(mode==="categories")await loadCategoryModerationPanel();else if(mode==="rated")await loadRatedPhotosPanel();else await loadDataTable();
@@ -3433,17 +3443,18 @@ loopCurrentEl.checked = false;
 
   const validPhotoShares = new Set(["40", "50", "60", "70"]);
   const validFontScales = new Set(["1", "1.15", "1.25", "1.4", "1.6"]);
+  const fontScalePreferenceVersion="2026-08-29-responsive";
   let viewerPhotoShare=50;
   try {
     const savedPhotoShare = localStorage.getItem("storkViewerPhotoShare");
     const parsedPhotoShare=Number(savedPhotoShare);if(Number.isFinite(parsedPhotoShare)&&parsedPhotoShare>=20&&parsedPhotoShare<=80){viewerPhotoShare=parsedPhotoShare;if(validPhotoShares.has(String(parsedPhotoShare)))layoutSplitEl.value=String(parsedPhotoShare);else{const custom=layoutSplitEl.querySelector('option[value="custom"]');custom.hidden=false;custom.textContent=`Custom (${Math.round(parsedPhotoShare)}% photo)`;layoutSplitEl.value="custom";}}
-    const savedFontScale = localStorage.getItem("storkViewerFontScale");
-    if (validFontScales.has(savedFontScale)) fontScaleEl.value = savedFontScale;
-    else fontScaleEl.value="1.6";
+    const savedFontScale = localStorage.getItem("storkViewerFontScale"),savedFontVersion=localStorage.getItem("storkViewerFontScaleVersion"),recommendedScale=isMobile()?"1":"1.25";
+    if(savedFontVersion===fontScalePreferenceVersion&&validFontScales.has(savedFontScale))fontScaleEl.value=savedFontScale;
+    else{fontScaleEl.value=recommendedScale;localStorage.setItem("storkViewerFontScale",recommendedScale);localStorage.setItem("storkViewerFontScaleVersion",fontScalePreferenceVersion);}
   } catch(e) {}
 
   const applyFontScale = ({ persist = true } = {}) => {
-    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : "1.6";
+    const scale = validFontScales.has(fontScaleEl.value) ? fontScaleEl.value : (isMobile()?"1":"1.25");
     const multiplier = Number(scale);
     const rootStyle = document.documentElement.style;
     rootStyle.setProperty("--ui-font-scale", scale);
@@ -3454,7 +3465,7 @@ loopCurrentEl.checked = false;
     rootStyle.setProperty("--ui-font-title", `${13 * multiplier}px`);
     rootStyle.setProperty("--ui-font-heading", `${16 * multiplier}px`);
     rootStyle.setProperty("--ui-font-display", `${24 * multiplier}px`);
-    if (persist) try { localStorage.setItem("storkViewerFontScale", scale); } catch(e) {}
+    if (persist) try { localStorage.setItem("storkViewerFontScale", scale);localStorage.setItem("storkViewerFontScaleVersion",fontScalePreferenceVersion); } catch(e) {}
     refreshMapSizes();
   };
 
@@ -3505,27 +3516,36 @@ loopCurrentEl.checked = false;
   const photoSocialEl=document.querySelector("[data-photo-social]"),favoritePhotoBtn=photoSocialEl.querySelector(".favoritePhotoBtn"),photoRatingEl=photoSocialEl.querySelector(".photoRating"),ratingClearBtn=photoSocialEl.querySelector(".ratingClear"),ratingAverageEl=photoSocialEl.querySelector(".ratingAverage");
   let socialPhotoId=null,socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0},socialLoadToken=0;
   const removeOwnRating=async()=>{if(!socialPhotoId||socialState.ownRating==null)return;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"DELETE"});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not remove rating: ${error.message}`);}};
-  const renderPhotoSocial=()=>{photoSocialEl.hidden=!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"★":"☆";favoritePhotoBtn.title=socialState.favorite?"Remove from my best pictures":"Save in my best pictures";ratingClearBtn.hidden=socialState.ownRating==null;photoRatingEl.replaceChildren();for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${socialState.averageRating} (${socialState.ratingCount})`;};
+  const renderPhotoSocial=()=>{photoSocialEl.hidden=!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"★":"☆";favoritePhotoBtn.title=socialState.favorite?"Remove from my best pictures":"Save in my best pictures";ratingClearBtn.hidden=socialState.ownRating==null;photoRatingEl.replaceChildren();for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${Number(socialState.averageRating).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1})} (${socialState.ratingCount})`;};
   let currentPhotoDetails=null;
-  const renderPhotoInfo=()=>{if(!currentPhotoDetails){photoInfoOverlayEl.innerHTML='<span class="muted">No descriptive information for this photo.</span>';return;}const annotation=currentPhotoDetails.annotation||{},above=annotation.Above_ground;photoInfoOverlayEl.innerHTML=`<b>${escapeHtml(currentPhotoDetails.country||"Country not recorded")}</b>${above!==null&&above!==undefined?` • ${escapeHtml(above)} m above ground`:""}<br>${escapeHtml(currentPhotoDetails.geoDescription||"Geographical description not recorded")}${annotation.Remarks?`<hr><span>${escapeHtml(annotation.Remarks)}</span>`:""}`;};
+  const countryShort=(country)=>{const value=String(country||"").trim();if(!value)return"—";const known={poland:"PL",germany:"DE",czechia:"CZ","czech republic":"CZ",slovakia:"SK",ukraine:"UA",belarus:"BY",lithuania:"LT",latvia:"LV",estonia:"EE",romania:"RO",bulgaria:"BG",hungary:"HU",croatia:"HR",serbia:"RS",turkey:"TR",türkiye:"TR",israel:"IL",jordan:"JO",egypt:"EG",sudan:"SD",chad:"TD",ethiopia:"ET",kenya:"KE",tanzania:"TZ",spain:"ES",france:"FR",italy:"IT",austria:"AT",greece:"GR"};return value.length<=3?value.toUpperCase():(known[value.toLowerCase()]||value.slice(0,3).toUpperCase());};
+  const infoNumber=(value)=>value===null||value===undefined||value===""||!Number.isFinite(Number(value))?"—":`${Math.round(Number(value))} m`;
+  const renderPhotoInfo=()=>{if(!currentPhotoDetails){photoInfoOverlayEl.innerHTML='<div class="photoInfoDescription">No descriptive information for this photo.</div>';return;}const annotation=currentPhotoDetails.annotation||{},geo=currentPhotoDetails.geoDescription||"Geographical description not recorded";photoInfoOverlayEl.innerHTML=`<div class="photoInfoSide photoInfoPlace"><b>${escapeHtml(countryShort(currentPhotoDetails.country))}</b><br><span>${escapeHtml(currentPhotoDetails.closeCity||currentPhotoDetails.country||"")}</span></div><div class="photoInfoSide photoInfoHeight"><b>Height</b><br><span>${escapeHtml(infoNumber(annotation.Above_ground))} relative</span><br><span>${escapeHtml(infoNumber(currentPhotoDetails.altitudeM))} absolute</span></div><div class="photoInfoDescription">${escapeHtml(geo)}${annotation.Remarks?`<span class="remarks">${escapeHtml(annotation.Remarks)}</span>`:""}</div>`;};
   photoInfoToggleBtn.addEventListener("click",()=>{const open=photoInfoOverlayEl.hidden;photoInfoOverlayEl.hidden=!open;photoInfoToggleBtn.setAttribute("aria-expanded",String(open));if(open)renderPhotoInfo();});
   const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;const token=++socialLoadToken;currentPhotoDetails=null;photoInfoOverlayEl.hidden=true;photoInfoToggleBtn.setAttribute("aria-expanded","false");if(!editorHasConnection()||!socialPhotoId){renderPhotoSocial();return;}try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}renderPhotoSocial();};
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private Best pictures safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update Best pictures: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
 
-  let collectionBrowseState=null;
+  let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false;
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
   let activeCollectionType="favorites";
-  const openPhotoCollection=async(collection="favorites",targetPhotoId=null)=>{if(!editorHasConnection()){openAccountWorkspace();return;}activeCollectionType=collection;closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();const label=collection==="favorites"?"Best pictures":"Top rated";setStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];if(!photos.length){setStatus(`${label} is empty.`);return;}if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};stopAnim();groupedFiles.clear();trackCache.clear();for(const photo of photos){if(!Number.isFinite(photo.lat)||!Number.isFinite(photo.lon))continue;if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));const ids=idsSorted();if(!ids.length){setStatus(`${label} contains no photos with a usable map position.`);await leaveCollectionMode();return;}updateBirdSelectors(ids);document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionModeLabelEl.textContent=collection==="favorites"?`★ Best pictures • ${photos.length} saved • remove with the star button`:`☆ Top rated • ${photos.length} photos • average ratings shown on each photo`;const targetPhoto=targetPhotoId?photos.find((photo)=>photo.id===targetPhotoId):photos[0],targetBird=targetPhoto?.bird||ids[0];setBirdSelection(targetBird);await loadTrackFor(targetBird,{autoplay:false,deferInitialAccess:!!targetPhotoId});const targetIndex=targetPhotoId?track.findIndex((point)=>point.photoId===targetPhotoId):0;if(targetIndex>=0)await showPhotoAtIndex(targetIndex);}catch(error){setStatus(`Could not load ${label}: ${error.message}`);}};
+  const stopCollectionPlayback=()=>{collectionPlaying=false;if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;if(collectionPlayBtn)collectionPlayBtn.textContent="Play";};
+  const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0)return false;await showPhotoAtIndex(trackIndex);const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});collectionModeLabelEl.textContent=`${activeCollectionType==="favorites"?"★ Best pictures":"☆ Top rated"} • ${collectionSequenceIndex+1} / ${collectionSequence.length}`;return true;};
+  const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const delay=Math.max(1800,Number(holdSecondsEl.value||1)*1000+1200);collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
+  const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
+  const openPhotoCollection=async(collection="favorites",targetPhotoId=null)=>{if(!editorHasConnection()){openAccountWorkspace();return;}activeCollectionType=collection;stopCollectionPlayback();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();const label=collection==="favorites"?"Best pictures":"Top rated";setStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];if(!photos.length){setStatus(`${label} is empty.`);return;}if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};stopAnim();groupedFiles.clear();trackCache.clear();collectionSequence=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);await leaveCollectionMode();return;}updateBirdSelectors(idsSorted());document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);await showCollectionSequencePhoto(collectionSequenceIndex);}catch(error){setStatus(`Could not load ${label}: ${error.message}`);}};
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const previous=collectionBrowseState;collectionBrowseState=null;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;stopCollectionPlayback();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
 
-  const loadCollectionPhotosPanel=async()=>{const collection=activeCollectionType,label=collection==="favorites"?"Best pictures":"Top rated";setDataStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[];dataPanelEl.innerHTML=`<div class="btnrow"><button class="secondary" id="collectionBackToViewer" type="button">Map viewer</button></div><h3>${escapeHtml(label)}</h3><div class="dataTableWrap"><table class="ratedTable"><thead><tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Filename</th><th>Average</th><th>Votes</th><th>Your rating</th></tr></thead><tbody>${photos.map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${collection==="favorites"?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove from safe</button>':""}<select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select></td><td>${authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`}</td><td>${escapeHtml(photo.bird)}</td><td>${escapeHtml(photo.filename)}</td><td class="ratedStars">★ ${escapeHtml(photo.social?.averageRating??"—")}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0":`★ ${Number(photo.social.ownRating)}`}</td></tr>`).join("")}</tbody></table></div>`;el("collectionBackToViewer").addEventListener("click",()=>openPhotoCollection(collection));dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");openPhotoCollection(collection,row.dataset.photoId);}));dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});row.remove();}));dataPanelEl.querySelectorAll(".collectionRating").forEach((select)=>select.addEventListener("change",async()=>{const row=select.closest("tr"),rating=Number(select.value);await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/rating`,{method:rating?"PUT":"DELETE",body:rating?JSON.stringify({rating}):undefined});await loadCollectionPhotosPanel();}));setDataStatus(`${photos.length} ${label.toLowerCase()} photo(s)`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus(`${label} failed`);}};
+  const formatRating=(value)=>value===null||value===undefined?"—":Number(value).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1});
+  const downloadApiFile=async(url,fallbackName)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
+  const loadCollectionPhotosPanel=async()=>{const collection=activeCollectionType,label=collection==="favorites"?"Best pictures":"Top rated";setDataStatus(`Loading ${label}…`);try{const sort=collection==="favorites"?"date_asc":"rating_desc",result=await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${sort}`),photos=result.photos||[],bulk=collection==="rated"?`<label>Minimum average <input id="ratedDownloadThreshold" type="number" min="1" max="5" step="0.1" value="4.0" style="width:82px"></label><button class="primarySave" id="downloadRatedZip" type="button">Download matching photos (ZIP)</button>`:"";dataPanelEl.innerHTML=`<div class="btnrow"><button class="secondary" id="collectionBackToViewer" type="button">Map viewer</button>${bulk}</div><h3>${escapeHtml(label)}</h3><div class="dataTableWrap"><table class="ratedTable"><thead><tr><th>Actions</th><th>Photo</th><th>Bird</th><th>Average</th><th>Votes</th><th>Your rating</th></tr></thead><tbody>${photos.map((photo)=>`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird)}"><td>${collection==="favorites"?'<button class="danger tiny collectionRemoveFavorite" type="button">Remove</button> ':""}<button class="secondary tiny collectionDownload" type="button">Download</button> <select class="collectionRating" title="Your rating"><option value="">0 stars</option>${[1,2,3,4,5].map((rating)=>`<option value="${rating}" ${Number(photo.social?.ownRating)===rating?"selected":""}>${rating} star${rating===1?"":"s"}</option>`).join("")}</select></td><td>${authState.contribution?.restricted&&!photo.mediaGranted?`<button class="secondary tiny collectionOpenPhoto" type="button">View photo</button>`:`<img class="dataThumb collectionOpenPhoto" loading="lazy" src="${escapeHtml(photo.previewUrl)}" alt="">`}</td><td>${escapeHtml(photo.bird)}</td><td class="ratedStars">★ ${escapeHtml(formatRating(photo.social?.averageRating))}</td><td>${Number(photo.social?.ratingCount||0)}</td><td>${photo.social?.ownRating==null?"0,0":`★ ${formatRating(photo.social.ownRating)}`}</td></tr>`).join("")}</tbody></table></div>`;el("collectionBackToViewer").addEventListener("click",()=>openPhotoCollection(collection));el("downloadRatedZip")?.addEventListener("click",async()=>{const button=el("downloadRatedZip"),minimum=Math.max(1,Math.min(5,Number(el("ratedDownloadThreshold").value)||4));button.disabled=true;try{await downloadApiFile(`/api/me/photo-collection/download?minimumRating=${encodeURIComponent(minimum)}`,`top-rated-${String(minimum).replace(".","-")}.zip`);}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}});dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");openPhotoCollection(collection,row.dataset.photoId);}));dataPanelEl.querySelectorAll(".collectionDownload").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");button.disabled=true;try{await downloadApiFile(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/download`,"stork-photo.jpg");}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}}));dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});row.remove();}));dataPanelEl.querySelectorAll(".collectionRating").forEach((select)=>select.addEventListener("change",async()=>{const row=select.closest("tr"),rating=Number(select.value);await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/rating`,{method:rating?"PUT":"DELETE",body:rating?JSON.stringify({rating}):undefined});await loadCollectionPhotosPanel();}));setDataStatus(`${photos.length} ${label.toLowerCase()} photo(s)`);}catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus(`${label} failed`);}};
   const loadRatedPhotosPanel=loadCollectionPhotosPanel;
   const openRatedTable=async()=>{activeCollectionType="rated";if(collectionBrowseState)await leaveCollectionMode();closeAccountWorkspace();await openDataWorkspace("rated");};
   collectionViewerModeBtn.addEventListener("click",()=>openPhotoCollection(activeCollectionType));
+  collectionPlayBtn.addEventListener("click",toggleCollectionPlayback);
   collectionTableModeBtn.addEventListener("click",async()=>{const collection=activeCollectionType;if(collectionBrowseState)await leaveCollectionMode();activeCollectionType=collection;await openDataWorkspace("rated");});
   returnToPreviousWindowBtn.addEventListener("click",async()=>{viewerReturnBarEl.hidden=true;if(viewerReturnState?.mode==="table"){const state=viewerReturnState;viewerReturnState=null;tablePage=state.page;await openDataWorkspace("table");requestAnimationFrame(()=>{dataPanelEl.scrollTop=state.scrollTop||0;});return;}await openDataWorkspace("rated");});
   document.querySelectorAll("[data-open-collection]").forEach((button)=>button.addEventListener("click",()=>button.dataset.openCollection==="favorites"?openBestPictures():openRatedPictures()));
@@ -3586,11 +3606,13 @@ loopCurrentEl.checked = false;
   };
 
   prevPhotoBtn.addEventListener("click", () => {
+    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();void showCollectionSequencePhoto(collectionSequenceIndex-1);return;}
     if(document.body.classList.contains("editorOpen")){moveEditorPhoto(-1);return;}
     const index = currentPhotoIndex();
     if (index > 0) showPhotoAtIndex(index - 1);
   });
   nextPhotoBtn.addEventListener("click", () => {
+    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();void showCollectionSequencePhoto(collectionSequenceIndex+1);return;}
     if(document.body.classList.contains("editorOpen")){moveEditorPhoto(1);return;}
     const index = currentPhotoIndex();
     if (index >= 0 && index < track.length - 1) showPhotoAtIndex(index + 1);
@@ -3691,7 +3713,7 @@ loopCurrentEl.checked = false;
     editorLogoutBtn.hidden = !loggedIn;
     editorWebAppUrlEl.closest(".editorField").style.display=loggedIn?"none":"block";
     editorSecretEl.closest(".editorField").style.display=loggedIn?"none":"block";
-    adminRecoveryDetailsEl.hidden=loggedIn;
+    adminRecoveryDetailsEl.hidden=true;
     passwordChangeFieldsEl.style.display = loggedIn ? "grid" : "none";
     editorConnectionWarningEl.classList.toggle("show", !ready);
     editorModeBtn.disabled = !ready || !track.length;
@@ -3723,10 +3745,11 @@ loopCurrentEl.checked = false;
         closeAccountWorkspace();
         await loadContributionDashboard();
         await loadGithubFiles();
+        if(track.length&&!authState.contribution?.browseLimitReached)await openEditorMode();
       }
     } catch(error) {
       clearAuth();
-      const message = error.status === 401 ? "Incorrect email or password. If this is the administrator account, use administrator recovery below." : error.status === 429 ? "Too many login attempts. Wait 15 minutes and try again." : `API connection failed (${error.message}).`;
+      const message = error.status === 401 ? "Incorrect email or password. Contact the project administrator if access must be restored." : error.status === 429 ? "Too many login attempts. Wait 15 minutes and try again." : `API connection failed (${error.message}).`;
       setEditorConnectionStatus(message, false);
     } finally {
       if (!authState.token) testEditorConnectionBtn.disabled = false;
@@ -4069,11 +4092,12 @@ loopCurrentEl.checked = false;
   const editorLoadPhoto = async (index,{syncViewer=true}={}) => {
     if (!track.length) return;
     const token = ++editorLoadToken;
+    const previousEditorPhotoIndex=editorPhotoIndex;
     editorPhotoIndex = Math.max(0, Math.min(index, track.length - 1));
     const point = track[editorPhotoIndex];
     const filename = editorLookupFilename(point);
 
-    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorSetStatus("Photo access was not granted.","error");return;}}catch(error){editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
+    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus("Browsing limit reached. Finish the single annotation opened from the lock screen before moving to another unannotated photo.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
     if(syncViewer)await showPhotoAtIndex(editorPhotoIndex,{purpose:"annotation",skipAccess:true});else loadPhotoSocial(point.photoId);
     editorPhotoEl.src = point.url || "";
     editorBirdBadgeEl.textContent = "Bird: " + (birdId || "—");
@@ -4279,6 +4303,7 @@ loopCurrentEl.checked = false;
 
   let photoNavHideTimer = null;
   let touchControlsHideTimer = null;
+  let socialControlsHideTimer = null;
   const touchPhotoControlsMQ = window.matchMedia("(hover: none)");
   const isTouchPhotoUI = () => touchPhotoControlsMQ.matches;
   const revealPhotoNav = () => {
@@ -4304,12 +4329,13 @@ loopCurrentEl.checked = false;
       touchControlsHideTimer = null;
     }, 3000);
   };
+  const revealSocialControls=()=>{if(!photoStageEl)return;if(socialControlsHideTimer)clearTimeout(socialControlsHideTimer);photoStageEl.classList.add("socialControlsVisible");socialControlsHideTimer=setTimeout(()=>{if(!photoSocialEl.matches(":hover")&&!photoSocialEl.contains(document.activeElement))photoStageEl.classList.remove("socialControlsVisible");socialControlsHideTimer=null;},2800);};
   if (photoStageEl) {
-    photoStageEl.addEventListener("mouseenter", revealPhotoNav);
-    photoStageEl.addEventListener("mousemove", revealPhotoNav);
+    photoStageEl.addEventListener("mouseenter",()=>{revealPhotoNav();revealSocialControls();});
+    photoStageEl.addEventListener("mousemove",()=>{revealPhotoNav();revealSocialControls();});
     photoStageEl.addEventListener("mouseleave", hidePhotoNavAfterDelay);
     photoStageEl.addEventListener("pointerdown", (event) => {
-      if (event.pointerType === "touch" || isTouchPhotoUI()) revealTouchPhotoControls();
+      if (event.pointerType === "touch" || isTouchPhotoUI()){revealTouchPhotoControls();revealSocialControls();}
     });
     photoStageEl.addEventListener("pointermove", (event) => {
       if (event.pointerType === "touch") revealTouchPhotoControls();
@@ -4735,6 +4761,7 @@ loopCurrentEl.checked = false;
   });
 
   const startPlayback = async () => {
+    if(document.body.classList.contains("collectionMode")){await toggleCollectionPlayback();return;}
     if (!track || track.length < 2) return;
     if(document.body.classList.contains("editorOpen")&&editorDirty){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();editorSetStatus("Save or finish the current changes before starting playback.","error");return;}
     if(authState.contribution?.restricted){const currentIndex=Math.max(0,Math.min(segIndex,track.length-1)),nextIndex=Math.min(track.length-1,currentIndex+1);if(!await grantTrackPhotoAccess(track[currentIndex])||!await grantTrackPhotoAccess(track[nextIndex]))return;imgA.src=track[currentIndex].url;imgB.src=track[nextIndex].url;}

@@ -4,7 +4,7 @@ export const DEFAULT_CONTRIBUTION_SETTINGS=Object.freeze({
   bestPicturesThreshold:50,
   fullAccessThreshold:400,
   acknowledgementThreshold:600,
-  scientificThreshold:1000,
+  scientificThreshold:2000,
   autoPromoteFullAccess:true,
   scientificMessage:"Your contribution qualifies you for individual consideration for co-authorship in publications substantially using your annotated data.",
   levelNames:{nestling:"Nestling",fieldHelper:"Field Helper",fullContributor:"Full Contributor",acknowledgedContributor:"Acknowledged Contributor",scientificContributor:"Scientific Contributor"}

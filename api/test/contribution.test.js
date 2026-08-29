@@ -18,7 +18,8 @@ test("only current complete counts supplied to the profile affect access and lev
   assert.equal(contributionLevel(50,settings).key,"fieldHelper");
   assert.equal(contributionLevel(400,settings).key,"fullContributor");
   assert.equal(contributionLevel(600,settings).key,"acknowledgedContributor");
-  assert.equal(contributionLevel(1000,settings).key,"scientificContributor");
+  assert.equal(contributionLevel(1999,settings).key,"acknowledgedContributor");
+  assert.equal(contributionLevel(2000,settings).key,"scientificContributor");
 });
 
 test("restricted direct media access is denied after the allowance is consumed",()=>{
@@ -46,10 +47,10 @@ test("the direct media authorization path rejects an ungranted photo after the r
   const client={query:async(sql,params=[])=>{
     queries.push({sql,params});
     if(sql.includes("SELECT id,individual_id FROM photos"))return{rows:[{id:"outside-limit",individual_id:"bird-1"}]};
-    if(sql.includes("SELECT 1 FROM user_photo_access"))return{rows:[]};
     if(sql.includes("SELECT * FROM contribution_settings"))return{rows:[]};
     if(sql.includes("SELECT contribution_use_defaults"))return{rows:[{contribution_use_defaults:true}]};
     if(sql.includes("count(*) FILTER"))return{rows:[{completed:0,verified:0,browsed:30}]};
+    if(sql.includes("FROM user_photo_access x WHERE"))return{rows:[]};
     if(sql.includes("pg_advisory_xact_lock")||sql.includes("INSERT INTO contribution_stats"))return{rows:[]};
     throw new Error(`Unexpected query in direct-media test: ${sql}`);
   }};
@@ -58,4 +59,19 @@ test("the direct media authorization path rejects an ungranted photo after the r
   assert.equal(result.http,403);
   assert.equal(result.error,"browsing_limit_reached");
   assert.equal(queries.some(({sql})=>sql.includes("INSERT INTO user_photo_access")),false,"a denied direct URL must not create a grant");
+});
+
+test("an old non-counting annotation grant cannot unlock additional unannotated photos without the active focus",async()=>{
+  const client={query:async(sql)=>{
+    if(sql.includes("SELECT id,individual_id FROM photos"))return{rows:[{id:"old-annotation",individual_id:"bird-1"}]};
+    if(sql.includes("count(*) FILTER"))return{rows:[{completed:0,verified:0,browsed:30}]};
+    if(sql.includes("FROM user_photo_access x WHERE"))return{rows:[{access_source:"annotation",counts_against_allowance:false,focus_active:false,task_active:false}]};
+    if(sql.includes("SELECT * FROM contribution_settings"))return{rows:[]};
+    if(sql.includes("SELECT contribution_use_defaults"))return{rows:[{contribution_use_defaults:true}]};
+    if(sql.includes("pg_advisory_xact_lock")||sql.includes("INSERT INTO contribution_stats"))return{rows:[]};
+    throw new Error(`Unexpected query in annotation-focus test: ${sql}`);
+  }};
+  const result=await ensurePhotoAccess(client,restricted,"old-annotation",{purpose:"browse"});
+  assert.equal(result.allowed,false);
+  assert.equal(result.error,"browsing_limit_reached");
 });
