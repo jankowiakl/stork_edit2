@@ -193,11 +193,18 @@ test("progress continue opens the first unfinished photo using the public bird f
 
 test("managers can review completed photos grouped by contributor in the regular editor",()=>{
   assert.match(ui,/data-app-nav="user-photos" data-role="coordinator,admin"/);
-  assert.match(ui,/const loadContributorPhotoReviewPanel=/);
-  assert.match(ui,/photo\.status==="complete"&&photo\.updatedBy\?\.id/);
-  assert.match(ui,/editorContributorReview=\{userId:selected\.id,userName:selected\.name,points:/);
+  assert.match(schema,/idx_annotations_completed_by_status ON photo_annotations\(completed_by,status,completed_at DESC\)/);
+  assert.match(server,/app\.get\("\/api\/manager\/contributors",authenticateUser,requireRole\("admin","coordinator"\)/);
+  assert.match(server,/app\.get\("\/api\/manager\/contributors\/:id\/photos",authenticateUser,requireRole\("admin","coordinator"\)/);
+  assert.match(server,/a\.completed_by=\$1 AND a\.status='complete'/);
+  assert.match(ui,/id="contributorReviewUser" aria-label="Select contributor"/);
+  assert.match(ui,/const openContributorReviewMode=/);
+  assert.match(ui,/const selectContributorForReview=/);
+  assert.match(ui,/api\/manager\/contributors\/\$\{encodeURIComponent\(userId\)\}\/photos/);
   assert.match(ui,/const activeEditorSequence=/);
-  assert.match(ui,/editorReturnDataMode="user-photos"/);
+  assert.match(ui,/const point=activeEditorSequence\(\)\[editorPhotoIndex\]/);
+  assert.doesNotMatch(ui,/loadContributorPhotoReviewRows/);
+  assert.doesNotMatch(ui,/api\/photos\?page=\$\{page\}&pageSize=500/);
 });
 
 test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{

@@ -128,6 +128,7 @@ ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS completed_by TEXT REFEREN
 ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_by TEXT REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
 UPDATE photo_annotations SET completed_by=COALESCE(created_by,updated_by) WHERE status='complete' AND completed_by IS NULL;
+CREATE INDEX IF NOT EXISTS idx_annotations_completed_by_status ON photo_annotations(completed_by,status,completed_at DESC);
 
 CREATE TABLE IF NOT EXISTS annotation_options (
   field_key TEXT NOT NULL,
