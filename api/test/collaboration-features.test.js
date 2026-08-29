@@ -106,6 +106,15 @@ test("collections provide jump playback, compact tables and authenticated downlo
   assert.match(tableRenderer,/if\(isSafe\)return/);
 });
 
+test("the mobile collection show uses only a responsive icon and photo counter",()=>{
+  assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
+  assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{safe\?"🔐":"☆"\} \$\{position\}`/);
+  assert.match(ui,/collectionModeLabelEl\.title=safe\?"My photo safe":"Top rated"/);
+  assert.match(ui,/\.collectionModeBar \{ left:max\(7px,env\(safe-area-inset-left\)\)/);
+  assert.match(ui,/font-size:clamp\(14px,4\.2vw,19px\)/);
+  assert.match(ui,/@keyframes collectionBarMobileEnter/);
+});
+
 test("responsive defaults and mobile editor controls remain compact",()=>{
   assert.match(ui,/<option value="1\.25" selected>125%/);
   assert.match(ui,/@media\(max-width:700px\)\{:root\{--ui-font-scale:1\.25;/);
