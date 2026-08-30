@@ -53,8 +53,8 @@ export async function queryExportRows(db, user, filters = {}) {
       a.feather_occ,a.ciconia_num,a.env_desc_en,a.remarks,a.altitude,a.fly_ground,a.above_ground,a.height_class_100m,
       a.thermal_updraft,a.activity_class,a.agriculture_type,a.foraging_habitat_group,a.roost_site_group,a.period_day,
       a.artificial_lights,a.water_presence_class,a.spec1_abund,a.spec1_name,a.spec2_abund,a.spec2_name,
-      a.updated_by,a.updated_at AS annotation_updated_at,u.name AS updated_by_name
-     FROM photos p LEFT JOIN photo_annotations a ON a.photo_id=p.id LEFT JOIN users u ON u.id=a.updated_by
+      a.updated_by,a.updated_at AS annotation_updated_at,u.display_name AS updated_by_name
+     FROM photos p LEFT JOIN photo_annotations a ON a.photo_id=p.id LEFT JOIN user_attributions u ON u.user_id=a.updated_by
      WHERE ${where.join(" AND ")} ORDER BY p.individual_id,p.capture_time NULLS LAST,p.filename`, params);
   return result.rows;
 }

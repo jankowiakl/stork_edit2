@@ -10,6 +10,10 @@ export function assertAuthConfiguration() {
   if (JWT_SECRET.length < 32) throw new Error("JWT_SECRET must contain at least 32 characters.");
 }
 export const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+export const isValidEmail = (value) => {
+  const email=normalizeEmail(value);
+  return email.length<=254&&!/[\u0000-\u001f\u007f]/.test(email)&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
 export const randomId = () => crypto.randomUUID();
 export async function hashPassword(password) {
   if (String(password || "").length < 10) throw new Error("Password must contain at least 10 characters.");

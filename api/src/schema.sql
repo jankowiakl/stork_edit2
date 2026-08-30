@@ -17,6 +17,38 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS restricted_contributor BOOLEAN NOT NU
 ALTER TABLE users ADD COLUMN IF NOT EXISTS contribution_use_defaults BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMPTZ;
 
+-- Stable scientific attribution survives permanent deletion of a login account.
+-- It deliberately contains no password, e-mail address or authentication state.
+CREATE TABLE IF NOT EXISTS user_attributions (
+  user_id TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  role_snapshot TEXT,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  account_deleted_at TIMESTAMPTZ
+);
+INSERT INTO user_attributions(user_id,display_name,role_snapshot,first_seen_at,updated_at)
+SELECT id,name,role,created_at,now() FROM users
+ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,role_snapshot=EXCLUDED.role_snapshot,updated_at=now();
+CREATE OR REPLACE FUNCTION sync_user_attribution() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO user_attributions(user_id,display_name,role_snapshot,first_seen_at,updated_at,account_deleted_at)
+  VALUES(NEW.id,NEW.name,NEW.role,COALESCE(NEW.created_at,now()),now(),NULL)
+  ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,role_snapshot=EXCLUDED.role_snapshot,updated_at=now(),account_deleted_at=NULL;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS trg_sync_user_attribution ON users;
+CREATE TRIGGER trg_sync_user_attribution AFTER INSERT OR UPDATE OF name,role ON users FOR EACH ROW EXECUTE FUNCTION sync_user_attribution();
+CREATE OR REPLACE FUNCTION mark_deleted_user_attribution() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO user_attributions(user_id,display_name,role_snapshot,first_seen_at,updated_at,account_deleted_at)
+  VALUES(OLD.id,OLD.name,OLD.role,COALESCE(OLD.created_at,now()),now(),now())
+  ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name,role_snapshot=EXCLUDED.role_snapshot,updated_at=now(),account_deleted_at=now();
+  RETURN OLD;
+END $$;
+DROP TRIGGER IF EXISTS trg_mark_deleted_user_attribution ON users;
+CREATE TRIGGER trg_mark_deleted_user_attribution BEFORE DELETE ON users FOR EACH ROW EXECUTE FUNCTION mark_deleted_user_attribution();
+
 CREATE TABLE IF NOT EXISTS individuals (
   id TEXT PRIMARY KEY,
   display_name TEXT,
@@ -116,16 +148,16 @@ CREATE TABLE IF NOT EXISTS photo_annotations (
   spec1_name TEXT,
   spec2_abund INTEGER CHECK (spec2_abund IS NULL OR spec2_abund >= 1),
   spec2_name TEXT,
-  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
-  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
+  updated_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_annotations_status ON photo_annotations(status);
 ALTER TABLE photo_annotations DROP CONSTRAINT IF EXISTS photo_annotations_altitude_check;
-ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS completed_by TEXT REFERENCES users(id) ON DELETE SET NULL;
-ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS completed_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT;
+ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT;
 ALTER TABLE photo_annotations ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
 UPDATE photo_annotations SET completed_by=COALESCE(created_by,updated_by) WHERE status='complete' AND completed_by IS NULL;
 CREATE INDEX IF NOT EXISTS idx_annotations_completed_by_status ON photo_annotations(completed_by,status,completed_at DESC);
@@ -133,14 +165,14 @@ CREATE INDEX IF NOT EXISTS idx_annotations_completed_by_status ON photo_annotati
 CREATE TABLE IF NOT EXISTS annotation_options (
   field_key TEXT NOT NULL,
   value TEXT NOT NULL,
-  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (field_key,value)
 );
 CREATE INDEX IF NOT EXISTS idx_annotation_options_field ON annotation_options(field_key,value);
 ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
 ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reason TEXT;
-ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reviewed_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT;
 ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 ALTER TABLE annotation_options ADD COLUMN IF NOT EXISTS replacement_value TEXT;
 DO $$ BEGIN
@@ -190,7 +222,7 @@ CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_owner ON photo_safe_publ
 CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_active ON photo_safe_public_shares(token_hash,expires_at) WHERE revoked_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS photo_ratings (
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
   rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -205,9 +237,9 @@ CREATE TABLE IF NOT EXISTS annotation_review_requests (
   field_key TEXT,
   reason TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','resolved','rejected')),
-  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  resolved_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  resolved_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   resolved_at TIMESTAMPTZ,
   resolution_note TEXT
 );
@@ -224,7 +256,7 @@ CREATE TABLE IF NOT EXISTS contribution_settings (
   auto_promote_full_access BOOLEAN NOT NULL DEFAULT true,
   scientific_message TEXT NOT NULL DEFAULT 'Your contribution qualifies you for individual consideration for co-authorship in publications substantially using your annotated data.',
   level_names JSONB NOT NULL DEFAULT '{"nestling":"Nestling","fieldHelper":"Field Helper","fullContributor":"Full Contributor","acknowledgedContributor":"Acknowledged Contributor","scientificContributor":"Scientific Contributor"}'::jsonb,
-  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  updated_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 INSERT INTO contribution_settings(id) VALUES(1) ON CONFLICT(id) DO NOTHING;
@@ -241,7 +273,7 @@ CREATE TABLE IF NOT EXISTS user_contribution_overrides (
   auto_promote_full_access BOOLEAN,
   scientific_message TEXT,
   level_names JSONB,
-  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  updated_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 UPDATE user_contribution_overrides SET scientific_threshold=2000 WHERE scientific_threshold=1000;
@@ -320,8 +352,8 @@ CREATE INDEX IF NOT EXISTS idx_restricted_annotation_focus_photo ON restricted_a
 CREATE TABLE IF NOT EXISTS annotation_tasks (
   id TEXT PRIMARY KEY,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
-  assigned_to TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  assigned_to TEXT NOT NULL REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
+  created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   reason TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'assigned' CHECK(status IN ('assigned','completed','cancelled')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -335,7 +367,7 @@ CREATE TABLE IF NOT EXISTS annotation_history (
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
   version INTEGER NOT NULL,
   status TEXT NOT NULL,
-  changed_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  changed_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   snapshot JSONB NOT NULL,
   UNIQUE (photo_id, version)
@@ -376,7 +408,7 @@ CREATE TABLE IF NOT EXISTS import_batches (
   summary JSONB NOT NULL DEFAULT '{}'::jsonb,
   input_manifest JSONB NOT NULL DEFAULT '{}'::jsonb,
   staging_path TEXT,
-  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   finished_at TIMESTAMPTZ
 );
@@ -384,7 +416,7 @@ CREATE TABLE IF NOT EXISTS import_batches (
 -- Upgrade databases created by earlier releases without losing import history.
 ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS input_manifest JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS staging_path TEXT;
-ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS created_by TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE import_batches ADD COLUMN IF NOT EXISTS created_by TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT;
 DO $$
 DECLARE constraint_name TEXT;
 BEGIN
@@ -415,7 +447,7 @@ CREATE TABLE IF NOT EXISTS import_issues (
 
 CREATE TABLE IF NOT EXISTS audit_log (
   id BIGSERIAL PRIMARY KEY,
-  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  user_id TEXT REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
   action TEXT NOT NULL,
   entity_type TEXT NOT NULL,
   entity_id TEXT,
@@ -424,3 +456,40 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id, created_at DESC);
+
+-- Upgrade historical actor references from login accounts to durable attribution.
+-- Authentication-owned tables keep their users(id) CASCADE constraints.
+DO $$
+DECLARE
+  relation_name TEXT;
+  column_name TEXT;
+  constraint_name TEXT;
+BEGIN
+  FOR relation_name,column_name,constraint_name IN
+    SELECT * FROM (VALUES
+      ('photo_annotations','created_by','photo_annotations_created_by_fkey'),
+      ('photo_annotations','updated_by','photo_annotations_updated_by_fkey'),
+      ('photo_annotations','completed_by','photo_annotations_completed_by_fkey'),
+      ('photo_annotations','verified_by','photo_annotations_verified_by_fkey'),
+      ('annotation_options','created_by','annotation_options_created_by_fkey'),
+      ('annotation_options','reviewed_by','annotation_options_reviewed_by_fkey'),
+      ('photo_ratings','user_id','photo_ratings_user_id_fkey'),
+      ('annotation_review_requests','created_by','annotation_review_requests_created_by_fkey'),
+      ('annotation_review_requests','resolved_by','annotation_review_requests_resolved_by_fkey'),
+      ('contribution_settings','updated_by','contribution_settings_updated_by_fkey'),
+      ('user_contribution_overrides','updated_by','user_contribution_overrides_updated_by_fkey'),
+      ('annotation_tasks','assigned_to','annotation_tasks_assigned_to_fkey'),
+      ('annotation_tasks','created_by','annotation_tasks_created_by_fkey'),
+      ('annotation_history','changed_by','annotation_history_changed_by_fkey'),
+      ('import_batches','created_by','import_batches_created_by_fkey'),
+      ('audit_log','user_id','audit_log_user_id_fkey')
+    ) AS historical_reference(relation_name,column_name,constraint_name)
+  LOOP
+    IF EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=relation_name::regclass AND conname=constraint_name AND confrelid='users'::regclass) THEN
+      EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I',relation_name,constraint_name);
+    END IF;
+    IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid=relation_name::regclass AND conname=constraint_name) THEN
+      EXECUTE format('ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY(%I) REFERENCES user_attributions(user_id) ON DELETE RESTRICT',relation_name,constraint_name,column_name);
+    END IF;
+  END LOOP;
+END $$;

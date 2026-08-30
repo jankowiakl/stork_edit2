@@ -113,5 +113,5 @@ test("share actions are audited without storing the raw public token",()=>{
 });
 
 test("the service worker cache is bumped for Photo Safe sharing",()=>{
-  assert.match(worker,/stork-edit2-shell-v2026-08-30-18/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-30-19/);
 });
