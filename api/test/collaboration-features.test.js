@@ -153,14 +153,19 @@ test("all photo viewers use keyboard arrows and shared presentation controls",()
   assert.match(server,/sort==="custom"\?"f\.sort_order NULLS LAST/);
 });
 
-test("the mobile collection show keeps a compact touch-friendly primary bar",()=>{
+test("the shared collection viewer keeps a compact map-bound floating toolbar",()=>{
   assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
   assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{safe\?"🔐":"☆"\} \$\{position\}`/);
   assert.match(ui,/collectionModeLabelEl\.title=safe\?"My photo safe":"Top rated"/);
-  assert.match(ui,/\.collectionModeBar \{ left:max\(6px,env\(safe-area-inset-left\)\)/);
+  assert.match(ui,/<div class="card mapStack">[\s\S]*?<div class="collectionModeBar" id="collectionModeBar" hidden>[\s\S]*?<div class="mapControlDock"/);
+  assert.match(ui,/\.collectionModeBar \{ position:absolute; top:10px; left:50%; bottom:auto; transform:translateX\(-50%\)/);
+  assert.match(ui,/\.collectionModeBar \{ top:max\(7px,env\(safe-area-inset-top\)\); right:auto; bottom:auto; left:50%;[^}]*max-width:calc\(100% - 92px\)/);
   assert.match(ui,/min-width:42px; min-height:42px/);
   assert.match(ui,/flex-wrap:nowrap/);
   assert.match(ui,/@keyframes collectionBarMobileEnter/);
+  assert.match(ui,/collectionToolbarIdleTimer=setTimeout\(\(\)=>setCollectionToolbarCollapsed\(true\),collectionPlaying\?3000:4500\)/);
+  assert.match(ui,/collectionToolbarCollapsed #collectionDetailsToggle/);
+  assert.match(ui,/wrapEl\.addEventListener\("pointermove",\(\)=>\{if\(document\.body\.classList\.contains\("collectionMode"\)\)revealCollectionToolbar\(\);\}\)/);
 });
 
 test("responsive defaults and mobile editor controls remain compact",()=>{
@@ -183,9 +188,10 @@ test("all Photo Safe viewer modes share compact collapsible presentation details
   assert.match(ui,/id="collectionShare"/);
   assert.match(ui,/--slideshow-font:clamp\(12px,var\(--ui-font-control\),14px\)/);
   assert.match(ui,/body\.collectionMode #sliderOverlay \{ display:none!important; \}/);
-  assert.match(ui,/\.mapStack > \.collectionDetails \{ position:absolute; z-index:1650; top:max\(8px,env\(safe-area-inset-top\)\);[^}]*bottom:auto;[^}]*max-height:min\(calc\(100% - 16px\),32dvh,240px\);[^}]*--slideshow-font:/);
-  assert.match(ui,/mapStackEl\.appendChild\(collectionDetailsEl\)/);
-  assert.match(ui,/collectionModeBarEl\.appendChild\(collectionDetailsEl\)/);
+  assert.match(ui,/\.collectionDetails \{ position:absolute; top:calc\(100% \+ 7px\); right:auto; bottom:auto; left:50%; transform:translateX\(-50%\)/);
+  assert.match(ui,/\.collectionModeBar \.collectionDetails \{ top:calc\(100% \+ 6px\);[^}]*width:min\(310px,calc\(100vw - 18px\)\);[^}]*max-height:min\(calc\(var\(--mobile-map-height\) - 74px\),32dvh,240px\)/);
+  assert.match(ui,/document\.body\.classList\.toggle\("collectionDetailsOpen",visible\)/);
+  assert.doesNotMatch(ui,/mapStackEl\.appendChild\(collectionDetailsEl\)/);
   assert.match(ui,/collectionDetailsEl\.contains\(event\.target\)/);
   assert.equal((ui.match(/id="collectionDetails"/g)||[]).length,1);
 });
