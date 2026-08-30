@@ -457,6 +457,39 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id, created_at DESC);
 
+-- One administrator-managed plain-text template is shared by SMTP and every
+-- client-side fallback. Defaults preserve the invitation used before this table existed.
+CREATE TABLE IF NOT EXISTS email_invitation_settings (
+  id SMALLINT PRIMARY KEY CHECK (id=1),
+  subject_template TEXT NOT NULL CHECK (char_length(subject_template) BETWEEN 1 AND 200),
+  body_template TEXT NOT NULL CHECK (char_length(body_template) BETWEEN 1 AND 10000),
+  updated_by TEXT REFERENCES user_attributions(user_id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO email_invitation_settings(id,subject_template,body_template)
+VALUES(1,'Zaproszenie do Stork Photo Editor',$invite_default$Witaj {{name}},
+
+Masz konto w aplikacji Stork Photo Editor.
+
+Aplikacja: {{appUrl}}
+Email: {{email}}
+Twoja rola: {{role}}.
+Uprawnienia: {{permissions}}{{accessDescription}}
+
+Hasło tymczasowe: {{temporaryPassword}}
+
+Po pierwszym logowaniu trzeba zmienić hasło.
+
+Instrukcja:
+1. Otwórz aplikację.
+2. Zaloguj się emailem i hasłem tymczasowym.
+3. Ustaw własne hasło.
+4. Rozpocznij pracę z przydzielonymi zdjęciami.
+
+Stork Photo Editor$invite_default$)
+ON CONFLICT(id) DO NOTHING;
+
 -- Upgrade historical actor references from login accounts to durable attribution.
 -- Authentication-owned tables keep their users(id) CASCADE constraints.
 DO $$
