@@ -183,6 +183,10 @@ test("all Photo Safe viewer modes share compact collapsible presentation details
   assert.match(ui,/id="collectionShare"/);
   assert.match(ui,/--slideshow-font:clamp\(12px,var\(--ui-font-control\),14px\)/);
   assert.match(ui,/body\.collectionMode #sliderOverlay \{ display:none!important; \}/);
+  assert.match(ui,/\.mapStack > \.collectionDetails \{ position:absolute; z-index:1650; top:max\(8px,env\(safe-area-inset-top\)\);[^}]*bottom:auto;[^}]*max-height:min\(calc\(100% - 16px\),32dvh,240px\);[^}]*--slideshow-font:/);
+  assert.match(ui,/mapStackEl\.appendChild\(collectionDetailsEl\)/);
+  assert.match(ui,/collectionModeBarEl\.appendChild\(collectionDetailsEl\)/);
+  assert.match(ui,/collectionDetailsEl\.contains\(event\.target\)/);
   assert.equal((ui.match(/id="collectionDetails"/g)||[]).length,1);
 });
 

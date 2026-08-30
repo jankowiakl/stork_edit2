@@ -1252,7 +1252,7 @@
   .collectionModeBar .collectionModeLabel { flex:0 1 auto; min-width:3.4em; text-align:center; font-size:var(--slideshow-font)!important; line-height:1; }
   .collectionModeBar .collectionPrimaryControl { flex:0 1 auto; min-width:42px; min-height:42px; padding:6px clamp(6px,1.8vw,9px)!important; font-size:var(--slideshow-font)!important; }
   .collectionModeBar .collectionBack { min-width:42px; }
-  .collectionDetails { right:0; width:min(420px,calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))); max-height:min(32dvh,240px); padding:8px; }
+  .mapStack > .collectionDetails { position:absolute; z-index:1650; top:max(8px,env(safe-area-inset-top)); right:max(8px,env(safe-area-inset-right)); bottom:auto; left:max(8px,env(safe-area-inset-left)); width:auto; max-height:min(calc(100% - 16px),32dvh,240px); padding:8px; overflow:auto; --slideshow-font:clamp(12px,var(--ui-font-control),13.5px); --slideshow-font-small:clamp(11px,var(--ui-font-small),12.5px); }
   .collectionDetailsGrid { grid-template-columns:minmax(88px,.62fr) minmax(0,1.38fr); gap:7px; }
   .collectionDetailsActions button,.collectionDetailsHeader button { min-height:40px; }
   .collectionDetailsActions { gap:5px; }
@@ -2517,11 +2517,13 @@ button { white-space:normal; line-height:1.2; }
       // Always start in the fullscreen split view (map+photo). Map stays interactive.
       document.body.classList.add("mobileLock");
       moveCardsIntoMobilePanel();
+      if (collectionDetailsEl.parentNode !== mapStackEl) mapStackEl.appendChild(collectionDetailsEl);
       closeMobilePanel();
     } else {
       document.body.classList.remove("mobileLock");
       closeMobilePanel();
       restoreCardsFromMobilePanel();
+      if (collectionDetailsEl.parentNode !== collectionModeBarEl) collectionModeBarEl.appendChild(collectionDetailsEl);
     }
     setTimeout(() => { try { refreshMapSizes(); } catch(e) {} }, 80);
   };
@@ -3801,7 +3803,7 @@ loopCurrentEl.checked = false;
   const setCollectionDetailsOpen=(open)=>{const visible=!!open&&document.body.classList.contains("collectionMode");collectionDetailsEl.hidden=!visible;collectionDetailsToggleBtn.setAttribute("aria-expanded",String(visible));collectionDetailsToggleBtn.classList.toggle("active",visible);};
   collectionDetailsToggleBtn.addEventListener("click",()=>setCollectionDetailsOpen(collectionDetailsEl.hidden));
   collectionDetailsCloseBtn.addEventListener("click",()=>setCollectionDetailsOpen(false));
-  document.addEventListener("pointerdown",(event)=>{if(collectionDetailsEl.hidden||collectionModeBarEl.contains(event.target))return;setCollectionDetailsOpen(false);});
+  document.addEventListener("pointerdown",(event)=>{if(collectionDetailsEl.hidden||collectionModeBarEl.contains(event.target)||collectionDetailsEl.contains(event.target))return;setCollectionDetailsOpen(false);});
   window.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!collectionDetailsEl.hidden)setCollectionDetailsOpen(false);});
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
   const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
