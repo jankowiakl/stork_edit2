@@ -98,7 +98,7 @@ test("shared routes and public isolation expose only birds represented in the sa
 });
 
 test("shared viewing bypasses normal browse grants and refreshes short-lived URLs",()=>{
-  assert.match(ui,/showPhotoAtIndex\(trackIndex,\{skipAccess:!!photoSafeViewerContext\?\.readOnly\}\)/);
+  assert.match(ui,/showPhotoAtIndex\(trackIndex,\{skipAccess:!!photoSafeViewerContext\?\.readOnly,transitionFrom:animateFrom/);
   assert.match(ui,/if\(!skipAccess&&!await grantTrackPhotoAccess/);
   assert.match(ui,/scheduleSharedSafeRefresh/);
   assert.match(ui,/4\*60\*1000/);
@@ -113,5 +113,5 @@ test("share actions are audited without storing the raw public token",()=>{
 });
 
 test("the service worker cache is bumped for Photo Safe sharing",()=>{
-  assert.match(worker,/stork-edit2-shell-v2026-08-29-17/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-30-18/);
 });

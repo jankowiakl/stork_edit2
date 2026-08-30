@@ -123,6 +123,19 @@ test("photo safe navigation follows the complete cross-bird collection",()=>{
   assert.match(ui,/navigatePhotoSequenceBy\(1\)/);
 });
 
+test("all Photo Safe modes reuse the main photo and map transition engine",()=>{
+  assert.equal((ui.match(/const renderPhotoTransitionFrame=/g)||[]).length,1);
+  assert.match(ui,/const renderFrame = \(i, t, ts\) => \{[\s\S]*?renderPhotoTransitionFrame\(a,b,t,ts\)/);
+  assert.match(ui,/const animateCollectionTransition=[\s\S]*?renderPhotoTransitionFrame\(fromPoint,toPoint,t,ts,\{trail:null,moveMap:false\}\)/);
+  assert.match(ui,/lat=lerp\(a\.lat,b\.lat,t\),lon=lerpLonShortest\(a\.lon,b\.lon,t\)/);
+  assert.match(ui,/imgA\.style\.opacity=\(1-t\)\.toFixed\(3\)/);
+  assert.match(ui,/imgB\.style\.opacity=t\.toFixed\(3\)/);
+  assert.match(ui,/followMap\.setView\(latlng,followMap\.getZoom\(\),\{animate:true,duration:/);
+  assert.match(ui,/await loadTrackFor\(selected\.bird,\{autoplay:false,deferInitialAccess:true,preserveVisualState:!!previousPoint\}\)/);
+  assert.match(ui,/scheduleCollectionPlayback=[\s\S]*?showCollectionSequencePhoto\(collectionSequenceIndex\+1\)/);
+  assert.match(ui,/navigatePhotoSequenceBy=[\s\S]*?showCollectionSequencePhoto\(collectionSequenceIndex\+direction\)/);
+});
+
 test("all photo viewers use keyboard arrows and the photo safe has presentation controls",()=>{
   assert.match(ui,/\["ArrowLeft","ArrowRight"\]\.includes\(event\.key\)/);
   assert.match(ui,/navigatePhotoSequenceBy\(event\.key==="ArrowLeft"\?-1:1\)/);

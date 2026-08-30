@@ -3791,7 +3791,7 @@ loopCurrentEl.checked = false;
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private photo safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update photo safe: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
 
-  let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false,collectionOrderPreference="bird_time";
+  let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false,collectionOrderPreference="bird_time",collectionDisplayedPoint=null,collectionTransitionRaf=null,collectionTransitionResolve=null,collectionNavigationToken=0;
   try{const savedOrder=localStorage.getItem("storkPhotoSafeOrderV1");if(["bird_time","custom","date_asc"].includes(savedOrder))collectionOrderPreference=savedOrder;const savedInterval=Number(localStorage.getItem("storkCollectionIntervalV1"));if(Number.isFinite(savedInterval)&&savedInterval>=1&&savedInterval<=120)collectionIntervalEl.value=String(savedInterval);}catch(error){}
   collectionOrderEl.value=collectionOrderPreference;
   const setCollectionDetailsOpen=(open)=>{const visible=!!open&&document.body.classList.contains("collectionMode");collectionDetailsEl.hidden=!visible;collectionDetailsToggleBtn.setAttribute("aria-expanded",String(visible));collectionDetailsToggleBtn.classList.toggle("active",visible);};
@@ -3802,9 +3802,34 @@ loopCurrentEl.checked = false;
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
   const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
   const orderPhotoSafeSequence=(photos,order=collectionOrderPreference)=>photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
+  const cancelCollectionTransition=()=>{if(collectionTransitionRaf)cancelAnimationFrame(collectionTransitionRaf);collectionTransitionRaf=null;if(collectionTransitionResolve){const resolve=collectionTransitionResolve;collectionTransitionResolve=null;resolve(false);}};
+  const collectionTransitionDuration=()=>{if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return 0;const speed=Math.max(.1,Number(speedEl.value)||1),legMs=Math.max(.3,Number(legSecondsEl.value)||3)*1000/speed,intervalMs=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5))*1000;return Math.max(260,Math.min(1500,legMs,intervalMs*.65));};
+  const animateCollectionTransition=(fromPoint,toPoint)=>new Promise((resolve)=>{cancelCollectionTransition();const duration=collectionTransitionDuration();if(!duration){renderPhotoTransitionFrame(fromPoint,toPoint,1,performance.now(),{trail:null,moveMap:false});resolve(true);return;}const started=performance.now();collectionTransitionResolve=resolve;const step=(ts)=>{const t=Math.min(1,(ts-started)/duration);renderPhotoTransitionFrame(fromPoint,toPoint,t,ts,{trail:null,moveMap:false});if(t<1){collectionTransitionRaf=requestAnimationFrame(step);return;}collectionTransitionRaf=null;collectionTransitionResolve=null;resolve(true);};collectionTransitionRaf=requestAnimationFrame(step);});
   const stopCollectionPlayback=()=>{collectionPlaying=false;if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;if(collectionPlayBtn)collectionPlayBtn.textContent="Play";};
-  const showCollectionSequencePhoto=async(index)=>{if(!collectionSequence.length)return false;collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;const selected=collectionSequence[collectionSequenceIndex];if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true});}const trackIndex=track.findIndex((point)=>point.photoId===selected.id);if(trackIndex<0){updatePhotoNavButtons();return false;}await showPhotoAtIndex(trackIndex,{skipAccess:!!photoSafeViewerContext?.readOnly});const point=track[trackIndex];followFixed=[[point.lat,point.lon]];followLine.setLatLngs(followFixed);followMap.setView([point.lat,point.lon],followMap.getZoom(),{animate:false});const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;collectionModeLabelEl.title=safe?"My photo safe":"Top rated";collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);updatePhotoNavButtons(trackIndex);return true;};
-  const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5)),delay=seconds*1000;collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
+  const showCollectionSequencePhoto=async(index)=>{
+    if(!collectionSequence.length)return false;
+    const navigationToken=++collectionNavigationToken,previousPoint=collectionDisplayedPoint?{...collectionDisplayedPoint}:null;
+    collectionSequenceIndex=(index+collectionSequence.length)%collectionSequence.length;
+    const selected=collectionSequence[collectionSequenceIndex];
+    if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true,preserveVisualState:!!previousPoint});}
+    if(navigationToken!==collectionNavigationToken)return false;
+    const trackIndex=track.findIndex((point)=>point.photoId===selected.id);
+    if(trackIndex<0){updatePhotoNavButtons();return false;}
+    const point=track[trackIndex],animateFrom=previousPoint&&previousPoint.photoId!==point.photoId?previousPoint:null;
+    const shown=await showPhotoAtIndex(trackIndex,{skipAccess:!!photoSafeViewerContext?.readOnly,transitionFrom:animateFrom,transitionGuard:()=>navigationToken===collectionNavigationToken});
+    if(!shown)return false;
+    if(navigationToken!==collectionNavigationToken)return false;
+    collectionDisplayedPoint={...point,url:point.url||point.file,bird:selected.bird};
+    followFixed=[[point.lat,point.lon]];
+    followLine.setLatLngs(followFixed);
+    const safe=activeCollectionType==="favorites",position=`${collectionSequenceIndex+1} / ${collectionSequence.length}`;
+    collectionModeLabelEl.textContent=`${safe?"🔐":"☆"} ${position}`;
+    collectionModeLabelEl.title=safe?"My photo safe":"Top rated";
+    collectionModeLabelEl.setAttribute("aria-label",`${safe?"My photo safe":"Top rated"}: photo ${position}`);
+    updatePhotoNavButtons(trackIndex);
+    return true;
+  };
+  const scheduleCollectionPlayback=()=>{if(!collectionPlaying)return;const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5)),delay=Math.max(250,seconds*1000-collectionTransitionDuration());collectionPlayTimer=setTimeout(async()=>{const shown=await showCollectionSequencePhoto(collectionSequenceIndex+1);if(!shown){stopCollectionPlayback();return;}scheduleCollectionPlayback();},delay);};
   const publicSafeIntroKey=()=>`storkPublicSafeIntroSeen:${photoSafeViewerContext?.shareId||"unknown"}`;
   const toggleCollectionPlayback=async()=>{if(collectionPlaying){stopCollectionPlayback();return;}if(!collectionSequence.length)return;setCollectionDetailsOpen(false);if(photoSafeViewerContext?.mode==="PUBLIC_READONLY"&&!sessionStorage.getItem(publicSafeIntroKey())){publicProjectIntroEl.classList.add("open");publicProjectIntroEl.setAttribute("aria-hidden","false");return;}stopAnim();collectionPlaying=true;collectionPlayBtn.textContent="Pause";scheduleCollectionPlayback();};
   const loadPhotoSafeViewerSource=async(options={})=>{if(options.payload)return options.payload;if(options.mode==="SHARED_READONLY")return apiFetch(`/api/photo-safe/shares/${encodeURIComponent(options.shareId)}`);if(options.mode==="PUBLIC_READONLY")return apiFetch(`/api/public/photo-safe?token=${encodeURIComponent(options.publicToken||"")}`,{}, {auth:false});return apiFetch("/api/me/photo-collection?collection=favorites&sort=custom");};
@@ -3842,7 +3867,7 @@ loopCurrentEl.checked = false;
       collectionShareBtn.hidden=readOnly||collection!=="favorites";
       leaveCollectionModeBtn.hidden=photoSafeViewerContext?.mode==="PUBLIC_READONLY";
       if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};
-      stopAnim();groupedFiles.clear();trackCache.clear();gpsTracksByBird.clear();gpsDatasetPromises.clear();stopoverFeatures=[];
+      stopAnim();cancelCollectionTransition();collectionDisplayedPoint=null;collectionNavigationToken+=1;groupedFiles.clear();trackCache.clear();gpsTracksByBird.clear();gpsDatasetPromises.clear();stopoverFeatures=[];
       const usable=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));
       collectionSequence=collection==="favorites"?orderPhotoSafeSequence(usable):usable;
       for(const photo of collectionSequence){
@@ -3865,7 +3890,7 @@ loopCurrentEl.checked = false;
   };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();cancelCollectionTransition();collectionNavigationToken+=1;collectionDisplayedPoint=null;stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
   collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
   collectionOrderEl.addEventListener("change",async()=>{if(activeCollectionType!=="favorites"||!collectionSequence.length)return;collectionOrderPreference=collectionOrderEl.value;try{localStorage.setItem("storkPhotoSafeOrderV1",collectionOrderPreference);}catch(error){}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderPhotoSafeSequence(collectionSequence,collectionOrderPreference);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
@@ -3944,7 +3969,7 @@ loopCurrentEl.checked = false;
   const grantTrackPhotoAccess=async(point,purpose="browse")=>{if(!point?.photoId||!editorHasConnection())return true;const requestAccess=(requestedPurpose)=>apiFetch(`/api/photos/${encodeURIComponent(point.photoId)}/access`,{method:"POST",body:JSON.stringify({purpose:requestedPurpose})});try{let access;try{access=await requestAccess(purpose);}catch(error){if(purpose==="annotation"&&error.message==="annotation_read_only")access=await requestAccess("browse");else throw error;}if(access.photo){point.url=access.photo.imageUrl;point.previewUrl=access.photo.previewUrl;}point.accessGranted=true;if(access.contribution){authState.contribution=access.contribution;saveAuth();updateAppNavigation();}hideBrowseLock();return true;}catch(error){if(error.message==="browsing_limit_reached"){authState.contribution=error.data?.contribution||authState.contribution;stopAnim();showBrowseLock(error.data?.contribution);updateAppNavigation();return false;}throw error;}};
   startAnnotatingLockedBtn.addEventListener("click",async()=>{try{const result=await apiFetch("/api/next-unfinished"),queue=result.photos?.length?result.photos:(result.photo?[result.photo]:[]);if(!queue.length){setStatus("No available unannotated photo with a usable location is assigned to you.");return;}hideBrowseLock();const queueBird=queue[0].bird||queue[0].individual_id;setBirdSelection(queueBird);await loadTrackFor(queueBird,{autoplay:false,deferInitialAccess:true});const queueById=new Map(queue.map((photo)=>[photo.id,photo])),focusedTrack=queue.map((photo)=>track.find((point)=>point.photoId===photo.id)).filter(Boolean);for(const point of focusedTrack){const photo=queueById.get(point.photoId);point.url=photo.imageUrl;point.previewUrl=photo.previewUrl;point.accessGranted=true;}if(!focusedTrack.length){showBrowseLock(result.contribution);setStatus("The photos available for annotation could not be displayed. Please try again.");return;}activateTrack(focusedTrack);overviewLine.setLatLngs(track.map((point)=>[point.lat,point.lon]));fitOverviewToFullRoute();updateSliderMax();await showPhotoAtIndex(0,{purpose:"annotation"});await openEditorMode();setStatus(`${track.length} photo${track.length===1?" is":"s are"} available for annotation.`);}catch(error){setStatus(`Could not start annotation: ${error.message}`);}});
 
-  const showPhotoAtIndex = async (requestedIndex,{purpose="browse",skipAccess=false,preservePlayback=false}={}) => {
+  const showPhotoAtIndex = async (requestedIndex,{purpose="browse",skipAccess=false,preservePlayback=false,transitionFrom=null,transitionGuard=null}={}) => {
     if (!track.length) return;
     const index = Math.max(0, Math.min(requestedIndex, track.length - 1));
     const lastIndex = track.length - 1;
@@ -3969,29 +3994,50 @@ loopCurrentEl.checked = false;
     const sliderMax = Number(timeSlider.max) || currentProgress;
     timeSlider.value = Math.min(currentProgress, sliderMax);
 
-    const latlng = [point.lat, point.lon];
-    overviewMarker.setLatLng(latlng);
-    followMarker.setLatLng(latlng);
-    followFixed = track.slice(0, index + 1).map(p => [p.lat, p.lon]);
-    followLine.setLatLngs(followFixed);
+    const latlng = [point.lat, point.lon],fromUrl=transitionFrom?.url||transitionFrom?.file||"",animateTransition=!!(transitionFrom&&fromUrl&&point.url&&Number.isFinite(transitionFrom.lat)&&Number.isFinite(transitionFrom.lon)&&transitionFrom.photoId!==point.photoId);
+    if(animateTransition){
+      await new Promise((resolve)=>{const preload=new Image(),finish=()=>{clearTimeout(timer);preload.onload=null;preload.onerror=null;resolve();},timer=setTimeout(finish,600);preload.onload=finish;preload.onerror=finish;preload.src=point.url;if(preload.complete)finish();});
+      if(transitionGuard&&!transitionGuard())return false;
+      overviewMarker.setLatLng([transitionFrom.lat,transitionFrom.lon]);
+      followMarker.setLatLng([transitionFrom.lat,transitionFrom.lon]);
+      followFixed=[];
+      followLine.setLatLngs([[transitionFrom.lat,transitionFrom.lon]]);
+      imgA.src=fromUrl;
+      imgB.src=point.url;
+      imgA.style.opacity=1;
+      imgB.style.opacity=0;
+      const duration=collectionTransitionDuration();
+      followMap.setView(latlng,followMap.getZoom(),{animate:true,duration:Math.max(.2,duration/1000)});
+      const completed=await animateCollectionTransition(transitionFrom,point);
+      if(!completed||(transitionGuard&&!transitionGuard()))return false;
+    }else{
+      cancelCollectionTransition();
+      overviewMarker.setLatLng(latlng);
+      followMarker.setLatLng(latlng);
+      followFixed=track.slice(0,index+1).map(p=>[p.lat,p.lon]);
+      followLine.setLatLngs(followFixed);
+      imgA.src=point.url;
+      imgB.src=next&&!authState.contribution?.restricted?next.url:"";
+      imgA.style.opacity=1;
+      imgB.style.opacity=0;
+      followMap.setView(latlng,followMap.getZoom(),{animate:true,duration:.2});
+    }
 
-    imgA.src = point.url;
-    imgB.src = next&&!authState.contribution?.restricted ? next.url : "";
-    imgA.style.opacity = 1;
-    imgB.style.opacity = 0;
-
-    metaCoords.textContent = `Lat/Lon: ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
-    metaTime.textContent = `Time: ${fmtTime(point.dt)}`;
-    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(point.dt);
+    imgA.src=point.url;
+    imgB.src=next&&!authState.contribution?.restricted?next.url:"";
+    imgA.style.opacity=1;
+    imgB.style.opacity=0;
+    metaCoords.textContent=`Lat/Lon: ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`;
+    metaTime.textContent=`Time: ${fmtTime(point.dt)}`;
+    if(mapTimeBadge)mapTimeBadge.textContent=fmtTime(point.dt);
 
     const segmentIndex = Math.min(index, Math.max(0, track.length - 2));
     updateCurrentGpsSegment(segmentIndex);
     updatePhotoNavButtons(index);
     loadPhotoSocial(point.photoId);
 
-    const zoom = followMap.getZoom();
-    followMap.setView(latlng, zoom, { animate: true, duration: 0.2 });
     syncModalPhotos();
+    return true;
   };
 
   const navigatePhotoSequenceBy=async(delta)=>{
@@ -5025,7 +5071,7 @@ loopCurrentEl.checked = false;
     timeSlider.value = currentProgress;
   };
 
-  const loadTrackFor = async (id, {autoplay=false,deferInitialAccess=false,preservePlayback=false,lazyMedia=false} = {}) => {
+  const loadTrackFor = async (id, {autoplay=false,deferInitialAccess=false,preservePlayback=false,lazyMedia=false,preserveVisualState=false} = {}) => {
     if (!ensureLibs()) {
       setStatus("Leaflet or exifr failed to load. Check internet connection and refresh.");
       return;
@@ -5037,7 +5083,7 @@ loopCurrentEl.checked = false;
 
     birdId = id;
     metaBird.textContent = `Bird: ${birdId}`;
-    clearMaps();
+    if(preserveVisualState){overviewLine.setLatLngs([]);followLine.setLatLngs([]);followFixed=[];}else clearMaps();
     let files = groupedFiles.get(id);
     if (files.serverPlaceholder) {
       try {
@@ -5124,18 +5170,13 @@ loopCurrentEl.checked = false;
     const latlngs = track.map(p => [p.lat, p.lon]);
 
     overviewLine.setLatLngs(latlngs);
-    overviewMarker.setLatLng(start);
+    if(!preserveVisualState)overviewMarker.setLatLng(start);
     fitOverviewToFullRoute();
 
     const z = Math.max(2, Math.min(18, parseInt(followZoomEl.value||"12",10)));
-    followMarker.setLatLng(start);
-    followFixed = [start];
-    followLine.setLatLngs([start]);
-    followMap.setView(start, z);
+    if(!preserveVisualState){followMarker.setLatLng(start);followFixed=[start];followLine.setLatLngs([start]);followMap.setView(start,z);}
 
-    if(authState.contribution?.restricted){imgA.removeAttribute("src");imgB.removeAttribute("src");if(!deferInitialAccess)void showPhotoAtIndex(0);}else{imgA.src=track[0].url;imgB.src=track[1]?track[1].url:"";}
-    imgA.style.opacity = 1;
-    imgB.style.opacity = 0;
+    if(!preserveVisualState){if(authState.contribution?.restricted){imgA.removeAttribute("src");imgB.removeAttribute("src");if(!deferInitialAccess)void showPhotoAtIndex(0);}else{imgA.src=track[0].url;imgB.src=track[1]?track[1].url:"";}imgA.style.opacity=1;imgB.style.opacity=0;}
 
     segIndex = 0;
     segT = -1;
@@ -5143,9 +5184,7 @@ loopCurrentEl.checked = false;
     lastFollowMove = 0;
     currentProgress = 0;
 
-    metaCoords.textContent = `Lat/Lon: ${track[0].lat.toFixed(5)}, ${track[0].lon.toFixed(5)}`;
-    metaTime.textContent = `Time: ${fmtTime(track[0].dt)}`;
-    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(track[0].dt);
+    if(!preserveVisualState){metaCoords.textContent=`Lat/Lon: ${track[0].lat.toFixed(5)}, ${track[0].lon.toFixed(5)}`;metaTime.textContent=`Time: ${fmtTime(track[0].dt)}`;if(mapTimeBadge)mapTimeBadge.textContent=fmtTime(track[0].dt);}
 
     resetBtn.disabled = false;
     playBtn.disabled = (track.length < 2);
@@ -5386,38 +5425,32 @@ loopCurrentEl.checked = false;
     modalChip.textContent = `${metaBird.textContent} • ${metaTime.textContent}`;
   };
 
-  const renderFrame = (i, t, ts) => {
-    const a = track[i];
-    const b = track[i+1] || track[i];
-
-    const lat = lerp(a.lat, b.lat, t);
-    const lon = lerpLonShortest(a.lon, b.lon, t);
-
-    overviewMarker.setLatLng([lat, lon]);
-    followMarker.setLatLng([lat, lon]);
-
-    followLine.setLatLngs(followFixed.concat([[lat, lon]]));
-
-    maybeMoveFollowMap(lat, lon, ts);
-
-    imgA.style.opacity = (1 - t).toFixed(3);
-    imgB.style.opacity = (t).toFixed(3);
-
-    let curTime = null;
+  const renderPhotoTransitionFrame=(a,b,t,ts,{trail=followFixed,moveMap=true}={})=>{
+    const lat=lerp(a.lat,b.lat,t),lon=lerpLonShortest(a.lon,b.lon,t);
+    overviewMarker.setLatLng([lat,lon]);
+    followMarker.setLatLng([lat,lon]);
+    followLine.setLatLngs(trail?trail.concat([[lat,lon]]):[[lat,lon]]);
+    if(moveMap)maybeMoveFollowMap(lat,lon,ts);
+    imgA.style.opacity=(1-t).toFixed(3);
+    imgB.style.opacity=t.toFixed(3);
+    let curTime=null;
     if (a.dt && b.dt) {
       const ta = a.dt.getTime();
       const tb = b.dt.getTime();
       curTime = new Date(ta + (tb - ta) * t);
     } else if (a.dt) curTime = a.dt;
+    metaCoords.textContent=`Lat/Lon: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    metaTime.textContent=`Time: ${fmtTime(curTime)}`;
+    if(mapTimeBadge)mapTimeBadge.textContent=fmtTime(curTime);
+    syncModalPhotos();
+  };
 
-    metaCoords.textContent = `Lat/Lon: ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-    metaTime.textContent = `Time: ${fmtTime(curTime)}`;
-    if (mapTimeBadge) mapTimeBadge.textContent = fmtTime(curTime);
+  const renderFrame = (i, t, ts) => {
+    const a=track[i],b=track[i+1]||track[i];
+    renderPhotoTransitionFrame(a,b,t,ts);
 
     const frameIndex=Math.min(track.length-1,i+(t>=.5?1:0)),framePhotoId=track[frameIndex]?.photoId;if(framePhotoId&&framePhotoId!==socialPhotoId)void loadPhotoSocial(framePhotoId);
     if(document.body.classList.contains("editorOpen")&&!editorContributorReview&&!editorDirty&&frameIndex!==editorPhotoIndex)void editorLoadPhoto(frameIndex,{syncViewer:false});
-
-    syncModalPhotos();
   };
 
   holdSecondsEl.addEventListener("input", updateSliderMax);
