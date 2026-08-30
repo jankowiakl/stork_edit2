@@ -126,6 +126,70 @@
       white-space: nowrap;
     }
 
+    .mapControlDock {
+      position:absolute;
+      z-index:1700;
+      right:12px;
+      bottom:32px;
+      left:12px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:7px;
+      pointer-events:none;
+      --map-control-font:clamp(11px,var(--ui-font-small),13px);
+    }
+    .mapControlDock > button,.mapControlPanel { pointer-events:auto; }
+    .mapControlButton {
+      min-width:42px;
+      min-height:42px;
+      padding:4px!important;
+      border:1px solid rgba(255,255,255,.36)!important;
+      border-radius:11px!important;
+      background:rgba(7,13,22,.82)!important;
+      box-shadow:0 8px 25px rgba(0,0,0,.38);
+      backdrop-filter:blur(10px);
+      color:#fff;
+    }
+    .mapControlButton[aria-expanded="true"] { border-color:rgba(119,209,255,.86)!important; box-shadow:0 0 0 2px rgba(119,209,255,.16),0 8px 25px rgba(0,0,0,.38); }
+    .mapBasemapToggle { width:76px; height:52px; position:relative; overflow:hidden; }
+    .mapBasemapPreview { position:absolute; inset:3px; border-radius:8px; background-color:#26384b; background-position:center; background-size:cover; }
+    .mapBasemapName { position:absolute; right:3px; bottom:3px; left:3px; overflow:hidden; padding:2px 3px; border-radius:0 0 7px 7px; background:linear-gradient(transparent,rgba(0,0,0,.88)); color:#fff; font-size:10px; line-height:1.25; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
+    .mapSettingsToggle { width:44px; height:44px; font-size:20px!important; line-height:1; }
+    .mapControlPanel {
+      position:absolute;
+      right:0;
+      bottom:calc(100% + 8px);
+      width:min(360px,100%);
+      max-height:min(52vh,430px);
+      overflow:auto;
+      box-sizing:border-box;
+      padding:10px;
+      border:1px solid rgba(119,209,255,.38);
+      border-radius:13px;
+      background:rgba(8,16,28,.96);
+      box-shadow:0 16px 42px rgba(0,0,0,.48);
+      backdrop-filter:blur(16px);
+      color:var(--text);
+      font-size:var(--map-control-font);
+    }
+    .mapControlPanel[hidden] { display:none!important; }
+    .mapControlHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .mapControlHeader strong { font-size:var(--map-control-font); }
+    .mapControlClose { min-width:34px; min-height:34px; padding:2px 8px!important; }
+    .basemapGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+    .basemapChoice { position:relative; min-width:0; min-height:76px; overflow:hidden; padding:0!important; border:2px solid transparent!important; border-radius:10px!important; background:#26384b!important; }
+    .basemapChoice.active { border-color:#77d1ff!important; box-shadow:0 0 0 2px rgba(119,209,255,.18); }
+    .basemapChoicePreview { position:absolute; inset:0; background-position:center; background-size:cover; transition:transform .18s ease; }
+    .basemapChoice:hover .basemapChoicePreview,.basemapChoice:focus-visible .basemapChoicePreview { transform:scale(1.04); }
+    .basemapChoiceLabel { position:absolute; right:0; bottom:0; left:0; padding:14px 6px 5px; background:linear-gradient(transparent,rgba(0,0,0,.90)); color:#fff; font-size:var(--map-control-font); line-height:1.15; text-align:left; overflow-wrap:anywhere; }
+    .mapSettingsContent { display:grid; gap:9px; min-width:0; }
+    .mapSettingsContent > .row,.mapSettingsContent > .checkRow,.mapSettingsContent > .btnrow { margin:0; }
+    .mapSettingsContent .checkRow { gap:8px 12px; }
+    .mapSettingsContent .row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .mapSettingsContent input,.mapSettingsContent select { min-width:0; max-width:100%; box-sizing:border-box; }
+    .mapSettingsContent .subSettings { margin-top:0; }
+
 
     .side {
       position: relative;
@@ -1253,6 +1317,12 @@
   .collectionModeBar .collectionPrimaryControl { flex:0 1 auto; min-width:42px; min-height:42px; padding:6px clamp(6px,1.8vw,9px)!important; font-size:var(--slideshow-font)!important; }
   .collectionModeBar .collectionBack { min-width:42px; }
   .mapStack > .collectionDetails { position:absolute; z-index:1650; top:max(8px,env(safe-area-inset-top)); right:max(8px,env(safe-area-inset-right)); bottom:auto; left:max(8px,env(safe-area-inset-left)); width:auto; max-height:min(calc(100% - 16px),32dvh,240px); padding:8px; overflow:auto; --slideshow-font:clamp(12px,var(--ui-font-control),13.5px); --slideshow-font-small:clamp(11px,var(--ui-font-small),12.5px); }
+  .mapControlDock { right:max(7px,env(safe-area-inset-right)); bottom:8px; left:max(7px,env(safe-area-inset-left)); gap:5px; --map-control-font:clamp(11px,var(--ui-font-small),12.5px); }
+  .mapBasemapToggle { width:62px; height:44px; }
+  .mapSettingsToggle { width:42px; min-width:42px; height:42px; min-height:42px; font-size:18px!important; }
+  .mapControlPanel { width:min(330px,100%); max-height:min(calc(var(--mobile-map-height) - 66px),36dvh,280px); padding:8px; }
+  .basemapChoice { min-height:66px; }
+  .mapSettingsContent .row { gap:7px; }
   .collectionDetailsGrid { grid-template-columns:minmax(88px,.62fr) minmax(0,1.38fr); gap:7px; }
   .collectionDetailsActions button,.collectionDetailsHeader button { min-height:40px; }
   .collectionDetailsActions { gap:5px; }
@@ -1419,7 +1489,7 @@ button { white-space:normal; line-height:1.2; }
     <button class="appNavTile" type="button" data-app-nav="account"><span class="appNavIcon">◎</span><strong id="appNavAccountLabel">Log in</strong><small>Account, password and access</small></button>
     <button class="appNavTile" type="button" data-app-nav="favorites"><span class="appNavIcon">🔐</span><strong>My photo safe</strong><small>Your private server-side selection</small></button>
     <button class="appNavTile" type="button" data-app-nav="rated"><span class="appNavIcon">☆</span><strong>Top rated</strong><small>Ranking table ordered by average rating</small></button>
-    <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Map, playback, layout and music</small></button>
+    <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Playback, layout and music</small></button>
     <button class="appNavTile" type="button" data-app-nav="install"><span class="appNavIcon">⇩</span><strong>Install application</strong><small>Add Stork Journey to the phone home screen</small></button>
     <button class="appNavTile" type="button" data-app-nav="export" data-role="coordinator,admin"><span class="appNavIcon">⇩</span><strong>Export data</strong><small>XLSX, CSV, GIS and ZIP</small></button>
     <button class="appNavTile" type="button" data-app-nav="users" data-role="admin"><span class="appNavIcon">♙</span><strong>Users</strong><small>Accounts, roles and invitations</small></button>
@@ -1454,6 +1524,13 @@ button { white-space:normal; line-height:1.2; }
   <div class="card mapStack">
     <div class="timeBadge" id="mapTimeBadge">—</div>
     <div id="mapFollow"></div>
+
+    <div class="mapControlDock" id="mapControlDock" aria-label="Map controls">
+      <button class="mapControlButton mapBasemapToggle" id="mapBasemapToggle" type="button" aria-expanded="false" aria-controls="mapBasemapPanel" title="Choose basemap"><span class="mapBasemapPreview" id="mapBasemapPreview"></span><span class="mapBasemapName" id="mapBasemapName">Basemap</span></button>
+      <button class="mapControlButton mapSettingsToggle" id="mapSettingsToggle" type="button" aria-expanded="false" aria-controls="mapSettingsPanel" aria-label="Map settings" title="Map settings">⚙</button>
+      <section class="mapControlPanel" id="mapBasemapPanel" aria-label="Choose basemap" hidden><div class="mapControlHeader"><strong>Choose basemap</strong><button class="secondary tiny mapControlClose" id="mapBasemapClose" type="button" aria-label="Close basemap chooser">×</button></div><div class="basemapGrid" id="basemapGrid"></div></section>
+      <section class="mapControlPanel" id="mapSettingsPanel" aria-label="Map settings" hidden><div class="mapControlHeader"><strong>Map settings</strong><button class="secondary tiny mapControlClose" id="mapSettingsClose" type="button" aria-label="Close map settings">×</button></div><div class="mapSettingsContent" id="mapSettingsContent"></div></section>
+    </div>
 
     <div class="overviewInset">
       <div class="badge overview">Overview</div>
@@ -2139,6 +2216,17 @@ button { white-space:normal; line-height:1.2; }
   const layoutSplitEl = el("layoutSplit");
   const fontScaleEl = el("fontScale");
   const basemapSelect = el("basemapSelect");
+  const mapControlDockEl = el("mapControlDock");
+  const mapBasemapToggleBtn = el("mapBasemapToggle");
+  const mapBasemapPreviewEl = el("mapBasemapPreview");
+  const mapBasemapNameEl = el("mapBasemapName");
+  const mapBasemapPanelEl = el("mapBasemapPanel");
+  const mapBasemapCloseBtn = el("mapBasemapClose");
+  const basemapGridEl = el("basemapGrid");
+  const mapSettingsToggleBtn = el("mapSettingsToggle");
+  const mapSettingsPanelEl = el("mapSettingsPanel");
+  const mapSettingsCloseBtn = el("mapSettingsClose");
+  const mapSettingsContentEl = el("mapSettingsContent");
 
   const editorWebAppUrlEl = el("editorWebAppUrl");
   const editorSecretEl = el("editorSecret");
@@ -2366,12 +2454,14 @@ button { white-space:normal; line-height:1.2; }
   accountWorkspaceBodyEl.appendChild(editorConnectionDetailsEl);editorConnectionDetailsEl.open=true;
   exportWorkspaceBodyEl.appendChild(exportDataDetailsEl);exportDataDetailsEl.open=true;
   const makeOptionsSection=(title,description,open=false)=>{const details=document.createElement("details"),summary=document.createElement("summary"),body=document.createElement("div");details.className="optionsSection";details.open=open;summary.innerHTML=`${title}<span>${description}</span>`;body.className="optionsSectionBody";details.append(summary,body);settingsBodyEl.appendChild(details);return body;};
-  const dataOptionsBody=makeOptionsSection("Data source","Server reload, local folder and selected individual",true),appearanceOptionsBody=makeOptionsSection("Appearance","Typography, basemap and panel proportions",true),playbackOptionsBody=makeOptionsSection("Playback","Animation timing, following and looping"),mapOptionsBody=makeOptionsSection("Map layers","GPS, stopovers and route appearance"),audioOptionsBody=makeOptionsSection("Music","Optional background audio");
+  const dataOptionsBody=makeOptionsSection("Data source","Server reload, local folder and selected individual",true),appearanceOptionsBody=makeOptionsSection("Appearance","Typography and panel proportions",true),playbackOptionsBody=makeOptionsSection("Playback","Animation timing and looping"),audioOptionsBody=makeOptionsSection("Music","Optional background audio");
   const folderLabel=folderInput.previousElementSibling,folderButtons=loadGithubBtn.closest(".btnrow"),birdSpeedRow=birdSelect.closest(".row"),birdBox=birdSelect.parentElement,speedBox=speedEl.parentElement;
   dataOptionsBody.append(folderLabel,folderInput,folderButtons,birdBox);playbackOptionsBody.append(speedBox);birdSpeedRow.remove();
-  appearanceOptionsBody.append(fontScaleEl.closest(".row"),basemapSelect.closest(".row"));
-  playbackOptionsBody.append(legSecondsEl.closest(".row"),followZoomEl.closest(".row"),loopCurrentEl.closest(".checkRow"),loadBtn.closest(".btnrow"));
-  mapOptionsBody.append(showGpsTrackEl.closest(".checkRow"),backgroundDataStatusEl,lineStyleDetailsEl);audioOptionsBody.append(musicDetailsEl);
+  const basemapLayoutRow=basemapSelect.closest(".row"),basemapBox=basemapSelect.parentElement,layoutBox=layoutSplitEl.parentElement,mapFollowRow=followZoomEl.closest(".row");
+  basemapSelect.hidden=true;mapControlDockEl.appendChild(basemapSelect);basemapBox.remove();basemapLayoutRow.remove();
+  appearanceOptionsBody.append(fontScaleEl.closest(".row"),layoutBox);
+  playbackOptionsBody.append(legSecondsEl.closest(".row"),loopCurrentEl.closest(".checkRow"),loadBtn.closest(".btnrow"));
+  mapSettingsContentEl.append(mapFollowRow,showGpsTrackEl.closest(".checkRow"),backgroundDataStatusEl,lineStyleDetailsEl);audioOptionsBody.append(musicDetailsEl);
 
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
   const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
@@ -2896,6 +2986,17 @@ loopCurrentEl.checked = false;
     }
   };
 
+  const MAP_PREFERENCES_KEY="storkMapPreferencesV1";
+  const baseShortLabels={osmStd:"OSM Standard",osmDE:"OSM DE",cartoPos:"Positron",cartoVoy:"Voyager",opentopo:"OpenTopo",plOrtho:"PL Ortho",esriImageryLabels:"Esri + Labels",esriImagery:"Esri Imagery"};
+  const basemapPreviewUrl=(key)=>{const def=baseDefs[key];if(!def)return"";if(def.kind==="wms")return`${def.url}?service=WMS&request=GetMap&version=1.3.0&layers=${encodeURIComponent(def.opts.layers||"Raster")}&styles=&format=image/jpeg&crs=EPSG:3857&bbox=1565430,6257910,2504688,7194569&width=260&height=150`;const template=def.kind==="group"?def.baseUrl:def.url;return String(template||"").replace("{s}","a").replace("{z}","3").replace("{x}","4").replace("{y}","3").replace("{r}","");};
+  const loadMapPreferences=()=>{try{const value=JSON.parse(localStorage.getItem(MAP_PREFERENCES_KEY)||"{}");return value&&typeof value==="object"?value:{};}catch(error){return{};}};
+  const savedMapPreferences=loadMapPreferences();
+  if(baseDefs[savedMapPreferences.basemap])basemapSelect.value=savedMapPreferences.basemap;
+  for(const [element,key] of [[showGpsTrackEl,"showGpsTrack"],[showPhotoGpsSegmentEl,"showPhotoGpsSegment"],[showStopoversEl,"showStopovers"],[autoTrackDensityEl,"autoTrackDensity"]])if(typeof savedMapPreferences[key]==="boolean")element.checked=savedMapPreferences[key];
+  for(const [element,key,min,max] of [[photoLineOpacityEl,"photoLineOpacity",20,200],[photoLineWidthEl,"photoLineWidth",50,200],[gpsLineOpacityEl,"gpsLineOpacity",20,200],[gpsLineWidthEl,"gpsLineWidth",50,200],[followZoomEl,"followZoom",2,18]]){const value=Number(savedMapPreferences[key]);if(Number.isFinite(value)&&value>=min&&value<=max)element.value=String(value);}
+  if(["edge","always"].includes(savedMapPreferences.followMode))followModeEl.value=savedMapPreferences.followMode;
+  const persistMapPreferences=()=>{try{localStorage.setItem(MAP_PREFERENCES_KEY,JSON.stringify({basemap:basemapSelect.value,showGpsTrack:showGpsTrackEl.checked,showPhotoGpsSegment:showPhotoGpsSegmentEl.checked,showStopovers:showStopoversEl.checked,autoTrackDensity:autoTrackDensityEl.checked,photoLineOpacity:Number(photoLineOpacityEl.value),photoLineWidth:Number(photoLineWidthEl.value),gpsLineOpacity:Number(gpsLineOpacityEl.value),gpsLineWidth:Number(gpsLineWidthEl.value),followZoom:Number(followZoomEl.value),followMode:followModeEl.value}));}catch(error){}};
+
   let followBase = null;
   let overviewBase = null;
 
@@ -2915,16 +3016,29 @@ loopCurrentEl.checked = false;
     return L.tileLayer(def.url, def.opts);
   };
 
-  const applyBasemap = (key) => {
+  const updateBasemapControl=()=>{const key=basemapSelect.value,label=baseShortLabels[key]||baseDefs[key]?.label||"Basemap",preview=basemapPreviewUrl(key);mapBasemapNameEl.textContent=label;mapBasemapToggleBtn.title=`Basemap: ${label}`;mapBasemapPreviewEl.style.backgroundImage=preview?`url("${preview}")`:"none";basemapGridEl.querySelectorAll(".basemapChoice").forEach((button)=>{const active=button.dataset.basemap===key;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));});};
+  const renderBasemapChoices=()=>{basemapGridEl.replaceChildren(...Object.keys(baseDefs).map((key)=>{const button=document.createElement("button"),preview=document.createElement("span"),label=document.createElement("span");button.type="button";button.className="basemapChoice";button.dataset.basemap=key;button.title=baseDefs[key].label;preview.className="basemapChoicePreview";const url=basemapPreviewUrl(key);if(url)preview.style.backgroundImage=`url("${url}")`;label.className="basemapChoiceLabel";label.textContent=baseShortLabels[key]||baseDefs[key].label;button.append(preview,label);button.addEventListener("click",()=>{applyBasemap(key);closeMapControlPanels();});return button;}));updateBasemapControl();};
+  const applyBasemap = (key,{persist=true}={}) => {
+    const selected=baseDefs[key]?key:"esriImageryLabels";
     try { if (followBase) followMap.removeLayer(followBase); } catch(e) {}
     try { if (overviewBase) overviewMap.removeLayer(overviewBase); } catch(e) {}
-    followBase = createBaseLayer(key, followMap).addTo(followMap);
-    overviewBase = createBaseLayer(key, overviewMap).addTo(overviewMap);
+    basemapSelect.value=selected;
+    followBase = createBaseLayer(selected, followMap).addTo(followMap);
+    overviewBase = createBaseLayer(selected, overviewMap).addTo(overviewMap);
+    updateBasemapControl();
+    if(persist)persistMapPreferences();
   };
-
+  const closeMapControlPanels=()=>{mapBasemapPanelEl.hidden=true;mapSettingsPanelEl.hidden=true;mapBasemapToggleBtn.setAttribute("aria-expanded","false");mapSettingsToggleBtn.setAttribute("aria-expanded","false");};
+  const openMapControlPanel=(panel)=>{const open=panel==="basemap"?mapBasemapPanelEl.hidden:mapSettingsPanelEl.hidden;closeMapControlPanels();if(!open)return;const target=panel==="basemap"?mapBasemapPanelEl:mapSettingsPanelEl,toggle=panel==="basemap"?mapBasemapToggleBtn:mapSettingsToggleBtn;target.hidden=false;toggle.setAttribute("aria-expanded","true");if(typeof setCollectionDetailsOpen==="function")setCollectionDetailsOpen(false);};
+  mapBasemapToggleBtn.addEventListener("click",()=>openMapControlPanel("basemap"));
+  mapSettingsToggleBtn.addEventListener("click",()=>openMapControlPanel("settings"));
+  mapBasemapCloseBtn.addEventListener("click",closeMapControlPanels);
+  mapSettingsCloseBtn.addEventListener("click",closeMapControlPanels);
+  document.addEventListener("pointerdown",(event)=>{if(!mapControlDockEl.contains(event.target))closeMapControlPanels();});
+  window.addEventListener("keydown",(event)=>{if(event.key==="Escape")closeMapControlPanels();});
   basemapSelect.addEventListener("change", () => applyBasemap(basemapSelect.value));
-
-  applyBasemap(basemapSelect.value || "esriImageryLabels");
+  renderBasemapChoices();
+  applyBasemap(basemapSelect.value || "esriImageryLabels",{persist:false});
 
   const overviewLine = L.polyline([], { weight: 3, opacity: 0.85 }).addTo(overviewMap);
   const overviewMarker = L.circleMarker([0,0], {
@@ -3105,8 +3219,9 @@ loopCurrentEl.checked = false;
 
   for (const input of [photoLineOpacityEl, photoLineWidthEl, gpsLineOpacityEl, gpsLineWidthEl]) {
     input.addEventListener("input", refreshLineStyle);
+    input.addEventListener("change", persistMapPreferences);
   }
-  autoTrackDensityEl.addEventListener("change", refreshLineStyle);
+  autoTrackDensityEl.addEventListener("change", () => { refreshLineStyle();persistMapPreferences(); });
   resetLineStyleBtn.addEventListener("click", () => {
     autoTrackDensityEl.checked = true;
     photoLineOpacityEl.value = "100";
@@ -3114,8 +3229,11 @@ loopCurrentEl.checked = false;
     gpsLineOpacityEl.value = "100";
     gpsLineWidthEl.value = "100";
     refreshLineStyle();
+    persistMapPreferences();
   });
   updateLineStyleReadouts();
+  followZoomEl.addEventListener("change",persistMapPreferences);
+  followModeEl.addEventListener("change",persistMapPreferences);
 
   const fitOverviewToFullRoute = () => {
     const allPoints = [];
@@ -3668,9 +3786,9 @@ loopCurrentEl.checked = false;
     return { gps:ensureGpsDatasetLoaded(id), stopovers:loadStopoverDataset(id) };
   };
 
-  showGpsTrackEl.addEventListener("change", () => renderBackgroundLayers(birdId));
-  showPhotoGpsSegmentEl.addEventListener("change", () => renderBackgroundLayers(birdId));
-  showStopoversEl.addEventListener("change", () => renderBackgroundLayers(birdId));
+  showGpsTrackEl.addEventListener("change", () => { persistMapPreferences();renderBackgroundLayers(birdId); });
+  showPhotoGpsSegmentEl.addEventListener("change", () => { persistMapPreferences();renderBackgroundLayers(birdId); });
+  showStopoversEl.addEventListener("change", () => { persistMapPreferences();renderBackgroundLayers(birdId); });
 
   const ensureLibs = () => {
     return (window.L && window.exifr);
@@ -3800,7 +3918,7 @@ loopCurrentEl.checked = false;
   const activeCollectionOrder=()=>activeCollectionType==="rated"?topPicturesOrderPreference:collectionOrderPreference;
   const configureCollectionOrder=()=>{const topPictures=activeCollectionType==="rated",options=topPictures?[["rating_desc","Rating"],["bird_time","Bird, then time"],["date_asc","Date and time"]]:[["bird_time","Bird, then time"],["custom","My order"],["date_asc","Date and time"]];collectionOrderEl.replaceChildren(...options.map(([value,label])=>new Option(label,value)));collectionOrderEl.value=activeCollectionOrder();collectionOrderEl.setAttribute("aria-label",topPictures?"Top pictures presentation order":"Photo safe presentation order");collectionOrderWrapEl.hidden=false;};
   collectionOrderEl.value=collectionOrderPreference;
-  const setCollectionDetailsOpen=(open)=>{const visible=!!open&&document.body.classList.contains("collectionMode");collectionDetailsEl.hidden=!visible;collectionDetailsToggleBtn.setAttribute("aria-expanded",String(visible));collectionDetailsToggleBtn.classList.toggle("active",visible);};
+  const setCollectionDetailsOpen=(open)=>{const visible=!!open&&document.body.classList.contains("collectionMode");if(visible)closeMapControlPanels();collectionDetailsEl.hidden=!visible;collectionDetailsToggleBtn.setAttribute("aria-expanded",String(visible));collectionDetailsToggleBtn.classList.toggle("active",visible);};
   collectionDetailsToggleBtn.addEventListener("click",()=>setCollectionDetailsOpen(collectionDetailsEl.hidden));
   collectionDetailsCloseBtn.addEventListener("click",()=>setCollectionDetailsOpen(false));
   document.addEventListener("pointerdown",(event)=>{if(collectionDetailsEl.hidden||collectionModeBarEl.contains(event.target)||collectionDetailsEl.contains(event.target))return;setCollectionDetailsOpen(false);});

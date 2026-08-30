@@ -190,6 +190,24 @@ test("all Photo Safe viewer modes share compact collapsible presentation details
   assert.equal((ui.match(/id="collectionDetails"/g)||[]).length,1);
 });
 
+test("one thumbnail basemap switcher and map-settings panel serve every map viewer",()=>{
+  assert.equal((ui.match(/id="mapControlDock"/g)||[]).length,1);
+  assert.match(ui,/id="mapBasemapToggle"[^>]*aria-controls="mapBasemapPanel"/);
+  assert.match(ui,/id="mapSettingsToggle"[^>]*aria-controls="mapSettingsPanel"/);
+  assert.match(ui,/class="basemapGrid" id="basemapGrid"/);
+  assert.match(ui,/const baseShortLabels=\{osmStd:"OSM Standard",osmDE:"OSM DE",cartoPos:"Positron",cartoVoy:"Voyager",opentopo:"OpenTopo",plOrtho:"PL Ortho",esriImageryLabels:"Esri \+ Labels",esriImagery:"Esri Imagery"\}/);
+  assert.match(ui,/const renderBasemapChoices=/);
+  assert.match(ui,/button\.addEventListener\("click",\(\)=>\{applyBasemap\(key\);closeMapControlPanels\(\);\}\)/);
+  assert.match(ui,/document\.addEventListener\("pointerdown",\(event\)=>\{if\(!mapControlDockEl\.contains\(event\.target\)\)closeMapControlPanels\(\);\}\)/);
+  assert.match(ui,/mapSettingsContentEl\.append\(mapFollowRow,showGpsTrackEl\.closest\("\.checkRow"\),backgroundDataStatusEl,lineStyleDetailsEl\)/);
+  assert.match(ui,/const MAP_PREFERENCES_KEY="storkMapPreferencesV1"/);
+  assert.match(ui,/showGpsTrack:showGpsTrackEl\.checked/);
+  assert.match(ui,/showPhotoGpsSegment:showPhotoGpsSegmentEl\.checked/);
+  assert.match(ui,/showStopovers:showStopoversEl\.checked/);
+  assert.match(ui,/\.mapControlDock \{[\s\S]*?right:12px;[\s\S]*?bottom:32px;[\s\S]*?left:12px;/);
+  assert.match(ui,/\.mapControlPanel \{[\s\S]*?width:min\(360px,100%\);[\s\S]*?overflow:auto;/);
+});
+
 test("contribution dashboard reveals only earned badges and progress to the next one",()=>{
   const renderer=ui.match(/const renderContributionDashboard=[\s\S]*?const loadContributionDashboard/)?.[0]||"";
   assert.match(renderer,/Your current badge/);
