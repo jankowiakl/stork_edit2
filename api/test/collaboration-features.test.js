@@ -136,14 +136,19 @@ test("all Photo Safe modes reuse the main photo and map transition engine",()=>{
   assert.match(ui,/navigatePhotoSequenceBy=[\s\S]*?showCollectionSequencePhoto\(collectionSequenceIndex\+direction\)/);
 });
 
-test("all photo viewers use keyboard arrows and the photo safe has presentation controls",()=>{
+test("all photo viewers use keyboard arrows and shared presentation controls",()=>{
   assert.match(ui,/\["ArrowLeft","ArrowRight"\]\.includes\(event\.key\)/);
   assert.match(ui,/navigatePhotoSequenceBy\(event\.key==="ArrowLeft"\?-1:1\)/);
   assert.match(ui,/id="collectionInterval" type="number" min="1" max="120"/);
   assert.match(ui,/id="collectionOrder" aria-label="Photo safe presentation order"/);
-  assert.match(ui,/const orderPhotoSafeSequence=/);
+  assert.match(ui,/const orderCollectionSequence=/);
   assert.match(ui,/String\(a\.bird\|\|""\)\.localeCompare/);
   assert.match(ui,/collectionOrderPreference="custom"/);
+  assert.match(ui,/topPicturesOrderPreference="rating_desc"/);
+  assert.match(ui,/storkTopPicturesOrderV1/);
+  assert.match(ui,/\["rating_desc","Rating"\],\["bird_time","Bird, then time"\],\["date_asc","Date and time"\]/);
+  assert.match(ui,/if\(order==="rating_desc"\)/);
+  assert.match(ui,/collectionSequence=orderCollectionSequence\(usable,activeCollectionOrder\(\)\)/);
   assert.match(ui,/class="secondary tiny safeMove"/);
   assert.match(server,/sort==="custom"\?"f\.sort_order NULLS LAST/);
 });
