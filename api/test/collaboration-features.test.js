@@ -257,3 +257,14 @@ test("desktop navigation mirrors the mobile list and introduces itself once per 
   assert.match(ui,/setTimeout\(maybeShowNavigationIntro,250\)/);
   assert.match(ui,/appNavWelcomeEditBtn\.addEventListener/);
 });
+
+test("the shared photo editor downloads the current original through protected access",()=>{
+  assert.match(ui,/id="editorDownloadPhoto"[^>]*>Download photo<\/button>/);
+  assert.match(ui,/const point=activeEditorSequence\(\)\[editorPhotoIndex\]/);
+  assert.match(ui,/downloadApiFile\(`\/api\/photos\/\$\{encodeURIComponent\(point\.photoId\)\}\/download`/);
+  assert.match(ui,/photoSafeViewerContext\?\.readOnly/);
+  assert.match(ui,/body\.sharedPhotoSafeReadOnly #editorDownloadPhoto/);
+  assert.match(server,/app\.get\("\/api\/photos\/:id\/download",authenticateUser/);
+  assert.match(server,/ensurePhotoAccess\(client,req\.user,req\.params\.id,\{purpose:"browse"\}\)/);
+  assert.match(server,/res\.download\(file,path\.basename\(photo\.filename\)/);
+});

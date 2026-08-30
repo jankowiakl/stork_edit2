@@ -771,6 +771,15 @@
       gap: 8px;
     }
     .editorFooter button { flex: 1 1 auto; }
+    .editorFooter .editorDownloadPhoto {
+      flex: 0 1 auto;
+      min-width: 0;
+      margin-inline-start: auto;
+      padding: 6px 9px;
+      font-size: var(--ui-font-small);
+      line-height: 1.2;
+      white-space: normal;
+    }
     .editorFooter .primarySave { background: linear-gradient(180deg, rgba(57,217,138,.28), rgba(57,217,138,.11)); }
     .editorFooter .saveNext { background: linear-gradient(180deg, rgba(119,209,255,.28), rgba(119,209,255,.10)); }
     .editorInvalid {
@@ -829,7 +838,7 @@
     .shareSafeCard,.publicProjectIntroCard { width:min(720px,96vw); max-height:94dvh; overflow:auto; padding:18px; border:1px solid var(--border); border-radius:16px; background:#0d1625; box-shadow:var(--shadow); }
     .shareSafeList { display:grid; gap:7px; margin-top:9px; }
     .shareSafeRow { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px; border:1px solid rgba(255,255,255,.09); border-radius:9px; }
-    body.sharedPhotoSafeReadOnly .photoSocialControls,body.sharedPhotoSafeReadOnly #editorModeBtn,body.sharedPhotoSafeReadOnly #collectionShare { display:none!important; }
+    body.sharedPhotoSafeReadOnly .photoSocialControls,body.sharedPhotoSafeReadOnly #editorModeBtn,body.sharedPhotoSafeReadOnly #collectionShare,body.sharedPhotoSafeReadOnly #editorDownloadPhoto { display:none!important; }
     body.publicSharedSafeMode .appNavDrawer,body.publicSharedSafeMode .appNavHandle,body.publicSharedSafeMode .quickLogin,body.publicSharedSafeMode header,body.publicSharedSafeMode #mobilePanelBtn,body.publicSharedSafeMode .publicLanding { display:none!important; }
     body.loggedOut.publicSharedSafeMode .wrap,body.loggedOut.publicSharedSafeMode .collectionModeBar { visibility:visible; }
     body.publicSharedSafeMode .wrap { height:100dvh; padding:0; }
@@ -2014,6 +2023,7 @@ button { white-space:normal; line-height:1.2; }
         <button id="editorSaveDraft" class="secondary" type="button">Save draft</button>
         <button id="editorSaveAnalysed" class="primarySave" type="button">Save analysed</button>
         <button id="editorSaveNext" class="saveNext" type="button">Save &amp; next</button>
+        <button id="editorDownloadPhoto" class="secondary editorDownloadPhoto" type="button" title="Download the current photo in original quality">Download photo</button>
       </div>
     </aside>
   </div>
@@ -2214,6 +2224,7 @@ button { white-space:normal; line-height:1.2; }
   const editorSaveDraftBtn = el("editorSaveDraft");
   const editorSaveAnalysedBtn = el("editorSaveAnalysed");
   const editorSaveNextBtn = el("editorSaveNext");
+  const editorDownloadPhotoBtn = el("editorDownloadPhoto");
   const editorCopyPreviousBtn = el("editorCopyPrevious");
   const editorNextUnannotatedBtn = el("editorNextUnannotated");
   const editorRequestReviewBtn = el("editorRequestReview");
@@ -4169,6 +4180,9 @@ loopCurrentEl.checked = false;
     editorCopyPreviousBtn.disabled=busy||!editorCanEdit||editorPhotoIndex<=0;
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
+    const currentPhoto=activeEditorSequence()[editorPhotoIndex];
+    editorDownloadPhotoBtn.hidden=!!photoSafeViewerContext?.readOnly;
+    editorDownloadPhotoBtn.disabled=busy||!editorHasConnection()||!currentPhoto?.photoId||!!photoSafeViewerContext?.readOnly;
   };
 
   const editorSetEditable=(editable)=>{
@@ -4653,6 +4667,16 @@ loopCurrentEl.checked = false;
   editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
   editorSaveAnalysedBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: false }));
   editorSaveNextBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: true }));
+  editorDownloadPhotoBtn.addEventListener("click",async()=>{
+    const point=activeEditorSequence()[editorPhotoIndex];
+    if(!point?.photoId||photoSafeViewerContext?.readOnly){editorSetStatus("This photo is not available for download.","error");return;}
+    editorDownloadPhotoBtn.disabled=true;
+    try{
+      await downloadApiFile(`/api/photos/${encodeURIComponent(point.photoId)}/download`,editorLookupFilename(point)||"stork-photo.jpg");
+      editorSetStatus("Photo download started.","ok");
+    }catch(error){editorSetStatus(`Photo download failed: ${error.message}`,"error");}
+    finally{editorSetBusy(false);}
+  });
   const setEditorTab=(tab)=>{document.body.dataset.editorTab=tab;document.querySelectorAll("[data-editor-tab]").forEach((button)=>button.classList.toggle("active",button.dataset.editorTab===tab));requestAnimationFrame(refreshMapSizes);};
   document.querySelectorAll("[data-editor-tab]").forEach((button) => button.addEventListener("click", () => setEditorTab(button.dataset.editorTab)));
 
