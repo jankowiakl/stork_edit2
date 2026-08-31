@@ -174,13 +174,13 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   for(const width of [700])assert.match(ui,new RegExp(`max-width:${width}px`));
   assert.match(ui,/Potwierdzam, że mam ukończone 18 lat/);
   assert.match(ui,/I confirm that I am at least 18 years old/);
-  assert.match(ui,/Finish and submit survey/);
-  assert.match(ui,/Zakończ i wyślij ankietę/);
+  assert.match(ui,/Submit survey/);
+  assert.match(ui,/Wyślij ankietę/);
   assert.match(ui,/\["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"\]\.includes\(photoSafeViewerContext\?\.mode\)/);
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-31-31/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-31-32/);
 });
 
 test("mobile Survey keeps a compact rating row between photo and map",()=>{
