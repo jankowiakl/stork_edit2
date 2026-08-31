@@ -4524,7 +4524,9 @@ loopCurrentEl.checked = false;
     if(!editorHasConnection()){editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">Log in to view previous remarks.</span>';return;}
     editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">Loading previous remarks…</span>';
     try{
-      const result=await apiFetch("/api/annotation-suggestions/remarks"),items=result.remarks||[];
+      const result=await apiFetch("/api/photos?page=1&pageSize=500"),grouped=new Map();
+      for(const photo of result.photos||[]){const value=String(photo.annotation?.Remarks||"").trim();if(!value)continue;const previous=grouped.get(value)||{value,usageCount:0,lastUsedAt:""};previous.usageCount++;if(String(photo.updatedAt||"")>previous.lastUsedAt)previous.lastUsedAt=String(photo.updatedAt||"");grouped.set(value,previous);}
+      const items=[...grouped.values()].sort((a,b)=>String(b.lastUsedAt).localeCompare(String(a.lastUsedAt))||b.usageCount-a.usageCount).slice(0,30);
       if(!items.length){editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">No previous remarks yet.</span>';return;}
       editorRemarksSuggestionsEl.replaceChildren(...items.map((item)=>{const button=document.createElement("button"),text=document.createElement("span"),count=document.createElement("small"),value=String(item.value||"").trim();button.type="button";button.className="secondary remarksSuggestion";button.title="Click to insert this text into Remarks";text.textContent=value;count.textContent=`${item.usageCount}×`;button.append(text,count);button.addEventListener("click",()=>{const current=editorRemarksEl.value.trim();if(!current)editorRemarksEl.value=value;else if(!current.split("\n").includes(value))editorRemarksEl.value=`${current}\n${value}`;editorRemarksEl.dispatchEvent(new Event("input",{bubbles:true}));editorRemarksEl.focus();});return button;}));
     }catch(error){editorRemarksSuggestionsEl.innerHTML=`<span class="miniNote">Could not load suggestions: ${escapeHtml(error.message)}</span>`;}
