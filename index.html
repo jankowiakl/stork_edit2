@@ -7,6 +7,8 @@
   <title>White Stork Photo Flight Viewer</title>
   <meta name="theme-color" content="#0f2740" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -2189,7 +2191,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
           <div class="editorFields">
             <div class="editorField full">
               <label for="editorEnvDesc">Environment description <span class="required">*</span></label>
-              <select id="editorEnvDesc" data-field="Env_desc_en"><option value="">— select —</option><option>field</option><option>landfill</option><option>landfill slope</option><option>building</option><option>savanna/field</option><option>meadow</option><option>wastewater treatment plant</option><option>tree</option><option>savanna/tree</option><option>roof</option><option>nest</option><option>desert</option><option>river island</option><option>savanna</option><option>tree/shrub</option><option>semi-desert/field</option><option>landfill fence</option><option>dike</option><option>meadow/pasture</option><option>riverbank</option><option>field/pasture</option><option>arable field</option><option>urban area</option><option>dry riverbed</option></select>
+              <input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvDescOptions" autocomplete="off">
+              <datalist id="editorEnvDescOptions"><option value="field"><option value="landfill"><option value="landfill slope"><option value="building"><option value="savanna/field"><option value="meadow"><option value="wastewater treatment plant"><option value="tree"><option value="savanna/tree"><option value="roof"><option value="nest"><option value="desert"><option value="river island"><option value="savanna"><option value="tree/shrub"><option value="semi-desert/field"><option value="landfill fence"><option value="dike"><option value="meadow/pasture"><option value="riverbank"><option value="field/pasture"><option value="arable field"><option value="urban area"><option value="dry riverbed"></datalist>
             </div>
             <div class="editorField full">
               <label for="editorRemarks">Remarks</label>
@@ -2337,8 +2340,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
 <script src="config.js"></script>
 <script src="viewer-interactions.js"></script>
 

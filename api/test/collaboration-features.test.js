@@ -175,7 +175,7 @@ test("responsive defaults and mobile editor controls remain compact",()=>{
   assert.match(ui,/recommendedScale=isMobile\(\)\?"1":"1\.25"/);
   assert.match(ui,/if\(validFontScales\.has\(savedFontScale\)\)fontScaleEl\.value=savedFontScale/);
   assert.match(ui,/id="adminRecoveryDetails"[^>]*hidden aria-hidden="true"/);
-  assert.match(ui,/<select id="editorEnvDesc" data-field="Env_desc_en">/);
+  assert.match(ui,/<input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvDescOptions" autocomplete="off">/);
 });
 
 test("all Photo Safe viewer modes share compact collapsible presentation details",()=>{
