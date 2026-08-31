@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 export const SURVEY_DEMOGRAPHIC_LIBRARY=Object.freeze({
-  sex:{pl:"Płeć",en:"Sex",type:"select",options:[["female","Kobieta","Female"],["male","Mężczyzna","Male"]]},
+  sex:{pl:"Płeć",en:"Sex",type:"select",options:[["female","Kobieta","Female"],["male","Mężczyzna","Male"],["prefer_not_to_disclose","Wolę nie podawać","Prefer not to disclose"]]},
   year_of_birth:{pl:"Rok urodzenia",en:"Year of birth",type:"year"},
   education:{pl:"Wykształcenie",en:"Education",type:"select",options:[["primary","Podstawowe","Primary"],["vocational","Zawodowe","Vocational"],["secondary","Średnie","Secondary"],["bachelor_engineer","Licencjat / inżynier","Bachelor / Engineer"],["master","Magisterskie","Master"],["doctorate","Doktorat lub wyższe","Doctorate or higher"],["other","Inne","Other"]]},
   nationality:{pl:"Narodowość",en:"Nationality",type:"country"},
@@ -23,6 +23,9 @@ export const DEFAULT_SURVEY_TEXT=Object.freeze({
 
 export const surveyToken=()=>crypto.randomBytes(32).toString("base64url");
 export const surveyTokenHash=(value)=>crypto.createHash("sha256").update(String(value||"")).digest("hex");
+const surveyLinkKey=()=>{const secret=String(process.env.SURVEY_LINK_ENCRYPTION_KEY||process.env.JWT_SECRET||"");if(secret.length<32)throw new Error("survey_link_encryption_key_required");return crypto.createHash("sha256").update(`stork-survey-link:${secret}`).digest();};
+export const encryptSurveyToken=(value)=>{const iv=crypto.randomBytes(12),cipher=crypto.createCipheriv("aes-256-gcm",surveyLinkKey(),iv),encrypted=Buffer.concat([cipher.update(String(value||""),"utf8"),cipher.final()]),tag=cipher.getAuthTag();return`v1.${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;};
+export const decryptSurveyToken=(value)=>{try{const[version,iv,tag,payload]=String(value||"").split(".");if(version!=="v1"||!iv||!tag||!payload)return null;const decipher=crypto.createDecipheriv("aes-256-gcm",surveyLinkKey(),Buffer.from(iv,"base64url"));decipher.setAuthTag(Buffer.from(tag,"base64url"));return Buffer.concat([decipher.update(Buffer.from(payload,"base64url")),decipher.final()]).toString("utf8")||null;}catch(_error){return null;}};
 export const surveyLanguage=(languages=[])=>[].concat(languages||[]).some((value)=>String(value||"").toLowerCase().startsWith("pl"))?"pl":"en";
 export function surveyMediaUrl(publicApiUrl,{responseId,photoId,mediaToken,preview=false,top=false}){
   let base;

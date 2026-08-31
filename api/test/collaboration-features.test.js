@@ -157,7 +157,7 @@ test("all photo viewers use keyboard arrows and shared presentation controls",()
 test("the shared collection viewer keeps a compact map-bound floating toolbar",()=>{
   assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
   assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{survey\?"✦":safe\?"🔐":"☆"\} \$\{position\}`/);
-  assert.match(ui,/label=survey\?"Survey":safe\?"My photo safe":"Top rated"/);
+  assert.match(ui,/label=survey\?surveyText\("Ankieta","Survey"\):safe\?"My photo safe":"Top rated"/);
   assert.match(ui,/<div class="card mapStack">[\s\S]*?<div class="collectionModeBar" id="collectionModeBar" hidden>[\s\S]*?<div class="mapControlDock"/);
   assert.match(ui,/\.collectionModeBar \{ position:absolute; top:10px; left:50%; bottom:auto; transform:translateX\(-50%\)/);
   assert.match(ui,/\.collectionModeBar \{ top:max\(7px,env\(safe-area-inset-top\)\); right:auto; bottom:auto; left:50%;[^}]*max-width:calc\(100% - 92px\)/);
@@ -175,7 +175,7 @@ test("responsive defaults and mobile editor controls remain compact",()=>{
   assert.match(ui,/recommendedScale=isMobile\(\)\?"1":"1\.25"/);
   assert.match(ui,/if\(validFontScales\.has\(savedFontScale\)\)fontScaleEl\.value=savedFontScale/);
   assert.match(ui,/id="adminRecoveryDetails"[^>]*hidden aria-hidden="true"/);
-  assert.match(ui,/<select id="editorEnvDesc" data-field="Env_desc_en">/);
+  assert.match(ui,/<input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvDescOptions" autocomplete="off">/);
 });
 
 test("all Photo Safe viewer modes share compact collapsible presentation details",()=>{
@@ -294,15 +294,21 @@ test("managers can review completed photos grouped by contributor in the regular
   assert.doesNotMatch(ui,/api\/photos\?page=\$\{page\}&pageSize=500/);
 });
 
-test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{
+test("navigation exposes the unified per-user introduction and field guide",()=>{
   assert.match(ui,/class="appNavHandleLabel">Menu</);
-  assert.match(ui,/id="appNavWelcome" hidden/);
-  assert.match(ui,/All sections are available in this menu/);
-  assert.match(ui,/NAV_INTRO_STORAGE_PREFIX = "stork-nav-intro-v1:"/);
-  assert.match(ui,/localStorage\.setItem\(key,"shown"\)/);
-  assert.match(ui,/appNavWelcomeEl\.hidden=false;openAppNavigation\(\)/);
-  assert.match(ui,/setTimeout\(maybeShowNavigationIntro,250\)/);
-  assert.match(ui,/appNavWelcomeEditBtn\.addEventListener/);
+  assert.match(ui,/data-app-nav="help"/);
+  assert.match(ui,/id="appHelpWorkspace" hidden/);
+  assert.match(ui,/ONBOARDING_STORAGE_PREFIX = "stork-onboarding-v1:"/);
+  assert.match(ui,/localStorage\.setItem\(`\$\{ONBOARDING_STORAGE_PREFIX\}\$\{authState\.user\.id\}`,"complete"\)/);
+  assert.match(ui,/const openFieldGuide=async/);
+  assert.match(ui,/id="openFieldGuide"[^>]*>\? Field guide/);
+  assert.match(ui,/setTimeout\(maybeShowOnboarding,250\)/);
+  assert.match(ui,/const maybeShowOnboarding=/);
+  assert.match(ui,/bestAvailable\)steps\.push\(\{title:"Photo Safe, ratings and sharing"/);
+  assert.match(ui,/if\(\["coordinator","admin"\]\.includes\(role\)\)items\.push/);
+  assert.match(ui,/if\(role==="admin"\)items\.push/);
+  assert.match(ui,/fieldHelpPopover \{ position:fixed!important; inset:auto 0 0!important/);
+  assert.match(ui,/help\.textContent="ⓘ"/);
 });
 
 test("the shared photo editor downloads the current original through protected access",()=>{

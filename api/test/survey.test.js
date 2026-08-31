@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { SURVEY_DEMOGRAPHIC_LIBRARY,normalizeSurveyCampaign,surveyLanguage,surveyMediaUrl,surveyQualityFlags,surveyToken,surveyTokenHash,validateSurveyStart } from "../src/survey.js";
+import { SURVEY_DEMOGRAPHIC_LIBRARY,decryptSurveyToken,encryptSurveyToken,normalizeSurveyCampaign,surveyLanguage,surveyMediaUrl,surveyQualityFlags,surveyToken,surveyTokenHash,validateSurveyStart } from "../src/survey.js";
 import { SURVEY_LONG_HEADERS,SURVEY_SUMMARY_HEADERS,surveyLongRows } from "../src/survey-export.js";
 
 const root=path.resolve(import.meta.dirname,"../..");
@@ -32,7 +32,8 @@ test("demographics, adult confirmation and participation consent are mandatory",
   assert.throws(()=>validateSurveyStart({campaign:configured,ageConfirmed:true,consentAccepted:false,demographics:{sex:"female",year_of_birth:1990}}),/survey_participation_consent_required/);
   assert.throws(()=>validateSurveyStart({campaign:configured,ageConfirmed:true,consentAccepted:true,demographics:{sex:"female"}}),/survey_demographic_required:year_of_birth/);
   assert.deepEqual(validateSurveyStart({campaign:configured,ageConfirmed:true,consentAccepted:true,demographics:{sex:"female",year_of_birth:1990,ignored:"x"}}),{sex:"female",year_of_birth:1990});
-  assert.deepEqual(SURVEY_DEMOGRAPHIC_LIBRARY.sex.options.map(([id])=>id),["female","male"]);
+  assert.deepEqual(SURVEY_DEMOGRAPHIC_LIBRARY.sex.options.map(([id])=>id),["female","male","prefer_not_to_disclose"]);
+  assert.equal(validateSurveyStart({campaign:{demographic_fields:["sex"]},ageConfirmed:true,consentAccepted:true,demographics:{sex:"prefer_not_to_disclose"}}).sex,"prefer_not_to_disclose");
 });
 
 test("language selection uses Polish for pl variants and English otherwise",()=>{
@@ -53,6 +54,24 @@ test("survey tokens are random and only their SHA-256 representation is queried"
   assert.match(routes,/WHERE link\.token_hash=\$1/);
   assert.match(routes,/surveyTokenHash\(token\)/);
   assert.doesNotMatch(schema,/raw_token/);
+});
+
+test("saved survey links are encrypted, recoverable and never stored as plaintext",()=>{
+  const previous=process.env.SURVEY_LINK_ENCRYPTION_KEY;
+  process.env.SURVEY_LINK_ENCRYPTION_KEY="survey-link-test-secret-with-at-least-32-characters";
+  try{
+    const token=surveyToken(),ciphertext=encryptSurveyToken(token);
+    assert.notEqual(ciphertext,token);
+    assert.doesNotMatch(ciphertext,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+    assert.equal(decryptSurveyToken(ciphertext),token);
+    assert.equal(decryptSurveyToken(null),null);
+  }finally{
+    if(previous===undefined)delete process.env.SURVEY_LINK_ENCRYPTION_KEY;
+    else process.env.SURVEY_LINK_ENCRYPTION_KEY=previous;
+  }
+  assert.match(schema,/token_ciphertext TEXT/);
+  assert.match(routes,/GET|router\.get\("\/api\/surveys\/:id\/links"/);
+  assert.match(routes,/decryptSurveyToken\(row\.token_ciphertext\)/);
 });
 
 test("survey media URLs resolve at the configured API origin for images, previews and Top 10",()=>{
@@ -155,11 +174,98 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   for(const width of [700])assert.match(ui,new RegExp(`max-width:${width}px`));
   assert.match(ui,/Potwierdzam, że mam ukończone 18 lat/);
   assert.match(ui,/I confirm that I am at least 18 years old/);
-  assert.match(ui,/Finish and submit survey/);
-  assert.match(ui,/Zakończ i wyślij ankietę/);
+  assert.match(ui,/Submit survey/);
+  assert.match(ui,/Wyślij ankietę/);
   assert.match(ui,/\["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"\]\.includes\(photoSafeViewerContext\?\.mode\)/);
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-30-26/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-31-38/);
+});
+
+test("mobile Survey keeps a compact rating row between photo and map",()=>{
+  assert.match(ui,/syncSurveyRatingDockPlacement[\s\S]*?wrapEl\.appendChild\(surveyRatingDockEl\)/);
+  assert.match(ui,/body\.surveyMode \.wrap\{[^}]*grid-template-rows:minmax\(0,3fr\) auto minmax\(0,2fr\)/);
+  assert.match(ui,/body\.surveyMode \.side\{[^}]*grid-row:1/);
+  assert.match(ui,/body\.surveyMode \.wrap>\.surveyRatingDock\{[^}]*grid-row:2[^}]*display:flex[^}]*flex-wrap:nowrap/);
+  assert.match(ui,/body\.surveyMode \.mapStack\{[^}]*grid-row:3/);
+  assert.match(ui,/ResizeObserver[\s\S]*refreshMapSizes/);
+  assert.match(ui,/orientationchange/);
+  assert.match(ui,/surveyCoachTargets[\s\S]*target:surveyStarsEl[\s\S]*target:nextPhotoBtn[\s\S]*target:mapStackEl/);
+});
+
+test("Survey campaign UI supports persisted link QR PDFs and demographic bulk selection",()=>{
+  assert.match(ui,/src="vendor\/qrcode\.min\.js"/);
+  assert.match(ui,/src="vendor\/jspdf\.umd\.min\.js"/);
+  assert.match(ui,/generateSurveyQrPdf/);
+  assert.match(ui,/Single-use survey code/);
+  assert.match(ui,/Jednorazowy kod do ankiety/);
+  assert.doesNotMatch(ui,/window\.print\(/);
+  assert.match(ui,/\/api\/surveys\/\$\{encodeURIComponent\(campaign\.id\)\}\/links/);
+  assert.match(ui,/bindSurveySelectAll\("surveyCreateSelectAll"/);
+  assert.match(ui,/bindSurveySelectAll\("surveyEditSelectAll"/);
+  assert.match(ui,/toggle\.indeterminate/);
+  assert.match(ui,/surveyCountrySearch/);
+  assert.match(ui,/normalize\("NFD"\)/);
+  assert.match(ui,/rank:code==="PL"\?0:code==="DE"\?1/);
+});
+
+test("Survey country picker covers the world, prioritizes Poland and Germany and searches both languages",()=>{
+  const codes=ui.match(/const surveyCountryCodes="([A-Z ]+)"\.split\(" "\)/)?.[1].split(" ")||[];
+  assert.ok(codes.length>=190,"the picker must not be limited to Europe");
+  assert.equal(new Set(codes).size,codes.length);
+  const european=new Set((ui.match(/const surveyEuropeanCountries=new Set\("([A-Z ]+)"\.split/)?.[1]||"").split(" "));
+  const normalize=(value)=>String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  const pl=new Intl.DisplayNames(["pl"],{type:"region"}),en=new Intl.DisplayNames(["en"],{type:"region"});
+  const items=codes.map((code)=>({code,pl:pl.of(code),en:en.of(code),rank:code==="PL"?0:code==="DE"?1:european.has(code)?2:3})).sort((a,b)=>a.rank-b.rank||a.pl.localeCompare(b.pl,"pl"));
+  assert.deepEqual(items.slice(0,2).map((item)=>item.code),["PL","DE"]);
+  const search=(query)=>items.filter((item)=>[item.pl,item.en,item.code].some((value)=>normalize(value).includes(normalize(query)))).map((item)=>item.code);
+  assert.ok(search("pol").includes("PL"));assert.ok(search("niem").includes("DE"));assert.ok(search("germ").includes("DE"));assert.ok(search("fran").includes("FR"));
+});
+
+test("survey research results expose paginated photos, campaign comparison and real media metadata",()=>{
+  assert.match(routes,/\/api\/survey-results\/photos/);
+  assert.match(routes,/pageSize=Math\.max\(10,Math\.min\(100/);
+  assert.match(routes,/\/api\/survey-results\/comparison/);
+  assert.match(routes,/globalAverage/);
+  assert.match(routes,/overallRatingCount/);
+  assert.match(routes,/photos:photoResults\.map\(\(row\)=>\(\{\.\.\.photoPublic/);
+  assert.match(routes,/SELECT assigned\.position,p\.\*,rating\.rating/);
+  assert.match(ui,/Global campaign comparison/);
+  assert.match(ui,/Average survey rating|Overall average rating/);
+  assert.match(ui,/surveyResultsSearch/);
+  assert.match(ui,/surveyResultsSort/);
+});
+
+test("manager UI renders demographic groups and anonymous response details without debug alerts",()=>{
+  assert.match(ui,/surveyDemographicGroupsHtml/);
+  assert.match(ui,/N &lt; 5 — result hidden/);
+  assert.match(ui,/showSurveyResponseDetails/);
+  assert.match(ui,/Anonymous response/);
+  assert.match(ui,/Quality flags/);
+  assert.doesNotMatch(ui,/alert\(JSON\.stringify\(detail\.response/);
+  assert.match(ui,/All ratings identical/);
+  assert.match(ui,/Completed unusually fast/);
+});
+
+test("campaign editor exposes structure before responses and previews restored bilingual defaults",()=>{
+  assert.match(ui,/surveyEditPhotoCount/);
+  assert.match(ui,/surveyEditDateFrom/);
+  assert.match(ui,/surveyEditDateTo/);
+  assert.match(ui,/surveyEditField/);
+  assert.match(ui,/nobody has started this campaign/);
+  assert.match(ui,/Defaults restored in the form\. Click Save to persist them/);
+  assert.match(routes,/survey_structure_locked_after_start/);
+  assert.match(routes,/Object\.prototype\.hasOwnProperty\.call\(req\.body,key\)/);
+});
+
+test("first-photo tutorial uses anchored bilingual coach marks and remains restartable",()=>{
+  assert.match(ui,/surveyCoachTargets/);
+  assert.match(ui,/target:surveyStarsEl/);
+  assert.match(ui,/target:nextPhotoBtn/);
+  assert.match(ui,/target:mapStackEl/);
+  assert.match(ui,/surveyCoachTarget/);
+  assert.match(ui,/Rate the photo here/);
+  assert.match(ui,/Tutaj oceń zdjęcie/);
+  assert.match(ui,/surveyHelpBtn\.addEventListener\("click",\(\)=>showSurveyTutorial\(0\)\)/);
 });

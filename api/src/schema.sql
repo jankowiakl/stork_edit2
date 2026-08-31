@@ -213,11 +213,13 @@ CREATE TABLE IF NOT EXISTS photo_safe_public_shares (
   id TEXT PRIMARY KEY,
   owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token_hash TEXT NOT NULL UNIQUE,
+  token_ciphertext TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL,
   revoked_at TIMESTAMPTZ,
   CHECK(expires_at>created_at)
 );
+ALTER TABLE photo_safe_public_shares ADD COLUMN IF NOT EXISTS token_ciphertext TEXT;
 CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_owner ON photo_safe_public_shares(owner_user_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photo_safe_public_shares_active ON photo_safe_public_shares(token_hash,expires_at) WHERE revoked_at IS NULL;
 
@@ -266,6 +268,7 @@ CREATE TABLE IF NOT EXISTS survey_links (
   completed_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_survey_links_campaign ON survey_links(campaign_id,status,created_at);
+ALTER TABLE survey_links ADD COLUMN IF NOT EXISTS token_ciphertext TEXT;
 
 CREATE TABLE IF NOT EXISTS survey_responses (
   id TEXT PRIMARY KEY,

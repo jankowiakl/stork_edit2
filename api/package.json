@@ -12,7 +12,7 @@
     "migrate": "node src/migrate.js",
     "import": "node src/import-data.js",
     "test": "node --test",
-    "test:integration": "node --test test/import-duplicate.integration.test.js"
+    "test:integration": "node --test test/*.integration.test.js"
   },
   "dependencies": {
     "archiver": "^7.0.1",
