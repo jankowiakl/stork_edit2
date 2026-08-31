@@ -161,5 +161,52 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-30-26/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-31-27/);
+});
+
+test("survey research results expose paginated photos, campaign comparison and real media metadata",()=>{
+  assert.match(routes,/\/api\/survey-results\/photos/);
+  assert.match(routes,/pageSize=Math\.max\(10,Math\.min\(100/);
+  assert.match(routes,/\/api\/survey-results\/comparison/);
+  assert.match(routes,/globalAverage/);
+  assert.match(routes,/overallRatingCount/);
+  assert.match(routes,/photos:photoResults\.map\(\(row\)=>\(\{\.\.\.photoPublic/);
+  assert.match(routes,/SELECT assigned\.position,p\.\*,rating\.rating/);
+  assert.match(ui,/Global campaign comparison/);
+  assert.match(ui,/Average survey rating|Overall average rating/);
+  assert.match(ui,/surveyResultsSearch/);
+  assert.match(ui,/surveyResultsSort/);
+});
+
+test("manager UI renders demographic groups and anonymous response details without debug alerts",()=>{
+  assert.match(ui,/surveyDemographicGroupsHtml/);
+  assert.match(ui,/N &lt; 5 — result hidden/);
+  assert.match(ui,/showSurveyResponseDetails/);
+  assert.match(ui,/Anonymous response/);
+  assert.match(ui,/Quality flags/);
+  assert.doesNotMatch(ui,/alert\(JSON\.stringify\(detail\.response/);
+  assert.match(ui,/All ratings identical/);
+  assert.match(ui,/Completed unusually fast/);
+});
+
+test("campaign editor exposes structure before responses and previews restored bilingual defaults",()=>{
+  assert.match(ui,/surveyEditPhotoCount/);
+  assert.match(ui,/surveyEditDateFrom/);
+  assert.match(ui,/surveyEditDateTo/);
+  assert.match(ui,/surveyEditField/);
+  assert.match(ui,/nobody has started this campaign/);
+  assert.match(ui,/Defaults restored in the form\. Click Save to persist them/);
+  assert.match(routes,/survey_structure_locked_after_start/);
+  assert.match(routes,/Object\.prototype\.hasOwnProperty\.call\(req\.body,key\)/);
+});
+
+test("first-photo tutorial uses anchored bilingual coach marks and remains restartable",()=>{
+  assert.match(ui,/surveyCoachTargets/);
+  assert.match(ui,/target:surveyStarsEl/);
+  assert.match(ui,/target:nextPhotoBtn/);
+  assert.match(ui,/target:mapStackEl/);
+  assert.match(ui,/surveyCoachTarget/);
+  assert.match(ui,/Rate the photo here/);
+  assert.match(ui,/Tutaj oceń zdjęcie/);
+  assert.match(ui,/surveyHelpBtn\.addEventListener\("click",\(\)=>showSurveyTutorial\(0\)\)/);
 });
