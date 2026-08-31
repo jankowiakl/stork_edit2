@@ -266,6 +266,7 @@ CREATE TABLE IF NOT EXISTS survey_links (
   completed_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_survey_links_campaign ON survey_links(campaign_id,status,created_at);
+ALTER TABLE survey_links ADD COLUMN IF NOT EXISTS token_ciphertext TEXT;
 
 CREATE TABLE IF NOT EXISTS survey_responses (
   id TEXT PRIMARY KEY,

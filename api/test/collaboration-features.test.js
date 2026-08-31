@@ -157,7 +157,7 @@ test("all photo viewers use keyboard arrows and shared presentation controls",()
 test("the shared collection viewer keeps a compact map-bound floating toolbar",()=>{
   assert.match(ui,/id="collectionModeLabel" aria-label="Photo collection position">🔐 0 \/ 0/);
   assert.match(ui,/collectionModeLabelEl\.textContent=`\$\{survey\?"✦":safe\?"🔐":"☆"\} \$\{position\}`/);
-  assert.match(ui,/label=survey\?"Survey":safe\?"My photo safe":"Top rated"/);
+  assert.match(ui,/label=survey\?surveyText\("Ankieta","Survey"\):safe\?"My photo safe":"Top rated"/);
   assert.match(ui,/<div class="card mapStack">[\s\S]*?<div class="collectionModeBar" id="collectionModeBar" hidden>[\s\S]*?<div class="mapControlDock"/);
   assert.match(ui,/\.collectionModeBar \{ position:absolute; top:10px; left:50%; bottom:auto; transform:translateX\(-50%\)/);
   assert.match(ui,/\.collectionModeBar \{ top:max\(7px,env\(safe-area-inset-top\)\); right:auto; bottom:auto; left:50%;[^}]*max-width:calc\(100% - 92px\)/);
