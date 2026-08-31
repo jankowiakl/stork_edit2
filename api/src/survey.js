@@ -24,6 +24,15 @@ export const DEFAULT_SURVEY_TEXT=Object.freeze({
 export const surveyToken=()=>crypto.randomBytes(32).toString("base64url");
 export const surveyTokenHash=(value)=>crypto.createHash("sha256").update(String(value||"")).digest("hex");
 export const surveyLanguage=(languages=[])=>[].concat(languages||[]).some((value)=>String(value||"").toLowerCase().startsWith("pl"))?"pl":"en";
+export function surveyMediaUrl(publicApiUrl,{responseId,photoId,mediaToken,preview=false,top=false}){
+  let base;
+  try{base=new URL(String(publicApiUrl||""));}catch(_error){throw new Error("survey_public_api_url_required");}
+  if(!["http:","https:"].includes(base.protocol))throw new Error("survey_public_api_url_required");
+  const branch=top?"top":"photos",url=new URL(`/api/public/survey-responses/${encodeURIComponent(responseId)}/${branch}/${encodeURIComponent(photoId)}/image`,base);
+  url.searchParams.set("media_token",String(mediaToken||""));
+  if(preview)url.searchParams.set("kind","preview");
+  return url.href;
+}
 
 const text=(value,max)=>String(value??"").replaceAll("\0","").trim().slice(0,max);
 const email=(value)=>text(value,254).toLowerCase();

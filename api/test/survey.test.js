@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { SURVEY_DEMOGRAPHIC_LIBRARY,normalizeSurveyCampaign,surveyLanguage,surveyQualityFlags,surveyToken,surveyTokenHash,validateSurveyStart } from "../src/survey.js";
+import { SURVEY_DEMOGRAPHIC_LIBRARY,normalizeSurveyCampaign,surveyLanguage,surveyMediaUrl,surveyQualityFlags,surveyToken,surveyTokenHash,validateSurveyStart } from "../src/survey.js";
 import { SURVEY_LONG_HEADERS,SURVEY_SUMMARY_HEADERS,surveyLongRows } from "../src/survey-export.js";
 
 const root=path.resolve(import.meta.dirname,"../..");
@@ -53,6 +53,15 @@ test("survey tokens are random and only their SHA-256 representation is queried"
   assert.match(routes,/WHERE link\.token_hash=\$1/);
   assert.match(routes,/surveyTokenHash\(token\)/);
   assert.doesNotMatch(schema,/raw_token/);
+});
+
+test("survey media URLs resolve at the configured API origin for images, previews and Top 10",()=>{
+  const base="https://api.example.test:18444",normal=surveyMediaUrl(base,{responseId:"response 1",photoId:"photo/1",mediaToken:"signed token"}),preview=surveyMediaUrl(base,{responseId:"response 1",photoId:"photo/1",mediaToken:"signed token",preview:true}),top=surveyMediaUrl(base,{responseId:"response 1",photoId:"photo/1",mediaToken:"top token",top:true});
+  for(const url of [normal,preview,top]){assert.equal(new URL(url).origin,base);assert.doesNotMatch(url,/jankowiakl\.github\.io/);}
+  assert.equal(new URL(preview).searchParams.get("kind"),"preview");
+  assert.match(new URL(top).pathname,/\/top\/photo%2F1\/image$/);
+  assert.throws(()=>surveyMediaUrl("",{responseId:"r",photoId:"p",mediaToken:"t"}),/survey_public_api_url_required/);
+  assert.match(server,/createSurveyRouter\(\{db,transaction,publicApiUrl,publicAppUrl/);
 });
 
 test("survey storage is separate from internal photo ratings and fixes response order",()=>{
@@ -148,5 +157,9 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/I confirm that I am at least 18 years old/);
   assert.match(ui,/Finish and submit survey/);
   assert.match(ui,/Zakończ i wyślij ankietę/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-30-25/);
+  assert.match(ui,/\["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"\]\.includes\(photoSafeViewerContext\?\.mode\)/);
+  assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
+  assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
+  assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-30-26/);
 });

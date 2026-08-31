@@ -213,7 +213,7 @@ app.patch("/api/admin/annotation-options",authenticateUser,requireRole("admin","
 app.get("/api/public/individuals",(_req,res)=>res.status(401).json({error:"login_required_for_dataset"}));
 app.get("/api/public/individuals/:id/photos",(_req,res)=>res.status(401).json({error:"login_required_for_media"}));
 function decimate(points,max){if(points.length<=max)return points;const output=[points[0]],step=(points.length-1)/(max-1);for(let i=1;i<max-1;i++)output.push(points[Math.round(i*step)]);output.push(points.at(-1));return output;}
-app.use(createSurveyRouter({db,transaction,publicAppUrl,photoPublic,servePhoto,decimate}));
+app.use(createSurveyRouter({db,transaction,publicApiUrl,publicAppUrl,photoPublic,servePhoto,decimate}));
 app.get("/api/public/individuals/:id/route",(_req,res)=>res.status(401).json({error:"login_required_for_dataset"}));
 app.get("/api/public/individuals/:id/stopovers",(_req,res)=>res.status(401).json({error:"login_required_for_dataset"}));
 app.get("/api/public/photos/:id/image",authenticateMediaUser,authorizeMediaAndServe);

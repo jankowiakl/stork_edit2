@@ -1483,9 +1483,11 @@ body.surveyMode .publicLanding,body.surveyMode .appNavDrawer,body.surveyMode .ap
 body.surveyMode .collectionModeBar { pointer-events:none; }
 body.surveyMode .collectionModeLabel { margin:auto; }
 body.surveyMode .photoInfoToggle { bottom:132px; }
-body.surveyMode .photoNav { bottom:72px; }
+body.surveyMode .photoNav { top:43%; bottom:auto; opacity:.86!important; pointer-events:auto!important; background:rgba(7,11,20,.68); border-color:rgba(119,209,255,.58); box-shadow:0 7px 24px rgba(0,0,0,.48); }
+body.surveyMode .photoNav:disabled { opacity:.28!important; pointer-events:none!important; filter:saturate(.45); }
+body.surveyMode .photoNav:not(:disabled):focus-visible { opacity:1!important; outline:3px solid rgba(119,209,255,.72); outline-offset:3px; }
 body.surveyRewardMode .surveyRatingDock { display:none; }
-@media(max-width:700px){.surveyWorkspace{padding:6px}.surveyCard{max-height:calc(100dvh - 12px);border-radius:13px}.surveyRatingDock{bottom:7px;width:calc(100% - 12px);padding:7px}.surveyStars button{min-width:42px;min-height:42px}.surveyTutorial{bottom:118px}.surveyDemographics{grid-template-columns:1fr}body.surveyMode .photoNav{bottom:68px}}
+@media(max-width:700px){.surveyWorkspace{padding:6px}.surveyCard{max-height:calc(100dvh - 12px);border-radius:13px}.surveyRatingDock{bottom:max(5px,env(safe-area-inset-bottom));width:calc(100% - 12px);padding:6px 7px}.surveyStars button{min-width:42px;min-height:42px}.surveyTutorial{bottom:118px}.surveyDemographics{grid-template-columns:1fr}body.surveyMode .photoNav{top:39%;width:46px!important;min-width:46px!important;height:46px!important}body.surveyMode .photoNav.prev{left:8px}body.surveyMode .photoNav.next{right:8px}}
 .importColumnPicker,.tableColumnGrid { grid-template-columns:repeat(auto-fit,minmax(min(100%,15em),1fr)); }
 .userCard,.importCard,.progressCard,.contributionMetric,.nextRewardBox,.levelBox { min-width:0; overflow-wrap:anywhere; }
 .levelBox { grid-template-columns:auto minmax(0,1fr) auto; }
@@ -3958,9 +3960,10 @@ loopCurrentEl.checked = false;
 
   const updatePhotoNavButtons = (index = currentPhotoIndex()) => {
     if(document.body.classList.contains("collectionMode")&&collectionSequence.length){
-      const survey=photoSafeViewerContext?.mode==="SURVEY",canStep=collectionSequence.length>1,selected=collectionSequence[collectionSequenceIndex],selectedTrackIndex=selected?track.findIndex((point)=>point.photoId===selected.id):-1;
+      const survey=photoSafeViewerContext?.mode==="SURVEY",canStep=collectionSequence.length>1,selected=collectionSequence[collectionSequenceIndex],currentSurveyRated=!!surveyPublicState.ratings?.[selected?.id],selectedTrackIndex=selected?track.findIndex((point)=>point.photoId===selected.id):-1;
       prevPhotoBtn.disabled=!canStep||(survey&&collectionSequenceIndex<=0);
-      nextPhotoBtn.disabled=!canStep||(survey&&(collectionSequenceIndex>=collectionSequence.length-1||!surveyPublicState.ratings?.[selected?.id]));
+      nextPhotoBtn.disabled=!canStep||(survey&&(collectionSequenceIndex>=collectionSequence.length-1||!currentSurveyRated));
+      if(survey){prevPhotoBtn.title=collectionSequenceIndex<=0?surveyText("To jest pierwsze zdjęcie","This is the first photo"):surveyText("Poprzednie zdjęcie","Previous photo");nextPhotoBtn.title=collectionSequenceIndex>=collectionSequence.length-1?surveyText("To jest ostatnie zdjęcie","This is the last photo"):currentSurveyRated?surveyText("Następne zdjęcie","Next photo"):surveyText("Najpierw oceń bieżące zdjęcie","Rate the current photo first");}
       editorModeBtn.disabled=!!photoSafeViewerContext?.readOnly||selectedTrackIndex<0||!track[selectedTrackIndex]?.photoId||!editorHasConnection();
       tableModeBtn.disabled=!editorHasConnection();
       progressModeBtn.disabled=!editorHasConnection();
@@ -4072,7 +4075,8 @@ loopCurrentEl.checked = false;
       contactPublicProjectEl.href=contact.url||(contact.email?`mailto:${contact.email}`:"#");
       contactPublicProjectEl.textContent=contact.name?`Contact ${contact.name}`:"Contact the project";
       document.body.classList.toggle("sharedPhotoSafeReadOnly",readOnly);
-      document.body.classList.toggle("publicSharedSafeMode",photoSafeViewerContext?.mode==="PUBLIC_READONLY");
+      const publicCollectionViewer=["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"].includes(photoSafeViewerContext?.mode);
+      document.body.classList.toggle("publicSharedSafeMode",publicCollectionViewer);
       document.body.classList.toggle("surveyMode",requestedMode==="SURVEY");document.body.classList.toggle("surveyRewardMode",requestedMode==="SURVEY_REWARD");
       collectionSharedByEl.hidden=!readOnly||surveyMode;
       collectionSharedByEl.textContent=readOnly&&!surveyMode?`Shared by: ${photoSafeViewerContext.ownerName}`:"";
@@ -4092,8 +4096,10 @@ loopCurrentEl.checked = false;
       updateBirdSelectors(idsSorted());
       document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;setCollectionToolbarCollapsed(false);revealCollectionToolbar();
       setCollectionDetailsOpen(false);
+      requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
       collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);
       await showCollectionSequencePhoto(collectionSequenceIndex);
+      requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
     }catch(error){
       setStatus(`Could not load ${label}: ${error.message}`);
       if(readOnly&&error.status===403&&requestedMode==="SHARED_READONLY"){photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","collectionMode");collectionModeBarEl.hidden=true;openAccountWorkspace();}
