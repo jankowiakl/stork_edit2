@@ -374,6 +374,8 @@
       background: rgba(0,0,0,0.18);
       transition: opacity 80ms linear;
     }
+    .photoStage.swipeTracking img { transition: none !important; will-change: transform; }
+    .photoStage.swipeSettling img { transition: transform 190ms cubic-bezier(.22,.8,.3,1), opacity 80ms linear !important; will-change: transform; }
 
     .photoBirdPicker {
       position: absolute;
@@ -1507,9 +1509,40 @@ body.surveyMode .photoNav { top:43%; bottom:auto; opacity:.86!important; pointer
 body.surveyMode .photoNav:disabled { opacity:.28!important; pointer-events:none!important; filter:saturate(.45); }
 body.surveyMode .photoNav:not(:disabled):focus-visible { opacity:1!important; outline:3px solid rgba(119,209,255,.72); outline-offset:3px; }
 body.surveyRewardMode .surveyRatingDock { display:none; }
-@media(max-width:980px){body.surveyMode .wrap{display:grid!important;grid-template-columns:1fr;grid-template-rows:minmax(0,60dvh) minmax(0,40dvh);gap:0!important;padding:0!important;height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}body.surveyMode .side{display:block!important;grid-column:1;grid-row:1;height:60dvh!important;min-height:0!important;overflow:hidden!important;padding:0!important}body.surveyMode .side>:not(.photoCard){display:none!important}body.surveyMode .photoCard,body.surveyMode .photoStage{display:block!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;border-radius:0!important}body.surveyMode .mapStack{display:block!important;grid-column:1;grid-row:2;height:40dvh!important;min-height:0!important;width:100%!important;border-radius:0!important}body.surveyMode .surveyRatingDock{top:6px;max-width:calc(100% - 104px);padding:4px 6px}body.surveyMode .surveyStars button{min-width:36px;min-height:36px;font-size:28px}body.surveyMode .photoNav{top:50%;width:46px!important;min-width:46px!important;height:46px!important}body.surveyMode .photoNav.prev{left:8px}body.surveyMode .photoNav.next{right:8px}.surveyCountryResults{max-height:min(240px,38dvh)}}
+@media(max-width:980px){
+  body.surveyMode .wrap{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,60dvh) minmax(0,40dvh);
+    gap:0!important;padding:0!important;
+    width:100vw!important;width:100dvw!important;max-width:none!important;min-width:0!important;
+    height:100dvh!important;min-height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important
+  }
+  body.surveyMode .side{
+    display:block!important;grid-column:1;grid-row:1;
+    width:100%!important;max-width:none!important;min-width:0!important;
+    height:60dvh!important;min-height:0!important;overflow:hidden!important;padding:0!important;box-sizing:border-box!important
+  }
+  body.surveyMode .side>:not(.photoCard){display:none!important}
+  body.surveyMode .photoCard,body.surveyMode .photoStage{
+    display:block!important;width:100%!important;max-width:none!important;min-width:0!important;
+    height:100%!important;min-height:0!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important
+  }
+  body.surveyMode .mapStack{
+    display:block!important;grid-column:1;grid-row:2;
+    width:100%!important;max-width:none!important;min-width:0!important;
+    height:40dvh!important;min-height:0!important;border-radius:0!important;box-sizing:border-box!important
+  }
+  body.surveyMode .surveyRatingDock{top:6px;max-width:calc(100% - 104px);padding:4px 6px}
+  body.surveyMode .surveyStars button{min-width:36px;min-height:36px;font-size:28px}
+  .surveyCountryResults{max-height:min(240px,38dvh)}
+}
 @media(max-width:700px){.surveyWorkspace{padding:6px}.surveyCard{max-height:calc(100dvh - 12px);border-radius:13px}.surveyTutorial{width:min(260px,calc(100vw - 16px));padding:9px}.surveyDemographics{grid-template-columns:1fr}.surveyLinkRow{grid-template-columns:auto minmax(0,1fr)}.surveyLinkRow button{grid-column:1/-1}.surveyQrControls>*{flex:1 1 130px}}
 @media(max-width:980px) and (orientation:landscape){body.surveyMode .wrap{grid-template-rows:minmax(0,56dvh) minmax(0,44dvh)}body.surveyMode .side{height:56dvh!important}body.surveyMode .mapStack{height:44dvh!important}.surveyRatingDock .surveyLanguage{display:none}.surveyRatingStatus{display:none}}
+@media (hover:none), (pointer:coarse) {
+  .photoStage { touch-action:pan-y pinch-zoom; }
+  body:not(.editorOpen) .photoStage .photoNav { display:none!important; }
+}
 .importColumnPicker,.tableColumnGrid { grid-template-columns:repeat(auto-fit,minmax(min(100%,15em),1fr)); }
 .userCard,.importCard,.progressCard,.contributionMetric,.nextRewardBox,.levelBox { min-width:0; overflow-wrap:anywhere; }
 .levelBox { grid-template-columns:auto minmax(0,1fr) auto; }
@@ -2264,6 +2297,7 @@ body.surveyRewardMode .surveyRatingDock { display:none; }
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="config.js"></script>
+<script src="viewer-interactions.js"></script>
 
 <script>
 (() => {
@@ -3949,8 +3983,10 @@ loopCurrentEl.checked = false;
       } catch(e) {}
     });
   };
-  window.addEventListener("resize", refreshMapSizes);
-  window.addEventListener("orientationchange",()=>setTimeout(refreshMapSizes,80));
+  let refreshResponsiveViewerLayout=()=>refreshMapSizes();
+  window.addEventListener("resize",()=>refreshResponsiveViewerLayout());
+  window.addEventListener("orientationchange",()=>setTimeout(()=>refreshResponsiveViewerLayout(),80));
+  window.visualViewport?.addEventListener("resize",()=>refreshResponsiveViewerLayout());
   if("ResizeObserver" in window)new ResizeObserver(()=>refreshMapSizes()).observe(mapStackEl);
   setTimeout(refreshMapSizes, 100);
 
@@ -3987,8 +4023,12 @@ loopCurrentEl.checked = false;
     const photoShare = Math.max(20,Math.min(80,viewerPhotoShare));
     const mapShare = 100 - photoShare;
 
-    // Desktop: split the screen width. Mobile: split the screen height.
-    if (!document.body.classList.contains("editorOpen")) wrapEl.style.gridTemplateColumns = `minmax(180px, ${mapShare}fr) 9px minmax(260px, ${photoShare}fr)`;
+    // Desktop split is a user preference. Survey mobile owns a single full-width
+    // column, so the desktop inline grid must not participate in that layout.
+    if (!document.body.classList.contains("editorOpen")) {
+      if(document.body.classList.contains("surveyMode")&&isMobile())wrapEl.style.removeProperty("grid-template-columns");
+      else wrapEl.style.gridTemplateColumns = `minmax(180px, ${mapShare}fr) 9px minmax(260px, ${photoShare}fr)`;
+    }
     document.documentElement.style.setProperty("--mobile-map-height", `${mapShare}dvh`);
     document.documentElement.style.setProperty("--mobile-photo-height", `${photoShare}dvh`);
 
@@ -3997,6 +4037,24 @@ loopCurrentEl.checked = false;
     }
     refreshMapSizes();
   };
+
+  const surveyMobileViewportWidths=()=>({
+    wrap:wrapEl.getBoundingClientRect().width,
+    side:sideEl.getBoundingClientRect().width,
+    photoCard:photoStageEl.closest(".photoCard")?.getBoundingClientRect().width||0,
+    photoStage:photoStageEl.getBoundingClientRect().width,
+    mapStack:mapStackEl.getBoundingClientRect().width
+  });
+  const assertSurveyMobileViewportWidth=()=>{
+    if(!document.body.classList.contains("surveyMode")||!isMobile())return true;
+    const viewportWidth=window.visualViewport?.width||window.innerWidth;
+    const widths=surveyMobileViewportWidths();
+    const valid=window.StorkViewerInteractions.surveyViewportWidthsMatch(viewportWidth,widths,3);
+    if(!valid)console.error("Survey mobile viewer did not fill the viewport",{viewportWidth,widths});
+    return valid;
+  };
+  const settleResponsiveViewerLayout=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{refreshMapSizes();assertSurveyMobileViewportWidth();positionSurveyCoach?.();}));
+  refreshResponsiveViewerLayout=()=>{applyLayoutSplit({persist:false});settleResponsiveViewerLayout();};
 
   layoutSplitEl.addEventListener("change", () => applyLayoutSplit());
   fontScaleEl.addEventListener("change", () => applyFontScale());
@@ -4139,6 +4197,7 @@ loopCurrentEl.checked = false;
       const publicCollectionViewer=["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"].includes(photoSafeViewerContext?.mode);
       document.body.classList.toggle("publicSharedSafeMode",publicCollectionViewer);
       document.body.classList.toggle("surveyMode",requestedMode==="SURVEY");document.body.classList.toggle("surveyRewardMode",requestedMode==="SURVEY_REWARD");
+      refreshResponsiveViewerLayout();
       collectionSharedByEl.hidden=!readOnly||surveyMode;
       collectionSharedByEl.textContent=readOnly&&!surveyMode?`Shared by: ${photoSafeViewerContext.ownerName}`:"";
       collectionShareBtn.hidden=readOnly||collection!=="favorites";
@@ -4157,10 +4216,10 @@ loopCurrentEl.checked = false;
       updateBirdSelectors(idsSorted());
       document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;setCollectionToolbarCollapsed(false);revealCollectionToolbar();
       setCollectionDetailsOpen(false);
-      requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
+      settleResponsiveViewerLayout();
       collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);
       await showCollectionSequencePhoto(collectionSequenceIndex);
-      requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));
+      settleResponsiveViewerLayout();
     }catch(error){
       setStatus(`Could not load ${label}: ${error.message}`);
       if(readOnly&&error.status===403&&requestedMode==="SHARED_READONLY"){photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","collectionMode");collectionModeBarEl.hidden=true;openAccountWorkspace();}
@@ -4168,7 +4227,7 @@ loopCurrentEl.checked = false;
   };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();cancelCollectionTransition();collectionNavigationToken+=1;collectionDisplayedPoint=null;stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode","collectionDetailsOpen");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");clearCollectionToolbarIdle();setCollectionToolbarCollapsed(false);collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();cancelCollectionTransition();collectionNavigationToken+=1;collectionDisplayedPoint=null;stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode","collectionDetailsOpen","surveyMode","surveyRewardMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");refreshResponsiveViewerLayout();clearCollectionToolbarIdle();setCollectionToolbarCollapsed(false);collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
   collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
   collectionOrderEl.addEventListener("change",async()=>{if(!collectionSequence.length)return;const order=collectionOrderEl.value;if(activeCollectionType==="rated"){if(!["rating_desc","bird_time","date_asc"].includes(order))return;topPicturesOrderPreference=order;try{localStorage.setItem("storkTopPicturesOrderV1",order);}catch(error){}}else{if(!["bird_time","custom","date_asc"].includes(order))return;collectionOrderPreference=order;try{localStorage.setItem("storkPhotoSafeOrderV1",order);}catch(error){}}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderCollectionSequence(collectionSequence,order);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
@@ -4186,13 +4245,22 @@ loopCurrentEl.checked = false;
   const bindSurveyCountryPickers=()=>surveyWorkspaceEl.querySelectorAll(".surveyCountryPicker").forEach((picker)=>{const search=picker.querySelector(".surveyCountrySearch"),value=picker.querySelector("[data-survey-field]"),results=picker.querySelector(".surveyCountryResults"),items=surveyCountryItems();const render=()=>{const query=normalizeSurveySearch(search.value),matches=items.filter((item)=>!query||[item.name,item.pl,item.en,item.code].some((name)=>normalizeSurveySearch(name).includes(query)));results.innerHTML=matches.map((item)=>`<button class="surveyCountryOption" type="button" role="option" data-code="${item.code}">${escapeHtml(item.name)}</button>`).join("")||`<span class="miniNote">${surveyText("Brak wyników","No results")}</span>`;results.hidden=false;results.querySelectorAll(".surveyCountryOption").forEach((button)=>button.addEventListener("click",()=>{const item=items.find((entry)=>entry.code===button.dataset.code);value.value=item.code;search.value=item.name;search.classList.remove("surveyFieldInvalid");results.hidden=true;}));};search.addEventListener("focus",render);search.addEventListener("input",()=>{value.value="";render();});search.addEventListener("keydown",(event)=>{if(event.key==="Escape")results.hidden=true;else if(event.key==="ArrowDown"){event.preventDefault();results.querySelector("button")?.focus();}});picker.addEventListener("focusout",()=>setTimeout(()=>{if(!picker.contains(document.activeElement))results.hidden=true;},80));});
   const renderSurveyIntro=()=>{const data=surveyPublicState.data,c=data.campaign,library=data.demographicLibrary||{};setSurveyWorkspace(true);surveyWorkspaceBodyEl.innerHTML=`<h1>${escapeHtml(c.name)}</h1><p class="surveyIntroText">${escapeHtml(c.text.intro[surveyPublicState.language])}</p><p><b>${surveyText(`Liczba zdjęć do oceny: ${c.photoCount}`,`Photos to rate: ${c.photoCount}`)}</b></p><form id="publicSurveyStart"><div class="surveyConsent"><label><input id="surveyAge" type="checkbox" required> <span>${surveyText("Potwierdzam, że mam ukończone 18 lat.","I confirm that I am at least 18 years old.")}</span></label><label><input id="surveyConsent" type="checkbox" required> <span>${surveyText("Zapoznałem/am się z informacją o badaniu i dobrowolnie zgadzam się na udział w anonimowym badaniu naukowym.","I have read the study information and voluntarily agree to participate in this anonymous scientific study.")}</span></label></div>${c.demographicFields.length?`<h2>${surveyText("Informacje o uczestniku","About you")}</h2><div class="surveyDemographics">${c.demographicFields.map((key)=>surveyDemographicControl(key,library[key])).join("")}</div>`:""}<div class="miniNote" id="publicSurveyError"></div><button class="primarySave" type="submit">${surveyText("Rozpocznij ocenianie","Start rating")}</button></form>`;bindSurveyCountryPickers();el("publicSurveyStart").addEventListener("submit",async(event)=>{event.preventDefault();const errorEl=el("publicSurveyError"),missing=[];if(!el("surveyAge").checked)missing.push(el("surveyAge"));if(!el("surveyConsent").checked)missing.push(el("surveyConsent"));const demographics={};data.campaign.demographicFields.forEach((key)=>{const input=dataPanelEl.querySelector?.(`[data-survey-field="${key}"]`)||surveyWorkspaceEl.querySelector(`[data-survey-field="${key}"]`);if(!input?.value)missing.push(input);else demographics[key]=input.value;});surveyWorkspaceEl.querySelectorAll(".surveyFieldInvalid").forEach((input)=>input.classList.remove("surveyFieldInvalid"));missing.filter(Boolean).forEach((input)=>{const visible=input.closest(".surveyCountryPicker")?.querySelector(".surveyCountrySearch")||input;visible.classList.add("surveyFieldInvalid");});if(missing.length){errorEl.textContent=surveyText("Uzupełnij wszystkie wymagane pola i zgody.","Complete all required fields and confirmations.");return;}const button=event.submitter;button.disabled=true;errorEl.textContent=surveyText("Przygotowywanie stałego zestawu zdjęć…","Preparing your fixed photo set…");try{const result=await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/start`,{method:"POST",body:JSON.stringify({respondentToken:surveyPublicState.respondentToken,ageConfirmed:true,consentAccepted:true,demographics})},{auth:false});if(result.respondentToken){surveyPublicState.respondentToken=result.respondentToken;localStorage.setItem(surveyResponseStorageKey(),result.respondentToken);}await beginSurveyRating(result);}catch(error){errorEl.textContent=surveyText(`Nie można rozpocząć ankiety: ${error.message}`,`Could not start the survey: ${error.message}`);button.disabled=false;}});};
   let surveyCoachStep=0;
-  const surveyCoachTargets=()=>[{target:surveyStarsEl,highlights:[surveyStarsEl],text:surveyText("Tutaj oceń zdjęcie","Rate the photo here")},{target:nextPhotoBtn,highlights:[prevPhotoBtn,nextPhotoBtn],text:surveyText("Przyciskami −1 / +1 przechodzisz między zdjęciami","Use the −1 / +1 buttons to move between photos")},{target:mapStackEl,highlights:[mapStackEl],text:surveyText("Mapa pokazuje lokalizację i trasę aktualnego bociana","The map shows the current stork's location and route")}];
+  const surveyCoachTargets=()=>{
+    const swipeNavigation=isTouchPhotoUI();
+    return[
+      {target:surveyStarsEl,highlights:[surveyStarsEl],text:surveyText("Tutaj oceń zdjęcie","Rate the photo here")},
+      swipeNavigation
+        ?{target:photoStageEl,highlights:[photoStageEl],text:surveyText("Przesuwaj zdjęcia palcem. W lewo — następne zdjęcie, w prawo — poprzednie. Aby przejść dalej, najpierw oceń zdjęcie.","Swipe the photo to navigate. Left — next photo, right — previous photo. Rate the photo before moving to the next one.")}
+        :{target:nextPhotoBtn,highlights:[prevPhotoBtn,nextPhotoBtn],text:surveyText("Przyciskami −1 / +1 przechodzisz między zdjęciami","Use the −1 / +1 buttons to move between photos")},
+      {target:mapStackEl,highlights:[mapStackEl],text:surveyText("Mapa pokazuje lokalizację i trasę aktualnego bociana","The map shows the current stork's location and route")}
+    ];
+  };
   const closeSurveyTutorial=({remember=true}={})=>{surveyTutorialEl.hidden=true;document.querySelectorAll(".surveyCoachTarget").forEach((node)=>node.classList.remove("surveyCoachTarget"));if(remember&&surveyPublicState.data?.response?.id)sessionStorage.setItem(`storkSurveyTutorial:${surveyPublicState.data.response.id}`,"1");};
   const positionSurveyCoach=()=>{if(surveyTutorialEl.hidden)return;const item=surveyCoachTargets()[surveyCoachStep],target=item?.target;if(!target)return closeSurveyTutorial({remember:false});document.querySelectorAll(".surveyCoachTarget").forEach((node)=>node.classList.remove("surveyCoachTarget"));(item.highlights||[target]).forEach((node)=>node?.classList.add("surveyCoachTarget"));const rect=target.getBoundingClientRect(),bubble=surveyTutorialEl.getBoundingClientRect(),spaceAbove=rect.top,side=spaceAbove>bubble.height+18?"above":"below",top=side==="above"?rect.top-bubble.height-12:rect.bottom+12,left=Math.max(8,Math.min(window.innerWidth-bubble.width-8,rect.left+rect.width/2-bubble.width/2));surveyTutorialEl.dataset.side=side;surveyTutorialEl.style.left=`${left}px`;surveyTutorialEl.style.top=`${Math.max(8,Math.min(window.innerHeight-bubble.height-8,top))}px`;surveyTutorialEl.style.setProperty("--coach-arrow-left",`${Math.max(18,Math.min(bubble.width-18,rect.left+rect.width/2-left))}px`);};
   const showSurveyTutorial=(step=0)=>{surveyCoachStep=Math.max(0,Math.min(2,Number(step)||0));const item=surveyCoachTargets()[surveyCoachStep];surveyTutorialEl.hidden=false;surveyTutorialEl.innerHTML=`<b>${escapeHtml(item.text)}</b><div class="surveyCoachActions"><button class="secondary tiny" id="closeSurveyTutorial" type="button">${surveyText("Zamknij","Close")}</button>${surveyCoachStep<2?`<button class="primarySave tiny" id="nextSurveyTutorial" type="button">${surveyText("Dalej","Next")}</button>`:`<button class="primarySave tiny" id="nextSurveyTutorial" type="button">${surveyText("Gotowe","Done")}</button>`}</div>`;el("closeSurveyTutorial").addEventListener("click",()=>closeSurveyTutorial());el("nextSurveyTutorial").addEventListener("click",()=>surveyCoachStep<2?showSurveyTutorial(surveyCoachStep+1):closeSurveyTutorial());requestAnimationFrame(positionSurveyCoach);};
   const saveSurveyRating=async(photoId,rating)=>{surveyPublicState.ratings[photoId]=rating;localStorage.setItem(surveyDraftStorageKey(),JSON.stringify(surveyPublicState.ratings));renderSurveyRatingDock();try{await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/responses/${encodeURIComponent(surveyPublicState.data.response.id)}/photos/${encodeURIComponent(photoId)}/rating`,{method:"PUT",body:JSON.stringify({rating,respondentToken:surveyPublicState.respondentToken})},{auth:false});surveyPublicState.data.response.ratings={...(surveyPublicState.data.response.ratings||{}),[photoId]:rating};surveyRatingStatusEl.textContent=surveyText("Ocena zapisana.","Rating saved.");return true;}catch(error){surveyRatingStatusEl.textContent=surveyText("Ocena zachowana lokalnie — spróbujemy ponownie po odzyskaniu połączenia.","Rating kept locally — it will be retried when the connection returns.");return false;}};
   const flushSurveyDraft=async()=>{if(photoSafeViewerContext?.mode!=="SURVEY"||surveyPublicState.data?.response?.status==="completed")return true;const pending=Object.entries(surveyPublicState.ratings||{}).filter(([photoId,rating])=>Number(surveyPublicState.data.response.ratings?.[photoId])!==Number(rating));if(!pending.length)return true;const saved=await Promise.all(pending.map(([photoId,rating])=>saveSurveyRating(photoId,Number(rating))));return saved.every(Boolean);};
-  const finishSurvey=async()=>{if(!confirm(surveyText("Po wysłaniu ankiety nie będzie można zmienić odpowiedzi. Czy zakończyć?","After submission, answers can no longer be changed. Finish the survey?")))return;if(!await flushSurveyDraft()){surveyRatingStatusEl.textContent=surveyText("Nie wszystkie oceny dotarły do serwera. Sprawdź połączenie i spróbuj ponownie.","Not all ratings reached the server. Check your connection and try again.");return;}try{const result=await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/responses/${encodeURIComponent(surveyPublicState.data.response.id)}/complete`,{method:"POST",body:JSON.stringify({respondentToken:surveyPublicState.respondentToken})},{auth:false});localStorage.removeItem(surveyDraftStorageKey());surveyPublicState.data=result;document.body.classList.remove("surveyMode","collectionMode");collectionModeBarEl.hidden=true;renderSurveyReward();}catch(error){surveyRatingStatusEl.textContent=surveyText(`Nie można zakończyć: ${error.message}`,`Could not finish: ${error.message}`);}};
+  const finishSurvey=async()=>{if(!confirm(surveyText("Po wysłaniu ankiety nie będzie można zmienić odpowiedzi. Czy zakończyć?","After submission, answers can no longer be changed. Finish the survey?")))return;if(!await flushSurveyDraft()){surveyRatingStatusEl.textContent=surveyText("Nie wszystkie oceny dotarły do serwera. Sprawdź połączenie i spróbuj ponownie.","Not all ratings reached the server. Check your connection and try again.");return;}try{const result=await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/responses/${encodeURIComponent(surveyPublicState.data.response.id)}/complete`,{method:"POST",body:JSON.stringify({respondentToken:surveyPublicState.respondentToken})},{auth:false});localStorage.removeItem(surveyDraftStorageKey());surveyPublicState.data=result;document.body.classList.remove("surveyMode","collectionMode");refreshResponsiveViewerLayout();collectionModeBarEl.hidden=true;renderSurveyReward();}catch(error){surveyRatingStatusEl.textContent=surveyText(`Nie można zakończyć: ${error.message}`,`Could not finish: ${error.message}`);}};
   const renderSurveyRatingDock=()=>{if(photoSafeViewerContext?.mode!=="SURVEY")return;const photo=collectionSequence[collectionSequenceIndex],rating=Number(surveyPublicState.ratings?.[photo?.id]||0),rated=Object.keys(surveyPublicState.ratings||{}).filter((id)=>surveyPublicState.ratings[id]).length,total=collectionSequence.length,position=`${collectionSequenceIndex+1}/${total}`;surveyStarsEl.replaceChildren();for(let value=1;value<=5;value++){const button=document.createElement("button");button.type="button";button.textContent=value<=rating?"★":"☆";button.classList.toggle("selected",value<=rating);button.setAttribute("aria-label",`${value} / 5`);button.addEventListener("click",()=>saveSurveyRating(photo.id,value));surveyStarsEl.appendChild(button);}surveyRatingStatusEl.textContent=rating?surveyText(`${position} • Twoja ocena: ${rating}/5 • oceniono ${rated}/${total}`,`${position} • Your rating: ${rating}/5 • rated ${rated}/${total}`):surveyText(`${position} • Oceń to zdjęcie • oceniono ${rated}/${total}`,`${position} • Rate this photo • rated ${rated}/${total}`);surveyFinishActionsEl.innerHTML=rated===total?`<button class="secondary tiny" id="surveyReviewAnswers" type="button">${surveyText("Przejrzyj odpowiedzi","Review answers")}</button><button class="primarySave tiny" id="surveyFinish" type="button">${surveyText("Zakończ i wyślij ankietę","Finish and submit survey")}</button>`:"";el("surveyReviewAnswers")?.addEventListener("click",()=>showCollectionSequencePhoto(0));el("surveyFinish")?.addEventListener("click",finishSurvey);updatePhotoNavButtons();};
   const beginSurveyRating=async(data)=>{surveyPublicState.data=data;surveyPublicState.ratings={...(data.response.ratings||{})};try{const local=JSON.parse(localStorage.getItem(surveyDraftStorageKey())||"{}");surveyPublicState.ratings={...surveyPublicState.ratings,...local};}catch(_error){}setSurveyWorkspace(false);await openPhotoCollection("survey",null,{mode:"SURVEY",payload:data});if(!sessionStorage.getItem(`storkSurveyTutorial:${data.response.id}`))showSurveyTutorial();for(const[photoId,rating]of Object.entries(surveyPublicState.ratings))if(Number(data.response.ratings?.[photoId])!==Number(rating))void saveSurveyRating(photoId,Number(rating));};
   const renderSurveyReward=()=>{const data=surveyPublicState.data,c=data.campaign,photos=data.photos||[];setSurveyWorkspace(true);surveyWorkspaceBodyEl.innerHTML=`<h1>${surveyText("Dziękujemy!","Thank you!")}</h1><p class="surveyIntroText">${escapeHtml(c.text.thanks[surveyPublicState.language])}</p><p>${surveyText("Jeżeli chcesz pomóc w dalszym rozwoju projektu lub dowiedzieć się więcej o badaniach, skontaktuj się z twórcami projektu.","If you would like to support the project further or learn more about the research, please contact the project team.")}</p><p><b>${escapeHtml(c.contact.name)}</b><br><a href="mailto:${escapeHtml(c.contact.email)}">${escapeHtml(c.contact.email)}</a>${c.contact.url?`<br><a href="${escapeHtml(c.contact.url)}" target="_blank" rel="noopener">${escapeHtml(c.contact.url)}</a>`:""}</p><h2>${surveyText("Globalne najwyżej oceniane zdjęcia","Global highest-rated photos")}</h2>${photos.length<10?`<p>${surveyText("Ranking najlepszych zdjęć nie jest jeszcze gotowy. Zdjęcie pojawia się w rankingu dopiero po otrzymaniu co najmniej 5 niezależnych ocen. Wróć do tego linku później — po zebraniu większej liczby odpowiedzi zobaczysz tutaj najwyżej oceniane fotografie.","The best-photo ranking is not complete yet. A photo enters the ranking only after receiving at least 5 independent ratings. Return to this link later to see the highest-rated photographs as more responses are collected.")}</p>`:""}<div class="surveyTopGrid">${photos.map((photo,index)=>`<article class="surveyTopCard"><img src="${escapeHtml(photo.previewUrl)}" alt=""><div><b>#${index+1} • ★ ${Number(photo.averageSurveyRating).toFixed(1)}</b><br>${photo.surveyRatingCount} ${surveyText("ocen","ratings")}</div></article>`).join("")}</div>${photos.length?`<button class="primarySave" id="surveyOpenTopViewer" type="button">${surveyText("Otwórz ranking na mapie","Open ranking with map")}</button>`:""}`;el("surveyOpenTopViewer")?.addEventListener("click",async()=>{setSurveyWorkspace(false);await openPhotoCollection("survey_reward",null,{mode:"SURVEY_REWARD",payload:data});});};
@@ -4348,11 +4416,30 @@ loopCurrentEl.checked = false;
     return true;
   };
 
-  const navigatePhotoSequenceBy=async(delta)=>{
+  const photoNavigationAccess=(delta)=>{
     const direction=delta<0?-1:1;
-    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();if(photoSafeViewerContext?.mode==="SURVEY"){const selected=collectionSequence[collectionSequenceIndex];if(direction>0&&!surveyPublicState.ratings?.[selected?.id]){surveyRatingStatusEl.textContent=surveyText("Oceń bieżące zdjęcie, zanim przejdziesz dalej.","Rate the current photo before continuing.");return;}const target=collectionSequenceIndex+direction;if(target<0||target>=collectionSequence.length)return;}await showCollectionSequencePhoto(collectionSequenceIndex+direction);return;}
-    if(document.body.classList.contains("editorOpen")){await moveEditorPhoto(direction);return;}
-    const index=currentPhotoIndex(),next=index+direction;if(index>=0&&next>=0&&next<track.length)await showPhotoAtIndex(next);
+    if(document.body.classList.contains("collectionMode")){
+      if(collectionSequence.length<2)return{allowed:false,reason:"boundary",direction};
+      if(photoSafeViewerContext?.mode==="SURVEY"){
+        const selected=collectionSequence[collectionSequenceIndex],target=collectionSequenceIndex+direction;
+        if(direction>0&&!surveyPublicState.ratings?.[selected?.id])return{allowed:false,reason:"survey_unrated",direction};
+        if(target<0||target>=collectionSequence.length)return{allowed:false,reason:"boundary",direction};
+      }
+      return{allowed:true,reason:null,direction};
+    }
+    if(document.body.classList.contains("editorOpen"))return{allowed:true,reason:null,direction};
+    const index=currentPhotoIndex(),next=index+direction;
+    return{allowed:index>=0&&next>=0&&next<track.length,reason:"boundary",direction};
+  };
+  const navigatePhotoSequenceBy=async(delta,{source="button"}={})=>{
+    const access=photoNavigationAccess(delta),direction=access.direction;
+    if(!access.allowed){
+      if(access.reason==="survey_unrated")surveyRatingStatusEl.textContent=source==="swipe"?surveyText("Najpierw oceń to zdjęcie.","Please rate this photo first."):surveyText("Oceń bieżące zdjęcie, zanim przejdziesz dalej.","Rate the current photo before continuing.");
+      return false;
+    }
+    if(document.body.classList.contains("collectionMode")){stopCollectionPlayback();return!!(await showCollectionSequencePhoto(collectionSequenceIndex+direction));}
+    if(document.body.classList.contains("editorOpen")){await moveEditorPhoto(direction);return true;}
+    const index=currentPhotoIndex();return!!(await showPhotoAtIndex(index+direction));
   };
   prevPhotoBtn.addEventListener("click",()=>{void navigatePhotoSequenceBy(-1);});
   nextPhotoBtn.addEventListener("click",()=>{void navigatePhotoSequenceBy(1);});
@@ -5061,7 +5148,7 @@ loopCurrentEl.checked = false;
   let photoNavHideTimer = null;
   let touchControlsHideTimer = null;
   let socialControlsHideTimer = null;
-  const touchPhotoControlsMQ = window.matchMedia("(hover: none)");
+  const touchPhotoControlsMQ = window.matchMedia("(hover: none), (pointer: coarse)");
   const isTouchPhotoUI = () => touchPhotoControlsMQ.matches;
   const revealPhotoNav = () => {
     if (!photoStageEl || isTouchPhotoUI()) return;
@@ -5087,16 +5174,81 @@ loopCurrentEl.checked = false;
     }, 3000);
   };
   const revealSocialControls=()=>{if(!photoStageEl)return;if(socialControlsHideTimer)clearTimeout(socialControlsHideTimer);photoStageEl.classList.add("socialControlsVisible");socialControlsHideTimer=setTimeout(()=>{if(!photoSocialEl.matches(":hover")&&!photoSocialEl.contains(document.activeElement))photoStageEl.classList.remove("socialControlsVisible");socialControlsHideTimer=null;},2800);};
+  let activePhotoSwipe=null,photoSwipeAnimating=false;
+  const photoSwipeInteractiveSelector="button,a,input,select,textarea,label,[role='button'],[contenteditable='true'],.photoSocialControls,.surveyRatingDock";
+  const photoSwipeImages=()=>[imgA,imgB].filter(Boolean);
+  const setPhotoSwipeTransform=(pixels,{settling=false}={})=>{
+    photoStageEl.classList.toggle("swipeTracking",!settling);
+    photoStageEl.classList.toggle("swipeSettling",settling);
+    for(const image of photoSwipeImages())image.style.transform=`translate3d(${pixels}px,0,0)`;
+  };
+  const resetPhotoSwipeTransform=()=>{
+    photoStageEl.classList.remove("swipeTracking","swipeSettling");
+    for(const image of photoSwipeImages())image.style.removeProperty("transform");
+  };
+  const settlePhotoSwipe=async(pixels,duration=190)=>{
+    setPhotoSwipeTransform(pixels,{settling:true});
+    if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return;
+    await new Promise((resolve)=>setTimeout(resolve,duration));
+  };
+  const beginPhotoSwipe=(event)=>{
+    if(event.pointerType!=="touch"||photoSwipeAnimating||document.body.classList.contains("editorOpen")||event.button>0||event.target.closest(photoSwipeInteractiveSelector))return;
+    const rect=photoStageEl.getBoundingClientRect();
+    if(rect.width<1)return;
+    activePhotoSwipe={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,lastX:event.clientX,lastY:event.clientY,startedAt:performance.now(),axis:"pending",width:rect.width};
+  };
+  const movePhotoSwipe=(event)=>{
+    const swipe=activePhotoSwipe;if(!swipe||swipe.pointerId!==event.pointerId)return;
+    const dx=event.clientX-swipe.startX,dy=event.clientY-swipe.startY,absX=Math.abs(dx),absY=Math.abs(dy);
+    swipe.lastX=event.clientX;swipe.lastY=event.clientY;
+    if(swipe.axis==="pending"){
+      if(Math.max(absX,absY)<9)return;
+      if(absY>absX*1.12){swipe.axis="vertical";return;}
+      if(absX<=absY*1.12)return;
+      swipe.axis="horizontal";
+      try{photoStageEl.setPointerCapture(event.pointerId);}catch(_error){}
+    }
+    if(swipe.axis!=="horizontal")return;
+    event.preventDefault();
+    const access=photoNavigationAccess(dx<0?1:-1);
+    setPhotoSwipeTransform(access.allowed?dx:dx*.24);
+  };
+  const endPhotoSwipe=async(event)=>{
+    const swipe=activePhotoSwipe;if(!swipe||swipe.pointerId!==event.pointerId)return;
+    activePhotoSwipe=null;
+    try{photoStageEl.releasePointerCapture(event.pointerId);}catch(_error){}
+    if(swipe.axis!=="horizontal"){resetPhotoSwipeTransform();return;}
+    const dx=event.clientX-swipe.startX,dy=event.clientY-swipe.startY,direction=dx<0?1:-1,access=photoNavigationAccess(direction);
+    const decision=window.StorkViewerInteractions.swipeDecision({dx,dy,durationMs:performance.now()-swipe.startedAt,width:swipe.width,canNavigate:access.allowed});
+    if(access.reason==="survey_unrated"&&direction>0&&decision.horizontalIntent)surveyRatingStatusEl.textContent=surveyText("Najpierw oceń to zdjęcie.","Please rate this photo first.");
+    if(!decision.commit){await settlePhotoSwipe(0);resetPhotoSwipeTransform();return;}
+    photoSwipeAnimating=true;
+    try{
+      await settlePhotoSwipe(direction>0?-swipe.width:swipe.width,170);
+      photoStageEl.classList.remove("swipeSettling");
+      setPhotoSwipeTransform(direction>0?Math.min(72,swipe.width*.18):-Math.min(72,swipe.width*.18));
+      const moved=await navigatePhotoSequenceBy(direction,{source:"swipe"});
+      if(moved)await settlePhotoSwipe(0,210);else await settlePhotoSwipe(0);
+    }finally{resetPhotoSwipeTransform();photoSwipeAnimating=false;}
+  };
+  const cancelPhotoSwipe=(event)=>{
+    if(!activePhotoSwipe||activePhotoSwipe.pointerId!==event.pointerId)return;
+    activePhotoSwipe=null;void settlePhotoSwipe(0).then(resetPhotoSwipeTransform);
+  };
   if (photoStageEl) {
     photoStageEl.addEventListener("mouseenter",()=>{revealPhotoNav();revealSocialControls();});
     photoStageEl.addEventListener("mousemove",()=>{revealPhotoNav();revealSocialControls();});
     photoStageEl.addEventListener("mouseleave", hidePhotoNavAfterDelay);
     photoStageEl.addEventListener("pointerdown", (event) => {
       if (event.pointerType === "touch" || isTouchPhotoUI()){revealTouchPhotoControls();revealSocialControls();}
+      beginPhotoSwipe(event);
     });
     photoStageEl.addEventListener("pointermove", (event) => {
       if (event.pointerType === "touch") revealTouchPhotoControls();
+      movePhotoSwipe(event);
     });
+    photoStageEl.addEventListener("pointerup",(event)=>{void endPhotoSwipe(event);});
+    photoStageEl.addEventListener("pointercancel",cancelPhotoSwipe);
   }
 
   const idsSorted = () => Array.from(groupedFiles.keys()).sort();
@@ -5303,9 +5455,15 @@ loopCurrentEl.checked = false;
       refreshMapSizes();
 
       if (ids.length > 0) {
-        const firstId = ids[0];
-        setBirdSelection(firstId);
-        await loadTrackFor(firstId, {autoplay: true});
+        const lastAutomaticBirdKey="storkLastAutomaticBirdV1";
+        let lastAutomaticBird="";
+        try{lastAutomaticBird=localStorage.getItem(lastAutomaticBirdKey)||"";}catch(_error){}
+        const firstId=window.StorkViewerInteractions.chooseInitialBird(ids,birdPhotoCount,lastAutomaticBird,Math.random());
+        if(firstId){
+          try{localStorage.setItem(lastAutomaticBirdKey,firstId);}catch(_error){}
+          setBirdSelection(firstId);
+          await loadTrackFor(firstId, {autoplay: true});
+        }
       }
     } catch (err) {
       setStatus("Failed to load from server: " + err.message);
