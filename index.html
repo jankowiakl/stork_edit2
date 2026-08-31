@@ -1398,11 +1398,6 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .appNavHeader h2 { margin:0; font-size:var(--ui-font-heading); }
 .appNavUser { margin-top:3px; color:var(--muted); font-size:var(--ui-font-small); line-height:1.35; }
-.appNavWelcome { padding:11px; border:1px solid rgba(119,209,255,.38); border-radius:12px; background:linear-gradient(145deg,rgba(42,132,190,.18),rgba(57,217,138,.08)); box-shadow:0 7px 22px rgba(0,0,0,.18); }
-.appNavWelcome[hidden] { display:none!important; }
-.appNavWelcome b { display:block; color:#e9f8ff; }
-.appNavWelcome p { margin:5px 0 9px; color:#c6dce9; font-size:var(--ui-font-small); line-height:1.4; }
-.appNavWelcomeActions { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .appNavTiles { min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:8px; padding:2px; }
 .appNavTile { position:relative; min-height:64px; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:8px; padding:10px !important; text-align:left; border-color:rgba(119,209,255,.18); background:rgba(255,255,255,.055); }
 .appNavTile[hidden] { display:none !important; }
@@ -1604,6 +1599,44 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 .editorGrid input,.editorGrid select,.editorGrid textarea,.optionsSectionBody input,.optionsSectionBody select,.optionsSectionBody textarea { width:100%; min-width:0; box-sizing:border-box; }
 .contributionMetric,.nextRewardBox,.progressCard,.userCard,.importCard,.optionsSection,.appNavTile { height:auto; max-height:none; }
 
+/* Unified introduction and scientific field guide. */
+.appHelpWorkspace { position:fixed; inset:0; z-index:9800; display:grid; place-items:center; padding:clamp(12px,3vw,34px); box-sizing:border-box; background:radial-gradient(circle at 20% 10%,rgba(38,117,172,.24),transparent 38%),rgba(5,10,18,.94); backdrop-filter:blur(14px); }
+.appHelpWorkspace[hidden] { display:none!important; }
+.appHelpCard { display:flex; flex-direction:column; width:min(900px,100%); max-height:min(900px,calc(100dvh - 24px)); min-width:0; overflow:hidden; border:1px solid rgba(119,209,255,.28); border-radius:20px; background:linear-gradient(160deg,rgba(19,31,49,.98),rgba(8,15,27,.98)); box-shadow:0 28px 80px rgba(0,0,0,.58); }
+.appHelpTopbar { display:flex; align-items:center; gap:12px; padding:16px 18px 12px; border-bottom:1px solid rgba(255,255,255,.09); }
+.appHelpTopbar > div { flex:1; min-width:0; }
+.appHelpTopbar h2 { margin:0; font-size:clamp(19px,2vw,27px); }
+.appHelpEyebrow { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+.appHelpProgress { height:4px; background:rgba(255,255,255,.08); }
+.appHelpProgress > span { display:block; width:0; height:100%; background:linear-gradient(90deg,#4fb4ff,#8ed9ff,#d9b65a); transition:width .22s ease; }
+.appHelpBody { flex:1; min-height:0; overflow:auto; padding:clamp(18px,4vw,38px); }
+.appHelpBody h1 { margin:0 0 12px; font-size:clamp(25px,4vw,42px); line-height:1.05; }
+.appHelpBody h3 { margin:0 0 7px; color:#fff; }
+.appHelpLead { max-width:720px; color:#d8e7f4; font-size:clamp(15px,1.7vw,19px); line-height:1.55; }
+.appHelpGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; margin-top:20px; }
+.appHelpItem,.fieldGuideEntry { min-width:0; padding:14px; border:1px solid rgba(119,209,255,.18); border-radius:13px; background:rgba(255,255,255,.035); overflow-wrap:anywhere; }
+.appHelpItem p,.fieldGuideEntry p { margin:5px 0 0; color:#c8d7e5; line-height:1.5; }
+.scientificWarning { margin-top:18px; padding:13px 15px; border-left:3px solid #e0ba5b; border-radius:9px; background:rgba(224,186,91,.09); color:#f4e8ba; line-height:1.5; }
+.appHelpActions { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 18px max(12px,env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.09); background:rgba(4,9,17,.48); }
+.appHelpActions .appHelpActionGroup { display:flex; gap:8px; margin-left:auto; }
+.fieldGuideToolbar { position:sticky; top:-1px; z-index:2; display:flex; gap:8px; padding:0 0 14px; background:linear-gradient(#101a2a 70%,transparent); }
+.fieldGuideToolbar input { width:100%; min-width:0; box-sizing:border-box; }
+.fieldGuideGroup { margin:0 0 22px; }
+.fieldGuideGroup > h3 { position:sticky; top:49px; z-index:1; padding:7px 0; background:#101a2a; }
+.fieldGuideEntries { display:grid; gap:10px; }
+.fieldGuideEntry h4 { margin:0; font-size:15px; color:#fff; }
+.fieldGuideSection { margin-top:9px; }
+.fieldGuideSection > b { display:block; margin-bottom:3px; color:#91d8ff; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+.fieldGuideOptions { display:grid; gap:5px; margin:6px 0 0; padding:0; list-style:none; }
+.fieldGuideOptions li { padding:6px 8px; border-radius:7px; background:rgba(0,0,0,.16); }
+.fieldGuideOptions code { color:#ffe18a; font-family:inherit; font-weight:800; }
+.fieldGuideImportant { border-left:2px solid #e0ba5b; padding-left:9px; color:#f4e8ba!important; }
+.fieldHelpPopover { max-height:min(70dvh,620px); overflow:auto; }
+.fieldHelpHeader { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.fieldHelpHeader b { flex:1; margin:0!important; font-size:14px; }
+.fieldHelpClose { min-width:30px!important; min-height:30px; padding:2px 7px!important; }
+.editorPanelHeaderBar #openFieldGuide { flex:0 0 auto; white-space:nowrap; }
+
 /* Info is a persistent layer; only its toggle follows fading photo controls. */
 .photoInfoToggle { right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); opacity:0; pointer-events:none; transition:opacity .18s ease,background .18s ease,border-color .18s ease; }
 .photoStage.navControlsVisible .photoInfoToggle,.photoInfoToggle:focus-visible { opacity:.78; pointer-events:auto; }
@@ -1625,6 +1658,13 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   .levelNumbers { grid-column:2; text-align:left; }
   .photoInfoDescription { left:2%; right:52px; bottom:calc(68px + env(safe-area-inset-bottom)); }
   .photoInfoToggle { bottom:calc(86px + env(safe-area-inset-bottom)); }
+  .appHelpWorkspace { padding:0; place-items:stretch; }
+  .appHelpCard { width:100%; max-height:none; height:100dvh; border:0; border-radius:0; }
+  .appHelpTopbar { padding-top:max(12px,env(safe-area-inset-top)); }
+  .appHelpBody { padding:18px 15px; }
+  .appHelpActions { flex-wrap:wrap; }
+  .appHelpActions .appHelpActionGroup { flex:1; justify-content:flex-end; }
+  .fieldHelpPopover { position:fixed!important; inset:auto 0 0!important; width:100%!important; max-height:72dvh; border-radius:18px 18px 0 0; padding:15px 16px max(18px,env(safe-area-inset-bottom)); }
 }
 
   </style>
@@ -1636,7 +1676,6 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
 <nav class="appNavDrawer" id="appNavDrawer" aria-label="Main application menu" aria-hidden="true" inert>
   <div class="appNavHeader"><div><h2>Stork Photo Editor</h2><div class="appNavUser" id="appNavUser">Public photo viewer</div></div><button class="secondary tiny" id="closeAppNav" type="button">← Back</button></div>
-  <section class="appNavWelcome" id="appNavWelcome" hidden aria-label="Getting started"><b>Start here</b><p>All sections are available in this menu. Use Photo editor for daily annotation work; your account contains personal progress and rewards.</p><div class="appNavWelcomeActions"><button class="primarySave tiny" id="appNavWelcomeEdit" type="button">Open Photo editor</button><button class="secondary tiny" id="appNavWelcomeDismiss" type="button">Explore menu</button></div></section>
   <div class="appNavTiles">
     <button class="appNavTile primary" type="button" data-app-nav="browse"><span class="appNavIcon">⌖</span><strong>Map &amp; photos</strong><small>Browse the current individual</small></button>
     <button class="appNavTile" type="button" data-app-nav="edit"><span class="appNavIcon">✎</span><strong>Photo editor</strong><small>Describe the selected photo</small></button>
@@ -1647,6 +1686,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
     <button class="appNavTile" type="button" data-app-nav="favorites"><span class="appNavIcon">🔐</span><strong>My photo safe</strong><small>Your private server-side selection</small></button>
     <button class="appNavTile" type="button" data-app-nav="rated"><span class="appNavIcon">☆</span><strong>Top rated</strong><small>Ranking table ordered by average rating</small></button>
     <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Playback, layout and music</small></button>
+    <button class="appNavTile" type="button" data-app-nav="help"><span class="appNavIcon">?</span><strong>Help / Guide</strong><small>Introduction and scientific field guide</small></button>
     <button class="appNavTile" type="button" data-app-nav="install"><span class="appNavIcon">⇩</span><strong>Install application</strong><small>Add Stork Journey to the phone home screen</small></button>
     <button class="appNavTile" type="button" data-app-nav="export" data-role="coordinator,admin"><span class="appNavIcon">⇩</span><strong>Export data</strong><small>XLSX, CSV, GIS and ZIP</small></button>
     <button class="appNavTile" type="button" data-app-nav="users" data-role="admin"><span class="appNavIcon">♙</span><strong>Users</strong><small>Accounts, roles and invitations</small></button>
@@ -1662,6 +1702,14 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
 <section class="surveyWorkspace" id="surveyWorkspace" aria-hidden="true"><div class="surveyCard"><div class="surveyLanguage"><button class="secondary tiny" data-survey-lang="pl" type="button">PL</button><button class="secondary tiny" data-survey-lang="en" type="button">EN</button></div><div id="surveyWorkspaceBody"></div></div></section><aside class="surveyTutorial" id="surveyTutorial" hidden aria-live="polite"></aside><section class="surveyCompletionPrompt" id="surveyCompletionPrompt" hidden aria-modal="true" role="dialog"><div class="surveyCompletionCard" id="surveyCompletionCard"></div></section>
+<section class="appHelpWorkspace" id="appHelpWorkspace" hidden aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="appHelpTitle">
+  <div class="appHelpCard">
+    <header class="appHelpTopbar"><div><span class="appHelpEyebrow" id="appHelpEyebrow">Guide</span><h2 id="appHelpTitle">Stork Photo Editor</h2></div><button class="secondary" id="closeAppHelp" type="button" aria-label="Close help">×</button></header>
+    <div class="appHelpProgress" id="appHelpProgress" hidden><span id="appHelpProgressValue"></span></div>
+    <div class="appHelpBody" id="appHelpBody"></div>
+    <footer class="appHelpActions" id="appHelpActions"></footer>
+  </div>
+</section>
 <div class="viewerReturnBar" id="viewerReturnBar" hidden><strong class="collectionModeLabel" id="viewerReturnLabel">Photo ranking</strong><button class="secondary tiny" id="returnToPreviousWindow" type="button">← Back to ranking</button></div>
 <div class="editorMobileTabs" id="editorModeSwitcher" aria-label="Editor panel selector"><button class="secondary tiny" data-editor-tab="map" type="button">Map</button><button class="secondary tiny" data-editor-tab="form" type="button">Form</button><button class="secondary tiny" data-editor-tab="photo" type="button">Photo</button></div>
 
@@ -2019,7 +2067,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
     <aside class="editorPanel">
       <div class="editorPanelHeader compact">
-        <div class="editorPanelHeaderBar"><h2 id="editorPanelTitle">Photo editor</h2><div class="contributorReviewToolbar" id="contributorReviewToolbar" hidden><label for="contributorReviewUser">Contributor</label><select id="contributorReviewUser" aria-label="Select contributor"></select><span class="contributorReviewCount" id="contributorReviewCount"></span></div><button id="toggleEditorHeader" class="secondary tiny" type="button" aria-expanded="false">Details</button></div>
+        <div class="editorPanelHeaderBar"><h2 id="editorPanelTitle">Photo editor</h2><div class="contributorReviewToolbar" id="contributorReviewToolbar" hidden><label for="contributorReviewUser">Contributor</label><select id="contributorReviewUser" aria-label="Select contributor"></select><span class="contributorReviewCount" id="contributorReviewCount"></span></div><button id="openFieldGuide" class="secondary tiny" type="button">? Field guide</button><button id="toggleEditorHeader" class="secondary tiny" type="button" aria-expanded="false">Details</button></div>
         <div class="editorHeaderDetails"><div class="editorPaneHint">Drag the blue dividers to resize map, form and photo. Double-click a divider to reset.</div>
         <div class="editorRecordLine" id="editorRecordLine">No photo selected.</div>
         <div class="editorStatus" id="editorStatus">Log in and open a photo to load its SQL record.</div></div>
@@ -2537,6 +2585,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const contributorReviewToolbarEl = el("contributorReviewToolbar");
   const contributorReviewUserEl = el("contributorReviewUser");
   const contributorReviewCountEl = el("contributorReviewCount");
+  const openFieldGuideBtn = el("openFieldGuide");
   const toggleEditorHeaderBtn = el("toggleEditorHeader");
   const editorVisualNavEl = document.querySelector(".editorVisualNav");
   const editorVisualEl = document.querySelector(".editorVisual");
@@ -2556,14 +2605,19 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const appNavDrawerEl = el("appNavDrawer");
   const appNavHandleEl = el("appNavHandle");
   const closeAppNavBtn = el("closeAppNav");
-  const appNavWelcomeEl = el("appNavWelcome");
-  const appNavWelcomeEditBtn = el("appNavWelcomeEdit");
-  const appNavWelcomeDismissBtn = el("appNavWelcomeDismiss");
   const quickLoginBtn = el("quickLogin");
   const appNavUserEl = el("appNavUser");
   const appNavAccessEl = el("appNavAccess");
   const appNavAccountLabelEl = el("appNavAccountLabel");
   const appNavLogoutBtn = el("appNavLogout");
+  const appHelpWorkspaceEl = el("appHelpWorkspace");
+  const appHelpEyebrowEl = el("appHelpEyebrow");
+  const appHelpTitleEl = el("appHelpTitle");
+  const appHelpProgressEl = el("appHelpProgress");
+  const appHelpProgressValueEl = el("appHelpProgressValue");
+  const appHelpBodyEl = el("appHelpBody");
+  const appHelpActionsEl = el("appHelpActions");
+  const closeAppHelpBtn = el("closeAppHelp");
   const accountWorkspaceEl = el("accountWorkspace");
   const closeAccountWorkspaceBtn = el("closeAccountWorkspace");
   const accountWorkspaceBodyEl = el("accountWorkspaceBody");
@@ -2641,7 +2695,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
   const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
-  const NAV_INTRO_STORAGE_PREFIX = "stork-nav-intro-v1:";
+  const ONBOARDING_STORAGE_PREFIX = "stork-onboarding-v1:";
   let authState = { token: "", user: null, individualIds: [], contribution:null };
   try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
   const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
@@ -2674,13 +2728,9 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   let appNavCloseTimer=null;
   function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
   function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
-  const dismissNavigationIntro=()=>{appNavWelcomeEl.hidden=true;};
-  const maybeShowNavigationIntro=()=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${NAV_INTRO_STORAGE_PREFIX}${authState.user.id}`;try{if(localStorage.getItem(key))return;localStorage.setItem(key,"shown");}catch(error){}appNavWelcomeEl.hidden=false;openAppNavigation();};
   const scheduleAppNavigationClose=()=>{if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
   appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
   appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
-  appNavWelcomeDismissBtn.addEventListener("click",()=>{dismissNavigationIntro();appNavDrawerEl.querySelector("[data-app-nav]")?.focus();});
-  appNavWelcomeEditBtn.addEventListener("click",()=>{dismissNavigationIntro();appNavDrawerEl.querySelector('[data-app-nav="edit"]')?.click();});
   quickLoginBtn.addEventListener("click",openAccountWorkspace);
   landingLoginBtn.addEventListener("click",openAccountWorkspace);
   closeAccountWorkspaceBtn.addEventListener("click",closeAccountWorkspace);closeExportWorkspaceBtn.addEventListener("click",closeExportWorkspace);closeInstallWorkspaceBtn.addEventListener("click",closeInstallWorkspace);
@@ -3704,7 +3754,7 @@ loopCurrentEl.checked = false;
 
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
   dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);returnToMainBtn.addEventListener("click",closeDataWorkspace);
-  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="user-photos"){await openContributorReviewMode();return;}if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"){await openBestPictures();return;}if(action==="rated"){await openRatedPictures();return;}if(action==="export"){openExportWorkspace();return;}if(action==="install"){openInstallWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(collectionBrowseState)await leaveCollectionMode();if(document.body.classList.contains("editorOpen"))closeEditorMode({returnPrevious:false});return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}editorContributorReview=null;editorReturnDataMode=null;await openEditorMode();return;}if(["table","progress","users","contributors","imports","reviews","categories","survey-create","survey-results"].includes(action))await openDataWorkspace(action);}));
+  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="help"){renderHelpHub();return;}if(action==="user-photos"){await openContributorReviewMode();return;}if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"){await openBestPictures();return;}if(action==="rated"){await openRatedPictures();return;}if(action==="export"){openExportWorkspace();return;}if(action==="install"){openInstallWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(collectionBrowseState)await leaveCollectionMode();if(document.body.classList.contains("editorOpen"))closeEditorMode({returnPrevious:false});return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}editorContributorReview=null;editorReturnDataMode=null;await openEditorMode();return;}if(["table","progress","users","contributors","imports","reviews","categories","survey-create","survey-results"].includes(action))await openDataWorkspace(action);}));
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
   const splitTsvLine = (line) => {
@@ -4659,7 +4709,7 @@ loopCurrentEl.checked = false;
         await loadContributionDashboard();
         await loadGithubFiles();
         if(track.length&&!authState.contribution?.browseLimitReached)await openEditorMode();
-        setTimeout(maybeShowNavigationIntro,250);
+        setTimeout(maybeShowOnboarding,250);
       }
     } catch(error) {
       clearAuth();
@@ -4670,7 +4720,7 @@ loopCurrentEl.checked = false;
     }
   });
 
-  editorLogoutBtn.addEventListener("click", async () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeDataWorkspace();closeExportWorkspace();closeInstallWorkspace();collectionBrowseState=null;collectionModeBarEl.hidden=true;document.body.classList.remove("collectionMode");clearAuth();await loadGithubFiles();openAccountWorkspace(); });
+  editorLogoutBtn.addEventListener("click", async () => { editorSecretEl.value = "";editorCurrentPasswordEl.value=""; editorNewPasswordEl.value = "";closeHelpWorkspace();closeDataWorkspace();closeExportWorkspace();closeInstallWorkspace();collectionBrowseState=null;collectionModeBarEl.hidden=true;document.body.classList.remove("collectionMode");clearAuth();await loadGithubFiles();openAccountWorkspace(); });
   appNavLogoutBtn.addEventListener("click",()=>editorLogoutBtn.click());
   for(const input of [editorWebAppUrlEl,editorSecretEl])input.addEventListener("keydown",(event)=>{if(event.key==="Enter"){event.preventDefault();testEditorConnectionBtn.click();}});
   changeEditorPasswordBtn.addEventListener("click", async () => {
@@ -4680,7 +4730,7 @@ loopCurrentEl.checked = false;
     try {
       await apiFetch("/api/me/change-password", { method:"POST", body:JSON.stringify({ currentPassword, newPassword }) });
       const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || [];authState.contribution=me.contribution||null; saveAuth();
-      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true); await loadGithubFiles();setTimeout(maybeShowNavigationIntro,250);
+      editorCurrentPasswordEl.value = ""; editorNewPasswordEl.value = ""; updateAuthUi(); setEditorConnectionStatus("Password changed. Editor access is active.", true); await loadGithubFiles();setTimeout(maybeShowOnboarding,250);
     } catch(error) { setEditorConnectionStatus("Password change failed: " + error.message, false); }
     finally { changeEditorPasswordBtn.disabled = false; }
   });
@@ -4833,21 +4883,69 @@ loopCurrentEl.checked = false;
     }
   };
 
+  const GENERAL_SCIENTIFIC_WARNING="Photo-based annotation describes what can be detected in the camera frame. A feature that is not visible in a photograph is not necessarily absent from the surrounding environment.";
+  const FIELD_GUIDE_GROUPS=[
+    {title:"Selection and period",keys:["Quality_selected","Pheno_period","Residence","Period_day","Artificial_lights"]},
+    {title:"Image and individuals",keys:["Feather_occ","Feather_perc","Ciconia_num","Water_presence_class"]},
+    {title:"Behaviour and height",keys:["Fly_ground","Activity_class","Altitude","Thermal_updraft"]},
+    {title:"Habitat classification",keys:["Agriculture_type","Foraging_habitat_group","Roost_site_group"]},
+    {title:"Environment and remarks",keys:["Env_desc_en","Remarks"]},
+    {title:"Other visible species",keys:["Spec1_name","Spec1_abund","Spec2_name","Spec2_abund"]},
+    {title:"Derived height and telemetry",keys:["Elevation_m","Above_ground","Height_class_100m"]}
+  ];
+  let annotationSchemaPromise=null,helpWorkspaceMode=null,onboardingSteps=[],onboardingIndex=0;
+  const getAnnotationSchema=()=>annotationSchemaPromise||(annotationSchemaPromise=apiFetch("/api/schema/annotation",{}, {auth:false}).catch((error)=>{annotationSchemaPromise=null;throw error;}));
+  const fieldMapFromSchema=(schema)=>new Map((schema.fields||[]).map((field)=>[field.key,field]));
+  const addHelpSection=(container,title,content,className="")=>{if(!content)return;const section=document.createElement("section");section.className=`fieldGuideSection ${className}`.trim();const heading=document.createElement("b"),textEl=document.createElement("p");heading.textContent=title;textEl.textContent=content;section.append(heading,textEl);container.append(section);};
+  const appendFieldGuidance=(container,field,{technical=false}={})=>{
+    addHelpSection(container,"What is it?",field.plainDefinition||field.definition||field.help||"");
+    addHelpSection(container,"How to record it",field.howToRecord||"");
+    const availableOptions=(field.options||[]).filter((value)=>value&&value!=="__add_category__");
+    if(availableOptions.length){const section=document.createElement("section"),heading=document.createElement("b"),list=document.createElement("ul");section.className="fieldGuideSection";heading.textContent="Categories";list.className="fieldGuideOptions";for(const value of availableOptions){const item=document.createElement("li"),code=document.createElement("code"),description=document.createTextNode(` — ${field.optionHelp?.[value]||"Project-specific category; use only when its meaning is defined by the project."}`);code.textContent=value;item.append(code,description);list.append(item);}section.append(heading,list);container.append(section);}
+    addHelpSection(container,"Important",field.important||"","fieldGuideImportant");
+    if(technical){const details=document.createElement("details"),summary=document.createElement("summary"),meta=document.createElement("p");details.className="fieldHelpMeta";summary.textContent="Technical metadata";meta.textContent=[field.dataType?`Data type: ${field.dataType}`:"",field.unit?`Unit / format: ${field.unit}`:"",field.sourceRole?`Source / role: ${field.sourceRole}`:""].filter(Boolean).join(" • ");details.append(summary,meta);container.append(details);}
+  };
+
   const fieldHelpPopoverEl=document.createElement("div");fieldHelpPopoverEl.className="fieldHelpPopover";fieldHelpPopoverEl.setAttribute("role","dialog");fieldHelpPopoverEl.setAttribute("aria-live","polite");document.body.appendChild(fieldHelpPopoverEl);
   const closeFieldHelp=()=>{fieldHelpPopoverEl.classList.remove("open");document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));};
   const showFieldHelp=(field,anchor)=>{
-    fieldHelpPopoverEl.replaceChildren();const title=document.createElement("b"),definition=document.createElement("div"),meta=document.createElement("div");title.textContent=field.label||field.key;definition.textContent=field.definition||field.help||"";meta.className="fieldHelpMeta";meta.textContent=[field.dataType?`Data type: ${field.dataType}`:"",field.unit?`Unit / format: ${field.unit}`:"",field.sourceRole?`Source / role: ${field.sourceRole}`:""].filter(Boolean).join(" • ");fieldHelpPopoverEl.append(title,definition,meta);fieldHelpPopoverEl.classList.add("open");const rect=anchor.getBoundingClientRect(),width=fieldHelpPopoverEl.offsetWidth,height=fieldHelpPopoverEl.offsetHeight,left=Math.max(12,Math.min(window.innerWidth-width-12,rect.left)),below=rect.bottom+8,top=below+height<=window.innerHeight-12?below:Math.max(12,rect.top-height-8);fieldHelpPopoverEl.style.left=`${left}px`;fieldHelpPopoverEl.style.top=`${top}px`;
+    fieldHelpPopoverEl.replaceChildren();const header=document.createElement("div"),title=document.createElement("b"),close=document.createElement("button"),content=document.createElement("div");header.className="fieldHelpHeader";title.textContent=field.label||field.key;close.type="button";close.className="secondary fieldHelpClose";close.textContent="×";close.setAttribute("aria-label","Close field help");close.addEventListener("click",closeFieldHelp);header.append(title,close);appendFieldGuidance(content,field,{technical:true});fieldHelpPopoverEl.append(header,content);fieldHelpPopoverEl.classList.add("open");const rect=anchor.getBoundingClientRect(),width=fieldHelpPopoverEl.offsetWidth,height=fieldHelpPopoverEl.offsetHeight,left=Math.max(12,Math.min(window.innerWidth-width-12,rect.left)),below=rect.bottom+8,top=below+height<=window.innerHeight-12?below:Math.max(12,rect.top-height-8);fieldHelpPopoverEl.style.left=`${left}px`;fieldHelpPopoverEl.style.top=`${top}px`;
   };
   document.addEventListener("click",(event)=>{if(!fieldHelpPopoverEl.contains(event.target)&&!event.target.closest?.(".fieldHelp"))closeFieldHelp();});
-  document.addEventListener("keydown",(event)=>{if(event.key==="Escape")closeFieldHelp();});
+
+  const openHelpWorkspace=()=>{closeFieldHelp();closeAppNavigation();appHelpWorkspaceEl.hidden=false;appHelpWorkspaceEl.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";setTimeout(()=>closeAppHelpBtn.focus(),0);};
+  const closeHelpWorkspace=()=>{appHelpWorkspaceEl.hidden=true;appHelpWorkspaceEl.setAttribute("aria-hidden","true");document.body.style.overflow="";helpWorkspaceMode=null;};
+  const helpButton=(label,className,onClick)=>{const button=document.createElement("button");button.type="button";button.className=className;button.textContent=label;button.addEventListener("click",onClick);return button;};
+  const renderHelpHub=()=>{
+    helpWorkspaceMode="hub";openHelpWorkspace();appHelpEyebrowEl.textContent="Help / Guide";appHelpTitleEl.textContent="How can we help?";appHelpProgressEl.hidden=true;appHelpBodyEl.innerHTML=`<h1>Scientific annotation guide</h1><p class="appHelpLead">Revisit the application introduction or open the searchable guide for every annotation field.</p><div class="appHelpGrid"><article class="appHelpItem"><h3>Application introduction</h3><p>A role-aware tour of maps, photographs, annotation, saving and the modules available to you.</p><button class="primarySave" id="runIntroductionAgain" type="button">Run introduction again</button></article><article class="appHelpItem"><h3>Field guide</h3><p>Practical definitions, category meanings and scientific interpretation warnings in one searchable guide.</p><button class="secondary" id="openFullFieldGuide" type="button">Open field guide</button></article></div>`;appHelpActionsEl.replaceChildren(helpButton("Close","secondary",closeHelpWorkspace));el("runIntroductionAgain").addEventListener("click",()=>openOnboarding({force:true}));el("openFullFieldGuide").addEventListener("click",openFieldGuide);
+  };
+  const openFieldGuide=async()=>{
+    helpWorkspaceMode="guide";openHelpWorkspace();appHelpEyebrowEl.textContent="Photo annotation";appHelpTitleEl.textContent="Scientific field guide";appHelpProgressEl.hidden=true;appHelpBodyEl.innerHTML='<p class="appHelpLead">Loading field guidance…</p>';appHelpActionsEl.replaceChildren(helpButton("← Help home","secondary",renderHelpHub),helpButton("Close","primarySave",closeHelpWorkspace));
+    try{const schema=await getAnnotationSchema(),fieldMap=fieldMapFromSchema(schema),toolbar=document.createElement("div"),search=document.createElement("input"),warning=document.createElement("div"),groups=document.createElement("div");toolbar.className="fieldGuideToolbar";search.type="search";search.placeholder="Search fields, categories or guidance…";search.setAttribute("aria-label","Search scientific field guide");toolbar.append(search);warning.className="scientificWarning";warning.textContent=GENERAL_SCIENTIFIC_WARNING;for(const group of FIELD_GUIDE_GROUPS){const section=document.createElement("section"),heading=document.createElement("h3"),entries=document.createElement("div");section.className="fieldGuideGroup";heading.textContent=group.title;entries.className="fieldGuideEntries";for(const key of group.keys){const field=fieldMap.get(key);if(!field)continue;const article=document.createElement("article"),title=document.createElement("h4");article.className="fieldGuideEntry";article.dataset.search=[field.label,field.key,field.plainDefinition,field.howToRecord,field.important,...Object.entries(field.optionHelp||{}).flat()].filter(Boolean).join(" ").toLowerCase();title.textContent=field.label||field.key;appendFieldGuidance(article,field);article.prepend(title);entries.append(article);}section.append(heading,entries);groups.append(section);}appHelpBodyEl.replaceChildren(toolbar,warning,groups);search.addEventListener("input",()=>{const term=search.value.trim().toLowerCase();groups.querySelectorAll(".fieldGuideEntry").forEach((entry)=>entry.hidden=!!term&&!entry.dataset.search.includes(term));groups.querySelectorAll(".fieldGuideGroup").forEach((group)=>group.hidden=![...group.querySelectorAll(".fieldGuideEntry")].some((entry)=>!entry.hidden));});search.focus();}
+    catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the field guide: ${escapeHtml(error.message)}</div>`;}
+  };
+
+  const onboardingFeatureCards=(role)=>{const items=[{title:"Data and progress",text:"Use Data table to browse records and Progress to continue from the first unfinished photograph for an individual."},{title:"Survey results",text:"View aggregated anonymous ratings without exposing individual respondents."}];if(["coordinator","admin"].includes(role))items.push({title:"Coordination",text:"Review contributor records, verification requests and category proposals; create surveys and export research data."});if(role==="admin")items.push({title:"Administration",text:"Manage users and contributor settings, import project data and inspect private contribution statistics."});return items;};
+  const createOnboardingSteps=async()=>{const schema=await getAnnotationSchema(),fieldMap=fieldMapFromSchema(schema),role=authState.user?.role||"annotator",bestAvailable=authState.contribution?.bestPicturesUnlocked??!authState.user?.restrictedContributor,steps=[
+    {title:"Welcome to the White Stork photo archive",lead:"This application connects tracking locations, photographs and standardized scientific annotations.",items:[{title:"Photo and location together",text:"View each photograph with its corresponding map position and movement context."},{title:"Describe evidence",text:"Record what is visible or otherwise justified by the photograph and associated telemetry—not assumptions about the wider site."}]},
+    {title:"Map & Photos",lead:"The map and photograph are synchronized so you can examine the same observation from two perspectives.",items:[{title:"Choose an individual",text:"Select a bird to load its photographs and route."},{title:"Move through photographs",text:"Use the navigation controls or swipe left/right on a touch device."},{title:"Use the map",text:"The marker follows the current photograph. Basemap and layer controls change only your local map view."}]},
+    {title:"Photo annotation",lead:"Each photograph is described with standardized scientific variables. Apply fields only when their context is relevant—for example flight, foraging, roosting or night records.",warning:GENERAL_SCIENTIFIC_WARNING,fieldKeys:["Quality_selected","Fly_ground","Env_desc_en","Water_presence_class"],items:[{title:"Blank is not absence",text:"A blank or not-applicable field differs from recording that an ecological feature is absent."},{title:"Use the frame",text:"Photograph-based variables describe detectable content in this frame; telemetry may support location and height fields."}]},
+    {title:"Saving your work",lead:"Choose the status that honestly reflects how far the record has been assessed.",fieldKeys:["Quality_selected"],items:[{title:"Save draft",text:"Keeps an incomplete record so it can be finished later. Only one active draft is allowed under the current workflow."},{title:"Complete / Analysed",text:"Use only when all applicable required fields have been reviewed."},{title:"Reject unusable photographs",text:"Quality selected = no allows an unusable image to be rejected without completing the remaining scientific fields."}]}
+  ];if(bestAvailable)steps.push({title:"Photo Safe, ratings and sharing",lead:"Save selected photographs in your private Photo Safe and explore project ratings.",items:[{title:"Private Photo Safe",text:"Your server-side selection supports the synchronized photo-and-map slideshow."},{title:"Ratings",text:"Rate photographs where ratings are available and review Top rated collections."},{title:"Sharing",text:"Share your Photo Safe read-only with another user or through a controlled public link."}]});steps.push({title:"Other modules available to you",lead:"The side menu keeps the application compact while giving quick access to your role's tools.",items:onboardingFeatureCards(role)});steps.push({title:"You are ready",lead:"Start with Photo editor for annotation work. Help / Guide in the side menu and ? Field guide in the editor can reopen this introduction or any field explanation at any time.",items:[{title:"Scientific habit",text:"When uncertain, avoid guessing: save a draft or request verification where available."},{title:"Need a reminder?",text:"Every scientific field has an ⓘ button with the same guidance used in the full field guide."}]});return {steps,fieldMap};};
+  let onboardingFieldMap=new Map();
+  const renderOnboardingStep=()=>{const step=onboardingSteps[onboardingIndex];if(!step)return;appHelpEyebrowEl.textContent=`Introduction • ${onboardingIndex+1} of ${onboardingSteps.length}`;appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width=`${((onboardingIndex+1)/onboardingSteps.length)*100}%`;const heading=document.createElement("h1"),lead=document.createElement("p"),grid=document.createElement("div");heading.textContent=step.title;lead.className="appHelpLead";lead.textContent=step.lead;grid.className="appHelpGrid";for(const item of step.items||[]){const article=document.createElement("article"),title=document.createElement("h3"),textEl=document.createElement("p");article.className="appHelpItem";title.textContent=item.title;textEl.textContent=item.text;article.append(title,textEl);grid.append(article);}for(const key of step.fieldKeys||[]){const field=onboardingFieldMap.get(key);if(!field)continue;const article=document.createElement("article"),title=document.createElement("h3");article.className="appHelpItem";title.textContent=field.label||field.key;article.append(title);appendFieldGuidance(article,field);grid.append(article);}appHelpBodyEl.replaceChildren(heading,lead,grid);if(step.warning){const warning=document.createElement("div");warning.className="scientificWarning";warning.textContent=step.warning;appHelpBodyEl.append(warning);}appHelpBodyEl.scrollTop=0;const left=helpButton("Close for now","secondary",closeHelpWorkspace),group=document.createElement("div");group.className="appHelpActionGroup";if(onboardingIndex>0)group.append(helpButton("← Back","secondary",()=>{onboardingIndex--;renderOnboardingStep();}));if(onboardingIndex<onboardingSteps.length-1)group.append(helpButton("Next →","primarySave",()=>{onboardingIndex++;renderOnboardingStep();}));else group.append(helpButton("Finish","primarySave",()=>{try{localStorage.setItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`,"complete");}catch(_error){}closeHelpWorkspace();openAppNavigation();}));appHelpActionsEl.replaceChildren(left,group);};
+  const openOnboarding=async({force=false}={})=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`;if(!force){try{if(localStorage.getItem(key)==="complete")return;}catch(_error){}}helpWorkspaceMode="onboarding";openHelpWorkspace();appHelpEyebrowEl.textContent="Introduction";appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width="8%";appHelpBodyEl.innerHTML='<p class="appHelpLead">Preparing your introduction…</p>';appHelpActionsEl.replaceChildren(helpButton("Close for now","secondary",closeHelpWorkspace));try{const result=await createOnboardingSteps();onboardingSteps=result.steps;onboardingFieldMap=result.fieldMap;onboardingIndex=0;renderOnboardingStep();}catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the introduction: ${escapeHtml(error.message)}</div>`;}};
+  const maybeShowOnboarding=()=>void openOnboarding();
+  closeAppHelpBtn.addEventListener("click",closeHelpWorkspace);openFieldGuideBtn.addEventListener("click",openFieldGuide);
+  document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
 
   const loadEditorHelp = async () => {
     try {
-      const schema = await apiFetch("/api/schema/annotation", {}, { auth:false });
+      const schema = await getAnnotationSchema();
       for (const field of schema.fields || []) {
         const input = editorFormEl.querySelector(`[data-field="${field.key}"]`), label = input?.closest(".editorField")?.querySelector("label");
         if (!label) continue;
-        if(!label.querySelector(".fieldHelp")){const help = document.createElement("button");help.type="button";help.className="fieldHelp";help.textContent="?";help.title=field.help||field.label;help.setAttribute("aria-label",`Information about ${field.label}`);help.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();if(fieldHelpPopoverEl.classList.contains("open")&&help.getAttribute("aria-expanded")==="true"){closeFieldHelp();help.setAttribute("aria-expanded","false");return;}document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));help.setAttribute("aria-expanded","true");showFieldHelp(field,help);});label.appendChild(help);}
+        if(!label.querySelector(".fieldHelp")){const help = document.createElement("button");help.type="button";help.className="fieldHelp";help.textContent="ⓘ";help.title=`Guidance for ${field.label}`;help.setAttribute("aria-label",`Guidance for ${field.label}`);help.setAttribute("aria-expanded","false");help.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();if(fieldHelpPopoverEl.classList.contains("open")&&help.getAttribute("aria-expanded")==="true"){closeFieldHelp();return;}document.querySelectorAll(".fieldHelp[aria-expanded='true']").forEach((item)=>item.setAttribute("aria-expanded","false"));help.setAttribute("aria-expanded","true");showFieldHelp(field,help);});label.appendChild(help);}
         if(input?.tagName==="SELECT"&&field.extensible){
           for(const value of field.options||[])if(value&&!Array.from(input.options).some((option)=>option.value===value))input.add(new Option(value,value));
           if(!input.querySelector('option[value="__add_category__"]'))input.add(new Option("＋ Add new category…","__add_category__"));
@@ -5576,7 +5674,7 @@ loopCurrentEl.checked = false;
     if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
     loadEditorHelp();
     if(editorHasConnection())await loadGithubFiles();
-    maybeShowNavigationIntro();
+    maybeShowOnboarding();
   });
 
   const handleBirdSelectionChange = async (sourceSelect) => {

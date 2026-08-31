@@ -294,15 +294,21 @@ test("managers can review completed photos grouped by contributor in the regular
   assert.doesNotMatch(ui,/api\/photos\?page=\$\{page\}&pageSize=500/);
 });
 
-test("desktop navigation mirrors the mobile list and introduces itself once per user",()=>{
+test("navigation exposes the unified per-user introduction and field guide",()=>{
   assert.match(ui,/class="appNavHandleLabel">Menu</);
-  assert.match(ui,/id="appNavWelcome" hidden/);
-  assert.match(ui,/All sections are available in this menu/);
-  assert.match(ui,/NAV_INTRO_STORAGE_PREFIX = "stork-nav-intro-v1:"/);
-  assert.match(ui,/localStorage\.setItem\(key,"shown"\)/);
-  assert.match(ui,/appNavWelcomeEl\.hidden=false;openAppNavigation\(\)/);
-  assert.match(ui,/setTimeout\(maybeShowNavigationIntro,250\)/);
-  assert.match(ui,/appNavWelcomeEditBtn\.addEventListener/);
+  assert.match(ui,/data-app-nav="help"/);
+  assert.match(ui,/id="appHelpWorkspace" hidden/);
+  assert.match(ui,/ONBOARDING_STORAGE_PREFIX = "stork-onboarding-v1:"/);
+  assert.match(ui,/localStorage\.setItem\(`\$\{ONBOARDING_STORAGE_PREFIX\}\$\{authState\.user\.id\}`,"complete"\)/);
+  assert.match(ui,/const openFieldGuide=async/);
+  assert.match(ui,/id="openFieldGuide"[^>]*>\? Field guide/);
+  assert.match(ui,/setTimeout\(maybeShowOnboarding,250\)/);
+  assert.match(ui,/const maybeShowOnboarding=/);
+  assert.match(ui,/bestAvailable\)steps\.push\(\{title:"Photo Safe, ratings and sharing"/);
+  assert.match(ui,/if\(\["coordinator","admin"\]\.includes\(role\)\)items\.push/);
+  assert.match(ui,/if\(role==="admin"\)items\.push/);
+  assert.match(ui,/fieldHelpPopover \{ position:fixed!important; inset:auto 0 0!important/);
+  assert.match(ui,/help\.textContent="ⓘ"/);
 });
 
 test("the shared photo editor downloads the current original through protected access",()=>{
