@@ -25,10 +25,11 @@ test("shared Photo Safe media tokens are short-lived and bound to share and phot
   assert.ok(viewer.exp-viewer.iat<=15*60);
 });
 
-test("public share tokens are random, returned once and stored only as SHA-256",()=>{
+test("public share tokens use a hash for authorization and encrypted recovery for the owner",async()=>{
   assert.match(server,/crypto\.randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(server,/createHash\("sha256"\)/);
-  assert.match(server,/INSERT INTO photo_safe_public_shares\(id,owner_user_id,token_hash,expires_at\)/);
+  assert.match(server,/INSERT INTO photo_safe_public_shares\(id,owner_user_id,token_hash,token_ciphertext,expires_at\)/);
+  assert.match(schema,/photo_safe_public_shares[\s\S]*?token_ciphertext TEXT/);
   assert.doesNotMatch(schema,/public_token\s+TEXT/i);
   assert.match(server,/expires_at>now\(\)/);
   assert.match(server,/revoked_at IS NULL/);
@@ -36,6 +37,20 @@ test("public share tokens are random, returned once and stored only as SHA-256",
   const sample=crypto.randomBytes(32).toString("base64url"),hash=crypto.createHash("sha256").update(sample).digest("hex");
   assert.notEqual(sample,hash);
   assert.equal(hash.length,64);
+  const {encryptPhotoSafeToken,decryptPhotoSafeToken}=await import(`../src/photo-safe-share.js?photo-safe-token=${Date.now()}`),encrypted=encryptPhotoSafeToken(sample);
+  assert.notEqual(encrypted,sample);
+  assert.equal(encrypted.includes(sample),false);
+  assert.equal(decryptPhotoSafeToken(encrypted),sample);
+  assert.equal(decryptPhotoSafeToken(`${encrypted}broken`),null);
+});
+
+test("the owner's Share window lists and can copy every recoverable public link",()=>{
+  assert.match(server,/publicShares:publicShares\.map/);
+  assert.match(server,/decryptPhotoSafeToken\(row\.token_ciphertext\)/);
+  assert.match(server,/legacyUnavailable:!token/);
+  assert.match(ui,/copySavedPublicSafeLink/);
+  assert.match(ui,/saved in the list below and can be copied again later/);
+  assert.match(ui,/older link cannot be recovered/);
 });
 
 test("sharing tables keep the owner's favourites live and enforce constraints",()=>{
@@ -113,5 +128,5 @@ test("share actions are audited without storing the raw public token",()=>{
 });
 
 test("the service worker cache remains newer than the Photo Safe sharing release",()=>{
-  assert.match(worker,/stork-edit2-shell-v2026-08-31-33/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-31-34/);
 });
