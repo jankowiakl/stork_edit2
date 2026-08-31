@@ -73,7 +73,7 @@ test("recipient is read-only and cannot re-share or mutate the owner's safe",()=
 
 test("owner, recipient and public modes reuse one map-synchronised Photo Safe viewer",()=>{
   assert.equal((ui.match(/const openPhotoCollection=/g)||[]).length,1);
-  assert.match(ui,/\["SHARED_READONLY","PUBLIC_READONLY"\]/);
+  assert.match(ui,/\["SHARED_READONLY","PUBLIC_READONLY","SURVEY","SURVEY_REWARD"\]/);
   assert.match(ui,/const showCollectionSequencePhoto=/);
   assert.match(ui,/await loadTrackFor\(selected\.bird/);
   assert.match(ui,/followMap\.setView/);
@@ -92,7 +92,7 @@ test("shared routes and public isolation expose only birds represented in the sa
   assert.match(server,/favorite\.user_id=\$1 AND p\.individual_id=\$2 LIMIT 1/);
   assert.match(ui,/body\.publicSharedSafeMode \.appNavDrawer/);
   assert.match(ui,/PUBLIC_READONLY/);
-  assert.match(ui,/publicSafeToken=new URLSearchParams/);
+  assert.match(ui,/publicParams=new URLSearchParams[\s\S]*?publicSafeToken=publicParams\.get\("photo_safe"\)/);
   assert.match(ui,/publicProjectIntro/);
   assert.match(ui,/PROJECT_CONTACT_NAME|Contact the project/);
 });
@@ -112,6 +112,6 @@ test("share actions are audited without storing the raw public token",()=>{
   assert.doesNotMatch(createRoute,/audit\([^\n]*\{token/);
 });
 
-test("the service worker cache is bumped for Photo Safe sharing",()=>{
-  assert.match(worker,/stork-edit2-shell-v2026-08-30-24/);
+test("the service worker cache remains newer than the Photo Safe sharing release",()=>{
+  assert.match(worker,/stork-edit2-shell-v2026-08-30-25/);
 });

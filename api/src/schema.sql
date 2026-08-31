@@ -231,6 +231,79 @@ CREATE TABLE IF NOT EXISTS photo_ratings (
 );
 CREATE INDEX IF NOT EXISTS idx_photo_ratings_photo ON photo_ratings(photo_id,rating);
 
+-- Anonymous scientific photo surveys are deliberately independent of photo_ratings.
+CREATE TABLE IF NOT EXISTS survey_campaigns (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL CHECK (char_length(name) BETWEEN 1 AND 200),
+  created_by TEXT NOT NULL REFERENCES user_attributions(user_id) ON DELETE RESTRICT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+  date_from TIMESTAMPTZ,
+  date_to TIMESTAMPTZ,
+  photo_count INTEGER NOT NULL DEFAULT 30 CHECK (photo_count BETWEEN 1 AND 500),
+  link_type TEXT NOT NULL CHECK (link_type IN ('reusable','single_use')),
+  expires_at TIMESTAMPTZ,
+  demographic_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+  contact_name TEXT NOT NULL,
+  contact_email TEXT NOT NULL,
+  project_url TEXT,
+  intro_pl TEXT NOT NULL,
+  intro_en TEXT NOT NULL,
+  thanks_pl TEXT NOT NULL,
+  thanks_en TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK(date_to IS NULL OR date_from IS NULL OR date_to>=date_from)
+);
+CREATE INDEX IF NOT EXISTS idx_survey_campaigns_status ON survey_campaigns(status,expires_at,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS survey_links (
+  id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL REFERENCES survey_campaigns(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  link_type TEXT NOT NULL CHECK (link_type IN ('reusable','single_use')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','revoked')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_survey_links_campaign ON survey_links(campaign_id,status,created_at);
+
+CREATE TABLE IF NOT EXISTS survey_responses (
+  id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL REFERENCES survey_campaigns(id) ON DELETE CASCADE,
+  link_id TEXT NOT NULL REFERENCES survey_links(id) ON DELETE CASCADE,
+  respondent_token_hash TEXT UNIQUE,
+  status TEXT NOT NULL DEFAULT 'started' CHECK (status IN ('started','completed')),
+  demographics JSONB NOT NULL DEFAULT '{}'::jsonb,
+  age_confirmed BOOLEAN NOT NULL,
+  consent_accepted BOOLEAN NOT NULL,
+  included BOOLEAN NOT NULL DEFAULT true,
+  quality_flags JSONB NOT NULL DEFAULT '[]'::jsonb,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_survey_responses_campaign_status ON survey_responses(campaign_id,status,included,started_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_survey_single_response_per_link ON survey_responses(link_id) WHERE respondent_token_hash IS NULL;
+
+CREATE TABLE IF NOT EXISTS survey_response_photos (
+  response_id TEXT NOT NULL REFERENCES survey_responses(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE RESTRICT,
+  position INTEGER NOT NULL CHECK (position>0),
+  PRIMARY KEY(response_id,position),
+  UNIQUE(response_id,photo_id)
+);
+CREATE INDEX IF NOT EXISTS idx_survey_response_photos_photo ON survey_response_photos(photo_id,response_id);
+
+CREATE TABLE IF NOT EXISTS survey_photo_ratings (
+  response_id TEXT NOT NULL,
+  photo_id TEXT NOT NULL,
+  rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(response_id,photo_id),
+  FOREIGN KEY(response_id,photo_id) REFERENCES survey_response_photos(response_id,photo_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_survey_photo_ratings_photo ON survey_photo_ratings(photo_id,rating,response_id);
+
 CREATE TABLE IF NOT EXISTS annotation_review_requests (
   id TEXT PRIMARY KEY,
   photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,

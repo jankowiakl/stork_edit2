@@ -26,6 +26,9 @@ export const signMediaToken = (user,photoId) => jwt.sign({sub:user.id,photoId:St
 export const signSharedSafeMediaToken = ({shareId,photoId,shareType,viewerId=null}) => jwt.sign({shareId:String(shareId),photoId:String(photoId),shareType:String(shareType),viewerId:viewerId?String(viewerId):null,scope:"shared-photo-safe-media"},JWT_SECRET,{expiresIn:"5m"});
 export const signSharedSafeViewerToken = ({shareId,shareType,viewerId=null}) => jwt.sign({shareId:String(shareId),shareType:String(shareType),viewerId:viewerId?String(viewerId):null,scope:"shared-photo-safe-viewer"},JWT_SECRET,{expiresIn:"15m"});
 export const verifySharedSafeToken = (token) => jwt.verify(String(token||""),JWT_SECRET);
+export const signSurveyViewerToken = ({responseId,linkId}) => jwt.sign({responseId:String(responseId),linkId:String(linkId),scope:"survey-viewer"},JWT_SECRET,{expiresIn:"15m"});
+export const signSurveyMediaToken = ({responseId,photoId,scope="survey-media"}) => jwt.sign({responseId:String(responseId),photoId:String(photoId),scope},JWT_SECRET,{expiresIn:"5m"});
+export const verifySurveyToken = (token) => jwt.verify(String(token||""),JWT_SECRET);
 
 export function publicUser(user) {
   return user ? {
