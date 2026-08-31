@@ -180,15 +180,15 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-31-29/);
+  assert.match(worker,/stork-edit2-shell-v2026-08-31-30/);
 });
 
-test("Survey-only layout keeps photo above map and its rating controls on the map",()=>{
-  const mapStart=ui.indexOf('<div class="card mapStack"'),mapEnd=ui.indexOf('<div class="overviewInset"',mapStart),dock=ui.indexOf('id="surveyRatingDock"');
-  assert.ok(mapStart>=0&&dock>mapStart&&dock<mapEnd,"Survey rating dock must be inside mapStack");
-  assert.match(ui,/body\.surveyMode \.wrap\{[^}]*grid-template-rows:minmax\(0,60dvh\) minmax\(0,40dvh\)/);
+test("mobile Survey keeps a compact rating row between photo and map",()=>{
+  assert.match(ui,/syncSurveyRatingDockPlacement[\s\S]*?wrapEl\.appendChild\(surveyRatingDockEl\)/);
+  assert.match(ui,/body\.surveyMode \.wrap\{[^}]*grid-template-rows:minmax\(0,3fr\) auto minmax\(0,2fr\)/);
   assert.match(ui,/body\.surveyMode \.side\{[^}]*grid-row:1/);
-  assert.match(ui,/body\.surveyMode \.mapStack\{[^}]*grid-row:2/);
+  assert.match(ui,/body\.surveyMode \.wrap>\.surveyRatingDock\{[^}]*grid-row:2[^}]*display:flex[^}]*flex-wrap:nowrap/);
+  assert.match(ui,/body\.surveyMode \.mapStack\{[^}]*grid-row:3/);
   assert.match(ui,/ResizeObserver[\s\S]*refreshMapSizes/);
   assert.match(ui,/orientationchange/);
   assert.match(ui,/surveyCoachTargets[\s\S]*target:surveyStarsEl[\s\S]*target:nextPhotoBtn[\s\S]*target:mapStackEl/);

@@ -1513,7 +1513,7 @@ body.surveyRewardMode .surveyRatingDock { display:none; }
   body.surveyMode .wrap{
     display:grid!important;
     grid-template-columns:minmax(0,1fr)!important;
-    grid-template-rows:minmax(0,60dvh) minmax(0,40dvh);
+    grid-template-rows:minmax(0,3fr) auto minmax(0,2fr);
     gap:0!important;padding:0!important;
     width:100vw!important;width:100dvw!important;max-width:none!important;min-width:0!important;
     height:100dvh!important;min-height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important
@@ -1521,7 +1521,7 @@ body.surveyRewardMode .surveyRatingDock { display:none; }
   body.surveyMode .side{
     display:block!important;grid-column:1;grid-row:1;
     width:100%!important;max-width:none!important;min-width:0!important;
-    height:60dvh!important;min-height:0!important;overflow:hidden!important;padding:0!important;box-sizing:border-box!important
+    height:100%!important;min-height:0!important;overflow:hidden!important;padding:0!important;box-sizing:border-box!important
   }
   body.surveyMode .side>:not(.photoCard){display:none!important}
   body.surveyMode .photoCard,body.surveyMode .photoStage{
@@ -1529,16 +1529,30 @@ body.surveyRewardMode .surveyRatingDock { display:none; }
     height:100%!important;min-height:0!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important
   }
   body.surveyMode .mapStack{
-    display:block!important;grid-column:1;grid-row:2;
+    display:block!important;grid-column:1;grid-row:3;
     width:100%!important;max-width:none!important;min-width:0!important;
-    height:40dvh!important;min-height:0!important;border-radius:0!important;box-sizing:border-box!important
+    height:100%!important;min-height:0!important;border-radius:0!important;box-sizing:border-box!important
   }
-  body.surveyMode .surveyRatingDock{top:6px;max-width:calc(100% - 104px);padding:4px 6px}
-  body.surveyMode .surveyStars button{min-width:36px;min-height:36px;font-size:28px}
+  body.surveyMode .wrap>.surveyRatingDock{
+    position:relative;grid-column:1;grid-row:2;left:auto;top:auto;transform:none;
+    display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:3px;
+    width:100%;max-width:none;min-width:0;min-height:40px;max-height:48px;
+    margin:0;padding:3px 5px;border-width:1px 0;border-radius:0;
+    background:rgba(3,8,15,.88);box-shadow:none;overflow-x:auto;overflow-y:hidden;
+    white-space:nowrap;scrollbar-width:none
+  }
+  body.surveyMode .wrap>.surveyRatingDock::-webkit-scrollbar{display:none}
+  body.surveyMode .surveyRatingDock .surveyLanguage{display:flex;flex:0 0 auto;gap:2px;margin:0}
+  body.surveyMode .surveyRatingDock .surveyLanguage button{min-width:25px;min-height:30px;padding:2px 4px!important}
+  body.surveyMode .surveyStars{flex:0 0 auto;gap:0}
+  body.surveyMode .surveyStars button{min-width:29px;min-height:32px;font-size:24px}
+  body.surveyMode .surveyRatingStatus{flex:0 1 auto;min-width:42px;max-width:118px;min-height:0;overflow:hidden;text-overflow:ellipsis;font-size:9px;line-height:1.05;text-align:left}
+  body.surveyMode .surveyFinishActions{flex:0 0 auto;flex-wrap:nowrap;gap:2px;margin:0}
+  body.surveyMode .surveyFinishActions button{min-height:30px;padding:2px 5px!important;font-size:9px!important}
   .surveyCountryResults{max-height:min(240px,38dvh)}
 }
 @media(max-width:700px){.surveyWorkspace{padding:6px}.surveyCard{max-height:calc(100dvh - 12px);border-radius:13px}.surveyTutorial{width:min(260px,calc(100vw - 16px));padding:9px}.surveyDemographics{grid-template-columns:1fr}.surveyLinkRow{grid-template-columns:auto minmax(0,1fr)}.surveyLinkRow button{grid-column:1/-1}.surveyQrControls>*{flex:1 1 130px}}
-@media(max-width:980px) and (orientation:landscape){body.surveyMode .wrap{grid-template-rows:minmax(0,56dvh) minmax(0,44dvh)}body.surveyMode .side{height:56dvh!important}body.surveyMode .mapStack{height:44dvh!important}.surveyRatingDock .surveyLanguage{display:none}.surveyRatingStatus{display:none}}
+@media(max-width:980px) and (orientation:landscape){body.surveyMode .wrap{grid-template-rows:minmax(0,56fr) auto minmax(0,44fr)}body.surveyMode .side,body.surveyMode .mapStack{height:100%!important}}
 @media (hover:none), (pointer:coarse) {
   .photoStage { touch-action:pan-y pinch-zoom; }
   body:not(.editorOpen) .photoStage .photoNav { display:none!important; }
@@ -4053,8 +4067,17 @@ loopCurrentEl.checked = false;
     if(!valid)console.error("Survey mobile viewer did not fill the viewport",{viewportWidth,widths});
     return valid;
   };
+  const surveyRatingDockHome=surveyRatingDockEl.parentElement,surveyRatingDockHomeNext=surveyRatingDockEl.nextSibling;
+  const syncSurveyRatingDockPlacement=()=>{
+    const betweenPhotoAndMap=document.body.classList.contains("surveyMode")&&isMobile();
+    if(betweenPhotoAndMap){
+      if(surveyRatingDockEl.parentElement!==wrapEl)wrapEl.appendChild(surveyRatingDockEl);
+    }else if(surveyRatingDockEl.parentElement!==surveyRatingDockHome){
+      surveyRatingDockHome.insertBefore(surveyRatingDockEl,surveyRatingDockHomeNext);
+    }
+  };
   const settleResponsiveViewerLayout=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{refreshMapSizes();assertSurveyMobileViewportWidth();positionSurveyCoach?.();}));
-  refreshResponsiveViewerLayout=()=>{applyLayoutSplit({persist:false});settleResponsiveViewerLayout();};
+  refreshResponsiveViewerLayout=()=>{syncSurveyRatingDockPlacement();applyLayoutSplit({persist:false});settleResponsiveViewerLayout();};
 
   layoutSplitEl.addEventListener("change", () => applyLayoutSplit());
   fontScaleEl.addEventListener("change", () => applyFontScale());
@@ -4261,7 +4284,7 @@ loopCurrentEl.checked = false;
   const saveSurveyRating=async(photoId,rating)=>{surveyPublicState.ratings[photoId]=rating;localStorage.setItem(surveyDraftStorageKey(),JSON.stringify(surveyPublicState.ratings));renderSurveyRatingDock();try{await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/responses/${encodeURIComponent(surveyPublicState.data.response.id)}/photos/${encodeURIComponent(photoId)}/rating`,{method:"PUT",body:JSON.stringify({rating,respondentToken:surveyPublicState.respondentToken})},{auth:false});surveyPublicState.data.response.ratings={...(surveyPublicState.data.response.ratings||{}),[photoId]:rating};surveyRatingStatusEl.textContent=surveyText("Ocena zapisana.","Rating saved.");return true;}catch(error){surveyRatingStatusEl.textContent=surveyText("Ocena zachowana lokalnie — spróbujemy ponownie po odzyskaniu połączenia.","Rating kept locally — it will be retried when the connection returns.");return false;}};
   const flushSurveyDraft=async()=>{if(photoSafeViewerContext?.mode!=="SURVEY"||surveyPublicState.data?.response?.status==="completed")return true;const pending=Object.entries(surveyPublicState.ratings||{}).filter(([photoId,rating])=>Number(surveyPublicState.data.response.ratings?.[photoId])!==Number(rating));if(!pending.length)return true;const saved=await Promise.all(pending.map(([photoId,rating])=>saveSurveyRating(photoId,Number(rating))));return saved.every(Boolean);};
   const finishSurvey=async()=>{if(!confirm(surveyText("Po wysłaniu ankiety nie będzie można zmienić odpowiedzi. Czy zakończyć?","After submission, answers can no longer be changed. Finish the survey?")))return;if(!await flushSurveyDraft()){surveyRatingStatusEl.textContent=surveyText("Nie wszystkie oceny dotarły do serwera. Sprawdź połączenie i spróbuj ponownie.","Not all ratings reached the server. Check your connection and try again.");return;}try{const result=await apiFetch(`/api/public/surveys/${encodeURIComponent(surveyPublicState.token)}/responses/${encodeURIComponent(surveyPublicState.data.response.id)}/complete`,{method:"POST",body:JSON.stringify({respondentToken:surveyPublicState.respondentToken})},{auth:false});localStorage.removeItem(surveyDraftStorageKey());surveyPublicState.data=result;document.body.classList.remove("surveyMode","collectionMode");refreshResponsiveViewerLayout();collectionModeBarEl.hidden=true;renderSurveyReward();}catch(error){surveyRatingStatusEl.textContent=surveyText(`Nie można zakończyć: ${error.message}`,`Could not finish: ${error.message}`);}};
-  const renderSurveyRatingDock=()=>{if(photoSafeViewerContext?.mode!=="SURVEY")return;const photo=collectionSequence[collectionSequenceIndex],rating=Number(surveyPublicState.ratings?.[photo?.id]||0),rated=Object.keys(surveyPublicState.ratings||{}).filter((id)=>surveyPublicState.ratings[id]).length,total=collectionSequence.length,position=`${collectionSequenceIndex+1}/${total}`;surveyStarsEl.replaceChildren();for(let value=1;value<=5;value++){const button=document.createElement("button");button.type="button";button.textContent=value<=rating?"★":"☆";button.classList.toggle("selected",value<=rating);button.setAttribute("aria-label",`${value} / 5`);button.addEventListener("click",()=>saveSurveyRating(photo.id,value));surveyStarsEl.appendChild(button);}surveyRatingStatusEl.textContent=rating?surveyText(`${position} • Twoja ocena: ${rating}/5 • oceniono ${rated}/${total}`,`${position} • Your rating: ${rating}/5 • rated ${rated}/${total}`):surveyText(`${position} • Oceń to zdjęcie • oceniono ${rated}/${total}`,`${position} • Rate this photo • rated ${rated}/${total}`);surveyFinishActionsEl.innerHTML=rated===total?`<button class="secondary tiny" id="surveyReviewAnswers" type="button">${surveyText("Przejrzyj odpowiedzi","Review answers")}</button><button class="primarySave tiny" id="surveyFinish" type="button">${surveyText("Zakończ i wyślij ankietę","Finish and submit survey")}</button>`:"";el("surveyReviewAnswers")?.addEventListener("click",()=>showCollectionSequencePhoto(0));el("surveyFinish")?.addEventListener("click",finishSurvey);updatePhotoNavButtons();};
+  const renderSurveyRatingDock=()=>{if(photoSafeViewerContext?.mode!=="SURVEY")return;const photo=collectionSequence[collectionSequenceIndex],rating=Number(surveyPublicState.ratings?.[photo?.id]||0),rated=Object.keys(surveyPublicState.ratings||{}).filter((id)=>surveyPublicState.ratings[id]).length,total=collectionSequence.length,position=`${collectionSequenceIndex+1}/${total}`;surveyStarsEl.replaceChildren();for(let value=1;value<=5;value++){const button=document.createElement("button");button.type="button";button.textContent=value<=rating?"★":"☆";button.classList.toggle("selected",value<=rating);button.setAttribute("aria-label",`${value} / 5`);button.addEventListener("click",()=>saveSurveyRating(photo.id,value));surveyStarsEl.appendChild(button);}surveyRatingStatusEl.textContent=isMobile()?(rating?`${position} • ★${rating} • ${rated}/${total}`:`${position} • ${surveyText("oceń","rate")} • ${rated}/${total}`):(rating?surveyText(`${position} • Twoja ocena: ${rating}/5 • oceniono ${rated}/${total}`,`${position} • Your rating: ${rating}/5 • rated ${rated}/${total}`):surveyText(`${position} • Oceń to zdjęcie • oceniono ${rated}/${total}`,`${position} • Rate this photo • rated ${rated}/${total}`));surveyFinishActionsEl.innerHTML=rated===total?`<button class="secondary tiny" id="surveyReviewAnswers" type="button">${surveyText("Przejrzyj odpowiedzi","Review answers")}</button><button class="primarySave tiny" id="surveyFinish" type="button">${surveyText("Zakończ i wyślij ankietę","Finish and submit survey")}</button>`:"";el("surveyReviewAnswers")?.addEventListener("click",()=>showCollectionSequencePhoto(0));el("surveyFinish")?.addEventListener("click",finishSurvey);updatePhotoNavButtons();};
   const beginSurveyRating=async(data)=>{surveyPublicState.data=data;surveyPublicState.ratings={...(data.response.ratings||{})};try{const local=JSON.parse(localStorage.getItem(surveyDraftStorageKey())||"{}");surveyPublicState.ratings={...surveyPublicState.ratings,...local};}catch(_error){}setSurveyWorkspace(false);await openPhotoCollection("survey",null,{mode:"SURVEY",payload:data});if(!sessionStorage.getItem(`storkSurveyTutorial:${data.response.id}`))showSurveyTutorial();for(const[photoId,rating]of Object.entries(surveyPublicState.ratings))if(Number(data.response.ratings?.[photoId])!==Number(rating))void saveSurveyRating(photoId,Number(rating));};
   const renderSurveyReward=()=>{const data=surveyPublicState.data,c=data.campaign,photos=data.photos||[];setSurveyWorkspace(true);surveyWorkspaceBodyEl.innerHTML=`<h1>${surveyText("Dziękujemy!","Thank you!")}</h1><p class="surveyIntroText">${escapeHtml(c.text.thanks[surveyPublicState.language])}</p><p>${surveyText("Jeżeli chcesz pomóc w dalszym rozwoju projektu lub dowiedzieć się więcej o badaniach, skontaktuj się z twórcami projektu.","If you would like to support the project further or learn more about the research, please contact the project team.")}</p><p><b>${escapeHtml(c.contact.name)}</b><br><a href="mailto:${escapeHtml(c.contact.email)}">${escapeHtml(c.contact.email)}</a>${c.contact.url?`<br><a href="${escapeHtml(c.contact.url)}" target="_blank" rel="noopener">${escapeHtml(c.contact.url)}</a>`:""}</p><h2>${surveyText("Globalne najwyżej oceniane zdjęcia","Global highest-rated photos")}</h2>${photos.length<10?`<p>${surveyText("Ranking najlepszych zdjęć nie jest jeszcze gotowy. Zdjęcie pojawia się w rankingu dopiero po otrzymaniu co najmniej 5 niezależnych ocen. Wróć do tego linku później — po zebraniu większej liczby odpowiedzi zobaczysz tutaj najwyżej oceniane fotografie.","The best-photo ranking is not complete yet. A photo enters the ranking only after receiving at least 5 independent ratings. Return to this link later to see the highest-rated photographs as more responses are collected.")}</p>`:""}<div class="surveyTopGrid">${photos.map((photo,index)=>`<article class="surveyTopCard"><img src="${escapeHtml(photo.previewUrl)}" alt=""><div><b>#${index+1} • ★ ${Number(photo.averageSurveyRating).toFixed(1)}</b><br>${photo.surveyRatingCount} ${surveyText("ocen","ratings")}</div></article>`).join("")}</div>${photos.length?`<button class="primarySave" id="surveyOpenTopViewer" type="button">${surveyText("Otwórz ranking na mapie","Open ranking with map")}</button>`:""}`;el("surveyOpenTopViewer")?.addEventListener("click",async()=>{setSurveyWorkspace(false);await openPhotoCollection("survey_reward",null,{mode:"SURVEY_REWARD",payload:data});});};
   const renderSurveyPublic=async(data)=>{surveyPublicState.data=data;if(data.state==="intro")renderSurveyIntro();else if(data.state==="rating")await beginSurveyRating(data);else if(data.state==="completed")renderSurveyReward();};
