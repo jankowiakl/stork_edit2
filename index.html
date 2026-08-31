@@ -787,6 +787,12 @@
     .editorField[hidden] { display: none !important; }
     .editorField label { margin-bottom: 5px; font-size: 11px; }
     .editorField label .required { color: #ff9c9c; }
+    .remarksHistory { margin-top:6px; border:1px solid rgba(119,209,255,.16); border-radius:9px; background:rgba(119,209,255,.035); }
+    .remarksHistory > summary { padding:7px 9px; cursor:pointer; color:var(--muted); font-size:var(--ui-font-small); }
+    .remarksSuggestions { display:grid; gap:6px; max-height:190px; overflow:auto; padding:0 7px 7px; }
+    .remarksSuggestion { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; width:100%; padding:7px 9px; text-align:left; }
+    .remarksSuggestion span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .remarksSuggestion small { color:var(--muted); white-space:nowrap; }
     .editorMode select,
     .editorMode input,
     .editorMode textarea,
@@ -2197,6 +2203,10 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
             <div class="editorField full">
               <label for="editorRemarks">Remarks</label>
               <textarea id="editorRemarks" data-field="Remarks"></textarea>
+              <details class="remarksHistory" id="editorRemarksHistory">
+                <summary>Previously used remarks</summary>
+                <div class="remarksSuggestions" id="editorRemarksSuggestions"><span class="miniNote">Open to load recent entries.</span></div>
+              </details>
             </div>
           </div>
         </details>
@@ -2501,6 +2511,9 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const editorRoostFieldEl = el("editorRoostField");
   const editorWaterEl = el("editorWater");
   const editorEnvDescEl = el("editorEnvDesc");
+  const editorRemarksEl = el("editorRemarks");
+  const editorRemarksHistoryEl = el("editorRemarksHistory");
+  const editorRemarksSuggestionsEl = el("editorRemarksSuggestions");
   const editorSpec1NameEl = el("editorSpec1Name");
   const editorSpec1AbundEl = el("editorSpec1Abund");
   const editorSpec2NameEl = el("editorSpec2Name");
@@ -4507,6 +4520,16 @@ loopCurrentEl.checked = false;
 
   // --- Editor mode: authenticated SQL-backed photo annotation ---
   const editorFieldEls = Array.from(editorFormEl.querySelectorAll("[data-field]"));
+  const loadEditorRemarksSuggestions=async()=>{
+    if(!editorHasConnection()){editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">Log in to view previous remarks.</span>';return;}
+    editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">Loading previous remarks…</span>';
+    try{
+      const result=await apiFetch("/api/annotation-suggestions/remarks"),items=result.remarks||[];
+      if(!items.length){editorRemarksSuggestionsEl.innerHTML='<span class="miniNote">No previous remarks yet.</span>';return;}
+      editorRemarksSuggestionsEl.replaceChildren(...items.map((item)=>{const button=document.createElement("button"),text=document.createElement("span"),count=document.createElement("small"),value=String(item.value||"").trim();button.type="button";button.className="secondary remarksSuggestion";button.title="Click to insert this text into Remarks";text.textContent=value;count.textContent=`${item.usageCount}×`;button.append(text,count);button.addEventListener("click",()=>{const current=editorRemarksEl.value.trim();if(!current)editorRemarksEl.value=value;else if(!current.split("\n").includes(value))editorRemarksEl.value=`${current}\n${value}`;editorRemarksEl.dispatchEvent(new Event("input",{bubbles:true}));editorRemarksEl.focus();});return button;}));
+    }catch(error){editorRemarksSuggestionsEl.innerHTML=`<span class="miniNote">Could not load suggestions: ${escapeHtml(error.message)}</span>`;}
+  };
+  editorRemarksHistoryEl.addEventListener("toggle",()=>{if(editorRemarksHistoryEl.open)void loadEditorRemarksSuggestions();});
   let editorPhotoIndex = -1;
   let editorDirty = false;
   let editorSaving = false;
