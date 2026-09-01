@@ -50,6 +50,11 @@ test("all annotation fields and current options have Polish presentation without
   assert.equal(i18n.optionLabels.en.arable_unspecified,"Arable field — general");
   assert.equal(i18n.optionLabels.pl.arable_unspecified,"Pole uprawne — ogólnie");
   assert.match(i18n.localizeField(schema.fields.find((field)=>field.key==="Pheno_period")).optionHelp.S_migration,/obszaru zimowania/);
+  const residence=i18n.localizeField(schema.fields.find((field)=>field.key==="Residence"));
+  assert.equal(residence.label,"Pobyt");
+  assert.match(residence.plainDefinition,/więcej niż jeden nocleg/);
+  assert.match(residence.howToRecord,/obszarów pobytu \(stopover\).*obwódkami/);
+  assert.match(residence.howToRecord,/podlotów/);
   assert.doesNotMatch(source,/control\.value\s*=/,"localization must not overwrite unsaved form values");
 });
 
@@ -63,6 +68,6 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-48/);
+  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-49/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
 });

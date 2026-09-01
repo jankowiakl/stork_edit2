@@ -19,7 +19,10 @@ test("scientific interpretation warnings and current options are documented",()=
   const fields=new Map(publicAnnotationSchema().fields.map((field)=>[field.key,field]));
   assert.match(fields.get("Water_presence_class").important,/does not mean that there is no water near/);
   assert.match(fields.get("Ciconia_num").important,/camera-carrying bird/);
-  assert.match(fields.get("Residence").important,/Do not invent a distance or time threshold/);
+  assert.match(fields.get("Residence").plainDefinition,/more than one overnight stay/);
+  assert.match(fields.get("Residence").howToRecord,/stopover areas outlined on the map/);
+  assert.match(fields.get("Residence").howToRecord,/recently fledged juveniles/);
+  assert.match(fields.get("Residence").optionHelp.no,/continues moving/);
   assert.deepEqual(Object.keys(fields.get("Activity_class").optionHelp).sort(),fields.get("Activity_class").options.slice().sort());
   assert.equal(fields.get("Env_desc_en").type,"text");
   assert.match(fields.get("Agriculture_type").optionHelp.arable_unspecified,/General arable-field category/);
