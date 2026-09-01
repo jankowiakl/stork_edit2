@@ -8,7 +8,9 @@ test("annotation schema exposes practical guidance while retaining technical met
   assert.equal(field.unit,"phenological phase");
   assert.equal(field.sourceRole,"Biological period");
   assert.match(field.help,/Annual-cycle or phenological period/);
-  assert.match(field.help,/fledging: Local post-fledging period/);
+  assert.match(field.help,/fledging: Fledging period — the period associated with the nest/);
+  assert.ok(field.options.includes("S_migration"));
+  assert.match(field.optionHelp.S_migration,/Spring migration — the period when the bird is migrating northwards/);
   assert.equal(field.optionHelp.A_migration,"Autumn migration.");
   assert.deepEqual(schema.fields.filter((item)=>!item.definition||!item.dataType||!item.unit||!item.sourceRole||!item.plainDefinition||!item.howToRecord).map((item)=>item.key),[]);
 });
@@ -20,6 +22,9 @@ test("scientific interpretation warnings and current options are documented",()=
   assert.match(fields.get("Residence").important,/Do not invent a distance or time threshold/);
   assert.deepEqual(Object.keys(fields.get("Activity_class").optionHelp).sort(),fields.get("Activity_class").options.slice().sort());
   assert.equal(fields.get("Env_desc_en").type,"text");
+  assert.match(fields.get("Agriculture_type").optionHelp.arable_unspecified,/General arable-field category/);
+  assert.match(fields.get("Agriculture_type").optionHelp.arable_unspecified,/does not mean that the crop could not be identified/);
+  assert.doesNotMatch(fields.get("Agriculture_type").optionHelp.arable_unspecified,/field is visible but the crop cannot be identified/);
   for(const field of fields.values())for(const option of field.options||[])assert.ok(field.optionHelp?.[option],`${field.key}.${option} needs category guidance`);
 });
 

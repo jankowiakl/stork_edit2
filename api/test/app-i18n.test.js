@@ -44,6 +44,12 @@ test("all annotation fields and current options have Polish presentation without
   }
   assert.match(i18n.localizeField(schema.fields.find((field)=>field.key==="Env_desc_en")).howToRecord,/po angielsku/);
   assert.match(i18n.localizeField(schema.fields.find((field)=>field.key==="Water_presence_class")).important,/Nie oznacza to/);
+  assert.equal(i18n.optionLabels.en.S_migration,"Spring migration");
+  assert.equal(i18n.optionLabels.pl.S_migration,"Migracja wiosenna");
+  assert.equal(i18n.optionLabels.pl.fledging,"Okres gniazdowy i pierwszych lotów");
+  assert.equal(i18n.optionLabels.en.arable_unspecified,"Arable field — general");
+  assert.equal(i18n.optionLabels.pl.arable_unspecified,"Pole uprawne — ogólnie");
+  assert.match(i18n.localizeField(schema.fields.find((field)=>field.key==="Pheno_period")).optionHelp.S_migration,/obszaru zimowania/);
   assert.doesNotMatch(source,/control\.value\s*=/,"localization must not overwrite unsaved form values");
 });
 
@@ -57,6 +63,6 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/stork-edit2-shell-v2026-08-31-39/);
+  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-40/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
 });

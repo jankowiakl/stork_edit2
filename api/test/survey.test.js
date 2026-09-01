@@ -180,7 +180,7 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-08-31-39/);
+  assert.match(worker,/stork-edit2-shell-v2026-09-01-40/);
 });
 
 test("mobile Survey keeps a compact rating row between photo and map",()=>{
@@ -235,6 +235,14 @@ test("survey research results expose paginated photos, campaign comparison and r
   assert.match(ui,/Average survey rating|Overall average rating/);
   assert.match(ui,/surveyResultsSearch/);
   assert.match(ui,/surveyResultsSort/);
+  assert.match(ui,/const SURVEY_RESULTS_PAGE_SIZE=20/);
+  assert.match(ui,/pageSize:String\(SURVEY_RESULTS_PAGE_SIZE\)/);
+  assert.match(ui,/surveyCollapsibleTableHtml/);
+  assert.match(ui,/comparisonPhotos\.slice\(comparisonStart,comparisonStart\+SURVEY_RESULTS_PAGE_SIZE\)/);
+  assert.match(ui,/photos\.slice\(photoStart,photoStart\+SURVEY_RESULTS_PAGE_SIZE\)/);
+  assert.match(ui,/admin=role==="admin"/);
+  assert.match(ui,/admin\?apiFetch\("\/api\/surveys"\)/);
+  assert.match(ui,/dataPanelEl\.innerHTML=`\$\{adminCampaigns\}<h3>Survey results/);
 });
 
 test("manager UI renders demographic groups and anonymous response details without debug alerts",()=>{
