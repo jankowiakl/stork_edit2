@@ -1624,11 +1624,13 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 .interfaceCoachActions { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
 .interfaceCoachActions>div { display:flex; gap:7px; margin-left:auto; }
 .interfaceCoachFinal .interfaceCoachHighlight,.interfaceCoachFinal .interfaceCoachPointer { display:none; }
-.interfaceCoachFinal { background:rgba(2,7,14,.76); }
-.interfaceCoachFinal .interfaceCoachCard { left:50%!important; top:50%!important; transform:translate(-50%,-50%); text-align:center; }
+.interfaceCoachFinal { display:grid; place-items:center; box-sizing:border-box; padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); overflow:auto; background:rgba(2,7,14,.76); }
+.interfaceCoachFinal .interfaceCoachCard { position:relative; left:auto!important; top:auto!important; width:min(390px,100%); max-height:100%; margin:auto; transform:none!important; text-align:center; }
+.interfaceCoachFinal .interfaceCoachActions { position:sticky; bottom:0; padding-top:10px; background:rgba(9,18,31,.98); }
 body.interfaceCoachOpen .appLanguage { z-index:10100; }
 @media (max-width:700px) {
   .interfaceCoachCard { width:calc(100vw - 20px); max-height:min(42dvh,390px); padding:13px; border-radius:14px; }
+  .interfaceCoachFinal .interfaceCoachCard { width:100%; max-height:100%; }
   .interfaceCoachActions button { min-height:42px; padding:7px 10px!important; }
   .interfaceCoachHighlight { border-radius:10px; }
 }
@@ -5047,7 +5049,7 @@ loopCurrentEl.checked = false;
   const positionInterfaceCoach=()=>{
     if(!interfaceCoachActive)return;const step=interfaceCoachSteps[interfaceCoachIndex];
     interfaceCoachEl.classList.toggle("interfaceCoachFinal",!!step.final);
-    if(step.final){interfaceCoachHighlightEl.hidden=true;interfaceCoachPointerEl.hidden=true;interfaceCoachCardEl.style.left="50%";interfaceCoachCardEl.style.top="50%";return;}
+    if(step.final){interfaceCoachHighlightEl.hidden=true;interfaceCoachPointerEl.hidden=true;interfaceCoachCardEl.style.removeProperty("left");interfaceCoachCardEl.style.removeProperty("top");interfaceCoachCardEl.style.removeProperty("transform");interfaceCoachCardEl.scrollTop=0;return;}
     const targets=(step.targets?.()||[]).filter(interfaceCoachVisible),rect=interfaceCoachRect(targets);if(!rect)return;
     const padding=7,margin=12,gap=18,left=Math.max(margin,rect.left-padding),top=Math.max(margin,rect.top-padding),right=Math.min(window.innerWidth-margin,rect.right+padding),bottom=Math.min(window.innerHeight-margin,rect.bottom+padding);
     interfaceCoachHighlightEl.hidden=false;interfaceCoachHighlightEl.style.left=`${left}px`;interfaceCoachHighlightEl.style.top=`${top}px`;interfaceCoachHighlightEl.style.width=`${Math.max(4,right-left)}px`;interfaceCoachHighlightEl.style.height=`${Math.max(4,bottom-top)}px`;

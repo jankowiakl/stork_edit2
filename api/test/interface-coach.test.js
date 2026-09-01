@@ -45,3 +45,10 @@ test("coach targets the real responsive interface and preserves dirty editor sta
   assert.match(indexSource,/@media \(max-width:700px\)\s*\{\s*\.interfaceCoachCard/);
   assert.match(indexSource,/window\.visualViewport\?\.addEventListener\("resize",scheduleInterfaceCoachPosition\)/);
 });
+
+test("final coach card remains reachable inside a narrow mobile viewport",()=>{
+  assert.match(indexSource,/\.interfaceCoachFinal \{ display:grid; place-items:center;[\s\S]*?overflow:auto;/);
+  assert.match(indexSource,/\.interfaceCoachFinal \.interfaceCoachCard \{[\s\S]*?max-height:100%;[\s\S]*?transform:none!important;/);
+  assert.match(indexSource,/\.interfaceCoachFinal \.interfaceCoachActions \{ position:sticky; bottom:0;/);
+  assert.match(indexSource,/if\(step\.final\)\{[\s\S]*?style\.removeProperty\("top"\)[\s\S]*?scrollTop=0/);
+});
