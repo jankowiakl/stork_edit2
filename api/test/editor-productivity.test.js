@@ -7,6 +7,23 @@ const ui=fs.readFileSync(new URL("../../index.html",import.meta.url),"utf8");
 const i18nSource=fs.readFileSync(new URL("../../app-i18n.js",import.meta.url),"utf8");
 const serverSource=fs.readFileSync(new URL("../src/server.js",import.meta.url),"utf8");
 
+function editorControlHarness(){
+  const busySource=ui.match(/  const editorSetBusy = \(busy\) => \{[\s\S]*?\n  \};/)?.[0];
+  const editableSource=ui.match(/  const editorSetEditable=\(editable\)=>\{[\s\S]*?\n  \};/)?.[0];
+  assert.ok(busySource,"editorSetBusy source");assert.ok(editableSource,"editorSetEditable source");
+  return new Function(`
+    const button=()=>({disabled:false,hidden:false});
+    const editorSaveDraftBtn=button(),editorSaveAnalysedBtn=button(),editorSaveNextBtn=button(),editorPrevPhotoBtn=button(),editorNextPhotoBtn=button(),editorCopyPreviousBtn=button(),editorNextUnannotatedBtn=button(),editorRequestReviewBtn=button(),editorDownloadPhotoBtn=button(),editorEnvToggleBtn=button();
+    const editorFieldEls=[{disabled:false}],editorFormEl={classList:{toggle:()=>{}}},track=[{photoId:"C"}];
+    let editorSaving=false,editorCanEdit=false,editorCurrentPhotoId="C",editorPhotoIndex=0,pinRefreshes=0,conditionalRefreshes=0;
+    const editorHasConnection=()=>true,activeEditorSequence=()=>track,photoSafeViewerContext=null,document={body:{classList:{contains:()=>false}}};
+    const editorUpdatePinButtons=()=>{pinRefreshes++;},editorApplyConditionalRules=()=>{conditionalRefreshes++;},closeEditorEnvAutocomplete=()=>{};
+    ${busySource}
+    ${editableSource}
+    return {setBusy:editorSetBusy,setEditable:editorSetEditable,track,state:()=>({copy:editorCopyPreviousBtn.disabled,draft:editorSaveDraftBtn.disabled,analysed:editorSaveAnalysedBtn.disabled,saveNext:editorSaveNextBtn.disabled,environment:editorEnvToggleBtn.disabled,field:editorFieldEls[0].disabled,pinRefreshes,conditionalRefreshes,canEdit:editorCanEdit})};
+  `)();
+}
+
 function loadI18n(language){
   const documentElement={lang:"en",dataset:{},hasAttribute:()=>false,querySelectorAll:()=>[]};
   const document={documentElement,title:"",readyState:"complete",body:{classList:{contains:()=>false}},querySelectorAll:()=>[],getElementById:()=>null,createTreeWalker:()=>({nextNode:()=>null}),addEventListener:()=>{}};
@@ -46,6 +63,22 @@ test("copy previous remains enabled for queue index zero and maps database photo
   assert.deepEqual(choices.map((choice)=>choice.point.photoId),["B","A"]);
   assert.equal(choices[0].record.data.Activity_class,"foraging");
   assert.equal(editorPhotoIndex,0);
+});
+
+test("editable API resolution immediately refreshes copy, save, environment and pin controls",()=>{
+  const editor=editorControlHarness();
+  editor.setEditable(false);editor.setBusy(false);
+  const locked=editor.state();
+  assert.equal(locked.copy,true);assert.equal(locked.draft,true);assert.equal(locked.analysed,true);assert.equal(locked.environment,true);assert.equal(locked.field,true);
+  editor.setEditable(true);
+  const editable=editor.state();
+  assert.equal(editable.copy,false,"photo C at queue index zero must allow database-backed Copy previous");
+  assert.equal(editable.draft,false);assert.equal(editable.analysed,false);assert.equal(editable.environment,false);assert.equal(editable.field,false);
+  assert.equal(editable.saveNext,true,"Save & next remains disabled when the current queue has no next photo");
+  assert.ok(editable.pinRefreshes>locked.pinRefreshes);assert.equal(editable.conditionalRefreshes,1);
+  editor.track.push({photoId:"D"});editor.setEditable(true);
+  assert.equal(editor.state().saveNext,false,"Save & next refreshes when a next queue photo exists");
+  assert.doesNotMatch(ui.match(/const editorSetBusy = \(busy\) => \{[\s\S]*?\n  \};/)?.[0]||"",/editorSetEditable\(/,"editorSetBusy must not recurse into editorSetEditable");
 });
 
 test("copying keeps current derived fields, does not save and adds only the requested mismatch warning",()=>{

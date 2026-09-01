@@ -5023,8 +5023,10 @@ loopCurrentEl.checked = false;
     editorCanEdit=!!editable;
     editorFormEl.classList.toggle("readOnly",!editorCanEdit);
     for(const field of editorFieldEls)field.disabled=!editorCanEdit;
-    editorEnvToggleBtn.disabled=!editorCanEdit;if(!editorCanEdit)closeEditorEnvAutocomplete();
+    editorEnvToggleBtn.disabled=!editorCanEdit;
+    if(!editorCanEdit)closeEditorEnvAutocomplete();
     if(editorCanEdit)editorApplyConditionalRules();
+    // canEdit resolves asynchronously; refresh every dependent editor control immediately.
     editorSetBusy(editorSaving);
   };
 

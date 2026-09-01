@@ -68,6 +68,6 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-49/);
+  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-50/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
 });
