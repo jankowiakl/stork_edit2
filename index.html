@@ -3726,7 +3726,7 @@ loopCurrentEl.checked = false;
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
   };
 
-  const contributorReviewPhotoPoint=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,url:photo.imageUrl,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted});
+  const contributorReviewPhotoPoint=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,url:photo.imageUrl,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,status:photo.status,hasAnnotation:photo.hasAnnotation,accessGranted:!!photo.mediaGranted});
   const renderContributorReviewPicker=()=>{const contributors=editorContributorReview?.contributors||[],selectedId=editorContributorReview?.userId||"";contributorReviewUserEl.replaceChildren(...contributors.map((user)=>new Option(`${user.name} (${Number(user.photoCount).toLocaleString()} photos)`,user.id,false,user.id===selectedId)));contributorReviewUserEl.disabled=!contributors.length;contributorReviewCountEl.textContent=editorContributorReview?.points?.length?`${editorContributorReview.points.length.toLocaleString()} photos`:"";};
   const resetContributorReviewUi=()=>{for(const bird of contributorReviewLazyBirds){const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);trackCache.delete(bird);}contributorReviewLazyBirds.clear();document.body.classList.remove("contributorReviewMode");contributorReviewToolbarEl.hidden=true;contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent="";editorPanelTitleEl.textContent="Photo editor";updateBirdSelectors();};
   const prepareContributorReviewBirds=(points)=>{for(const bird of new Set(points.map((point)=>point.bird).filter(Boolean))){if(groupedFiles.has(bird))continue;const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);}updateBirdSelectors(idsSorted());};
@@ -4976,7 +4976,7 @@ loopCurrentEl.checked = false;
   const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
   const collectEditorPreviousAnnotations=async()=>{
     const sequence=activeEditorSequence(),current=sequence[editorPhotoIndex],currentBird=current?.bird||birdId,choices=[];
-    for(let index=editorPhotoIndex-1;index>=0&&choices.length<3;index--){const point=sequence[index];if((point?.bird||birdId)!==currentBird||String(point?.status||"")==="unstarted")continue;try{const record=await editorApiGet({photoId:point.photoId});if(editorHasUsableAnnotation(record))choices.push({index,distance:editorPhotoIndex-index,point,record});}catch(_error){}}
+    for(let index=editorPhotoIndex-1;index>=0&&choices.length<3;index--){const point=sequence[index];if((point?.bird||birdId)!==currentBird||(point?.status==="unstarted"&&point?.hasAnnotation===false))continue;try{const record=await editorApiGet({photoId:point.photoId});if(editorHasUsableAnnotation(record))choices.push({index,distance:editorPhotoIndex-index,point,record});}catch(_error){}}
     return choices;
   };
   const copyEditorPreviousAnnotation=(choice)=>{
@@ -5579,7 +5579,7 @@ loopCurrentEl.checked = false;
       editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
       editorLoadedVersion = result.version ?? editorLoadedVersion;
       editorDirty = false;editorOnlyPinnedChanges=false;
-      const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint)savedTrackPoint.status=targetStatus;const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
+      const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint){savedTrackPoint.status=targetStatus;savedTrackPoint.hasAnnotation=true;}const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
       editorRecordLineEl.textContent = filename;
       editorSetStatus(values.Analysed === "yes" ? "Saved and marked as analysed." : "Draft saved.", "ok");
       if (advance) {
@@ -6104,7 +6104,7 @@ loopCurrentEl.checked = false;
         files = (response.photos || []).map((photo) => ({
           file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
           lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,
-          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, status:photo.status||"unstarted", accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
+          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, status:photo.status, hasAnnotation:photo.hasAnnotation, accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
         }));
         groupedFiles.set(id, files);
         if(lazyMedia)contributorReviewLazyBirds.add(id);

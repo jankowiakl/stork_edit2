@@ -5,6 +5,7 @@ import vm from "node:vm";
 
 const ui=fs.readFileSync(new URL("../../index.html",import.meta.url),"utf8");
 const i18nSource=fs.readFileSync(new URL("../../app-i18n.js",import.meta.url),"utf8");
+const serverSource=fs.readFileSync(new URL("../src/server.js",import.meta.url),"utf8");
 
 function loadI18n(language){
   const documentElement={lang:"en",dataset:{},hasAttribute:()=>false,querySelectorAll:()=>[]};
@@ -16,13 +17,20 @@ function loadI18n(language){
 test("copy previous opens a localized picker and scans back to three annotated photos",()=>{
   assert.match(ui,/id="editorPreviousPicker"[\s\S]*?id="editorPreviousChoices"/);
   assert.match(ui,/for\(let index=editorPhotoIndex-1;index>=0&&choices\.length<3;index--\)/);
-  assert.match(ui,/String\(point\?\.status\|\|""\)==="unstarted"/);
+  assert.match(ui,/point\?\.status==="unstarted"&&point\?\.hasAnnotation===false/);
   assert.match(ui,/\(point\?\.bird\|\|birdId\)!==currentBird/);
   assert.match(ui,/editorCopyPreviousBtn\.addEventListener\("click",\(\)=>void openEditorPreviousPicker\(\)\)/);
   const en=loadI18n("en"),pl=loadI18n("pl");
   assert.equal(en.t("editor.copyPickerTitle"),"Choose a previous annotation");
   assert.equal(pl.t("editor.copyPickerTitle"),"Wybierz poprzedni opis");
   assert.equal(pl.optionLabel("foraging"),"Żerowanie");
+});
+
+test("the bird photo sequence exposes annotation status instead of treating every earlier photo as unstarted",()=>{
+  assert.match(serverSource,/\/api\/individuals\/:id\/photos[\s\S]{0,1800}LEFT JOIN photo_annotations a ON a\.photo_id=p\.id/);
+  assert.match(serverSource,/status:row\.annotation_status\|\|"unstarted",hasAnnotation:!!row\.has_annotation/);
+  assert.match(ui,/status:photo\.status, hasAnnotation:photo\.hasAnnotation/);
+  assert.match(ui,/point\?\.status==="unstarted"&&point\?\.hasAnnotation===false/);
 });
 
 test("copying keeps current derived fields, does not save and adds only the requested mismatch warning",()=>{
@@ -48,7 +56,7 @@ test("only stable fields can be pinned and pinned-only values are not automatica
 test("new unstarted annotations default feathers visible to yes without replacing saved or copied values",()=>{
   assert.match(ui,/applyDefaults&&status==="unstarted"&&\(savedFeatherOccurrence===null\|\|savedFeatherOccurrence===undefined\|\|String\(savedFeatherOccurrence\)\.trim\(\)===""\)\)editorFeatherOccEl\.value="yes"/);
   assert.match(ui,/populateEditorForm\(result\.data \|\| \{\},\{status:result\.status\|\|"unstarted"\}\)/);
-  assert.match(ui,/status:photo\.status\|\|"unstarted"/);
+  assert.match(ui,/status:photo\.status, hasAnnotation:photo\.hasAnnotation/);
   assert.match(ui,/populateEditorForm\([\s\S]{0,300}\{applyDefaults:false\}\)/);
   assert.doesNotMatch(ui,/editorFeatherPercEl\.value\s*=\s*[^;]*yes/);
 });
