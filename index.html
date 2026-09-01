@@ -867,17 +867,6 @@
     .editorPin:hover,.editorPin:focus-visible { opacity:1; border-color:rgba(119,209,255,.62); }
     .editorPin.active { opacity:1; color:#ffe18a; border-color:rgba(255,225,138,.72); background:rgba(255,225,138,.16); box-shadow:0 0 0 2px rgba(255,225,138,.08); }
     .editorPin[hidden] { display:none!important; }
-    .editorPreviousPicker { position:fixed; z-index:7350; width:min(370px,calc(100vw - 24px)); max-height:min(62dvh,520px); overflow:auto; box-sizing:border-box; padding:12px; border:1px solid rgba(119,209,255,.38); border-radius:14px; background:rgba(10,19,33,.98); box-shadow:0 20px 58px rgba(0,0,0,.58); backdrop-filter:blur(16px); }
-    .editorPreviousPicker[hidden] { display:none!important; }
-    .editorPreviousPickerHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
-    .editorPreviousPickerHeader strong { color:#fff; }
-    .editorPreviousChoices { display:grid; gap:7px; }
-    .editorPreviousChoice { display:grid; width:100%; min-height:64px; gap:3px; padding:9px 10px!important; border:1px solid rgba(119,209,255,.2); border-radius:10px; background:rgba(119,209,255,.055); color:var(--text); text-align:left; white-space:normal; }
-    .editorPreviousChoice:hover,.editorPreviousChoice:focus-visible { border-color:rgba(119,209,255,.58); background:rgba(119,209,255,.12); }
-    .editorPreviousDistance { color:#8bd9ff; font-size:var(--ui-font-small); }
-    .editorPreviousActivity { color:#fff; font-weight:750; }
-    .editorPreviousSecondary { color:var(--muted); font-size:var(--ui-font-small); }
-    .editorPreviousEmpty { margin:6px 2px; color:var(--muted); }
     .editorEnvCombobox { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:stretch; min-width:0; }
     .editorEnvCombobox #editorEnvDesc { grid-column:1/-1; padding-right:38px; }
     .editorEnvToggle { position:absolute; top:1px; right:1px; bottom:1px; width:34px; min-width:34px; padding:0!important; border:0!important; border-left:1px solid rgba(255,255,255,.11)!important; border-radius:0 8px 8px 0!important; background:rgba(119,209,255,.035)!important; color:#b8c9db; font-size:17px!important; line-height:1; }
@@ -888,8 +877,6 @@
     .editorEnvOption:hover,.editorEnvOption.active,.editorEnvOption[aria-selected="true"] { background:rgba(119,209,255,.15)!important; color:#fff; }
     .editorEnvNoMatches { padding:7px 8px; color:var(--muted); font-size:var(--ui-font-small); }
     @media(max-width:700px){
-      .editorPreviousPicker { left:max(8px,env(safe-area-inset-left))!important; right:max(8px,env(safe-area-inset-right)); top:auto!important; bottom:max(8px,env(safe-area-inset-bottom)); width:auto; max-height:min(62dvh,480px); border-radius:16px; }
-      .editorPreviousChoice { min-height:68px; }
       .editorEnvOption { min-height:44px; }
     }
     .editorInvalid {
@@ -2385,7 +2372,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
       </form>
 
       <div class="editorFooter">
-        <button id="editorCopyPrevious" class="secondary" type="button" aria-haspopup="dialog" aria-expanded="false">Copy previous</button>
+        <button id="editorCopyPrevious" class="secondary" type="button" title="Paste the last annotation you saved in this browser">Paste previous entry</button>
         <button id="editorNextUnannotated" class="secondary" type="button">Next unannotated</button>
         <button id="editorRequestReview" class="secondary" type="button">Request verification</button>
         <button id="editorSaveDraft" class="secondary" type="button">Save draft</button>
@@ -2394,10 +2381,6 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
         <button id="editorDownloadPhoto" class="secondary editorDownloadPhoto" type="button" title="Download the current photo in original quality">Download photo</button>
       </div>
     </aside>
-    <section class="editorPreviousPicker" id="editorPreviousPicker" role="dialog" aria-labelledby="editorPreviousPickerTitle" hidden>
-      <div class="editorPreviousPickerHeader"><strong id="editorPreviousPickerTitle">Choose a previous annotation</strong><button class="secondary tiny" id="editorPreviousPickerClose" type="button">Cancel</button></div>
-      <div class="editorPreviousChoices" id="editorPreviousChoices"></div>
-    </section>
   </div>
 </div>
 
@@ -2619,10 +2602,6 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const editorSaveNextBtn = el("editorSaveNext");
   const editorDownloadPhotoBtn = el("editorDownloadPhoto");
   const editorCopyPreviousBtn = el("editorCopyPrevious");
-  const editorPreviousPickerEl = el("editorPreviousPicker");
-  const editorPreviousPickerTitleEl = el("editorPreviousPickerTitle");
-  const editorPreviousPickerCloseBtn = el("editorPreviousPickerClose");
-  const editorPreviousChoicesEl = el("editorPreviousChoices");
   const editorPinButtons = Array.from(document.querySelectorAll(".editorPin[data-pin-field]"));
   const editorNextUnannotatedBtn = el("editorNextUnannotated");
   const editorRequestReviewBtn = el("editorRequestReview");
@@ -4909,11 +4888,10 @@ loopCurrentEl.checked = false;
   const editorLookupFilename = (point) => String(point && point.name || "")
     .replace(/\s*\(\d+\)(?=\.[^.]+$)/, "");
   const activeEditorSequence=()=>editorContributorReview?.points?.length?editorContributorReview.points:track;
-  const EDITOR_COPY_EXCLUDED_FIELDS=new Set(["Elevation_m","Above_ground","Height_class_100m","Analysed"]);
+  const EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS=new Set(["FileName","Bird","photoId","Latitude","Longitude","GPS_time","GPS_source","Altitude_m","Elevation_m","Above_ground","Height_class_100m","version","status","Analysed"]);
+  const EDITOR_LAST_ANNOTATION_PREFIX="storkLastAnnotationV1:";
   const EDITOR_ENV_SUGGESTIONS=["field","landfill","landfill slope","building","savanna/field","meadow","wastewater treatment plant","tree","savanna/tree","roof","nest","desert","river island","savanna","tree/shrub","semi-desert/field","landfill fence","dike","meadow/pasture","riverbank","field/pasture","arable field","urban area","dry riverbed"];
   const editorPinnedFields=new Set();
-  let editorPreviousAnnotations=[];
-  let editorPreviousPickerToken=0;
   const editorT=(key,vars)=>appI18n?.t(key,vars)||key;
   const editorFieldForKey=(key)=>editorFieldEls.find((field)=>field.dataset.field===key);
   const editorUpdatePinButtons=()=>{
@@ -4942,32 +4920,11 @@ loopCurrentEl.checked = false;
     if(changed){editorDirty=false;editorOnlyPinnedChanges=true;editorSetStatus(editorT("editor.pinsApplied"),"busy");}
     return changed;
   };
-  const editorPhotoEarlierText=(distance)=>{
-    if(appI18n?.language!=="pl")return distance===1?editorT("editor.photoEarlierOne"):editorT("editor.photoEarlierMany",{n:distance});
-    if(distance===1)return editorT("editor.photoEarlierOne");const mod10=distance%10,mod100=distance%100;
-    return mod10>=2&&mod10<=4&&!(mod100>=12&&mod100<=14)?editorT("editor.photoEarlierFew",{n:distance}):editorT("editor.photoEarlierMany",{n:distance});
-  };
-  const editorPreviousSummary=(annotation)=>{
-    const activity=annotation.Activity_class||annotation.Fly_ground||"",primary=activity?appI18n?.optionLabel(activity)||activity:editorT("editor.noActivity");
-    const secondaryKey=["Foraging_habitat_group","Roost_site_group","Agriculture_type","Env_desc_en"].find((key)=>annotation[key]);
-    const secondaryValue=secondaryKey?(secondaryKey==="Env_desc_en"?String(annotation[secondaryKey]):appI18n?.optionLabel(annotation[secondaryKey])||String(annotation[secondaryKey])):"";
-    return{primary,secondary:secondaryValue};
-  };
-  const editorHasUsableAnnotation=(record)=>{
-    if(["draft","needs_review","complete"].includes(String(record?.status||"")))return true;
-    return editorFieldEls.some((field)=>!EDITOR_COPY_EXCLUDED_FIELDS.has(field.dataset.field)&&record?.data?.[field.dataset.field]!==null&&record?.data?.[field.dataset.field]!==undefined&&String(record.data[field.dataset.field]).trim()!=="");
-  };
-  const positionEditorPreviousPicker=()=>{
-    if(editorPreviousPickerEl.hidden||window.matchMedia("(max-width:700px)").matches)return;
-    const anchor=editorCopyPreviousBtn.getBoundingClientRect(),picker=editorPreviousPickerEl.getBoundingClientRect(),left=Math.max(12,Math.min(window.innerWidth-picker.width-12,anchor.left)),top=Math.max(12,anchor.top-picker.height-8);
-    editorPreviousPickerEl.style.left=`${left}px`;editorPreviousPickerEl.style.top=`${top}px`;
-  };
-  const closeEditorPreviousPicker=()=>{editorPreviousPickerToken++;editorPreviousPickerEl.hidden=true;editorPreviousPickerEl.classList.remove("open");editorCopyPreviousBtn.setAttribute("aria-expanded","false");};
-  const renderEditorPreviousPicker=()=>{
-    editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.replaceChildren();
-    if(!editorPreviousAnnotations.length){const empty=document.createElement("p");empty.className="editorPreviousEmpty";empty.textContent=editorT("editor.copyEmpty");editorPreviousChoicesEl.append(empty);return;}
-    editorPreviousAnnotations.forEach((choice,index)=>{const summary=editorPreviousSummary(choice.record.data||{}),button=document.createElement("button");button.type="button";button.className="editorPreviousChoice";button.dataset.previousChoice=String(index);const distance=document.createElement("span"),primary=document.createElement("span");distance.className="editorPreviousDistance";distance.textContent=editorPhotoEarlierText(choice.distance);primary.className="editorPreviousActivity";primary.textContent=summary.primary;button.append(distance,primary);if(summary.secondary){const secondary=document.createElement("span");secondary.className="editorPreviousSecondary";secondary.textContent=summary.secondary;button.append(secondary);}editorPreviousChoicesEl.append(button);});
-  };
+  const editorLastAnnotationStorageKey=()=>authState.user?.id?`${EDITOR_LAST_ANNOTATION_PREFIX}${authState.user.id}`:"";
+  const editorReusableAnnotationValues=(values={})=>{const reusable={};for(const field of editorFieldEls){const key=field.dataset.field;if(!key||EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS.has(key))continue;reusable[key]=Object.prototype.hasOwnProperty.call(values,key)?values[key]:null;}return reusable;};
+  const editorReadLastAnnotation=()=>{const key=editorLastAnnotationStorageKey();if(!key)return null;try{const snapshot=JSON.parse(localStorage.getItem(key)||"null");return snapshot?.values&&typeof snapshot.values==="object"?snapshot.values:null;}catch(_error){return null;}};
+  const editorHasLastAnnotation=()=>!!editorReadLastAnnotation();
+  const editorStoreLastAnnotation=(values)=>{const key=editorLastAnnotationStorageKey();if(!key)return false;try{localStorage.setItem(key,JSON.stringify({savedAt:new Date().toISOString(),values:editorReusableAnnotationValues(values)}));return true;}catch(_error){return false;}};
   let editorEnvActiveIndex=-1,editorEnvVisibleSuggestions=[];
   const closeEditorEnvAutocomplete=()=>{editorEnvAutocompleteEl.hidden=true;editorEnvActiveIndex=-1;editorEnvDescEl.setAttribute("aria-expanded","false");editorEnvDescEl.removeAttribute("aria-activedescendant");editorEnvToggleBtn.setAttribute("aria-expanded","false");};
   const positionEditorEnvAutocomplete=()=>{
@@ -4984,22 +4941,13 @@ loopCurrentEl.checked = false;
     else editorEnvVisibleSuggestions.forEach((value,index)=>{const option=document.createElement("button");option.type="button";option.className="editorEnvOption";option.id=`editorEnvOption-${index}`;option.setAttribute("role","option");option.setAttribute("aria-selected","false");option.textContent=value;option.addEventListener("pointerdown",(event)=>event.preventDefault());option.addEventListener("pointerenter",()=>setEditorEnvActive(index));option.addEventListener("click",()=>chooseEditorEnvSuggestion(value));editorEnvAutocompleteEl.append(option);});
     editorEnvAutocompleteEl.hidden=false;editorEnvDescEl.setAttribute("aria-expanded","true");editorEnvToggleBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorEnvAutocomplete);
   };
-  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
-  const collectEditorPreviousAnnotations=async()=>{
-    if(!editorCurrentPhotoId)return[];const result=await apiFetch(`/api/photos/${encodeURIComponent(editorCurrentPhotoId)}/previous-annotations?limit=3`);
-    return(result.annotations||[]).map((annotation)=>({distance:Number(annotation.distance)||1,point:{photoId:annotation.photoId,bird:annotation.bird,name:annotation.filename,dt:annotation.captureTime?new Date(annotation.captureTime):null},record:{ok:true,data:annotation.data||{},version:annotation.version??0,status:annotation.status||"unstarted"}}));
-  };
-  const copyEditorPreviousAnnotation=(choice)=>{
-    if(!choice?.record?.data||!editorCanEdit)return;const currentRecord={...(editorLoadedRecord||{})},currentVersion=editorLoadedVersion,currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},currentHeightClassManual=editorHeightClassManual,currentAboveGround=editorAboveGroundEl.value,copied={};
-    for(const field of editorFieldEls){const key=field.dataset.field;if(!EDITOR_COPY_EXCLUDED_FIELDS.has(key))copied[key]=choice.record.data[key]??null;}
-    editorPinnedFields.clear();editorUpdatePinButtons();
-    populateEditorForm({...currentRecord,...copied,Analysed:currentRecord.Analysed},{applyDefaults:false});editorLoadedRecord=currentRecord;editorLoadedVersion=currentVersion;editorHeightClassManual=currentHeightClassManual;editorApplyConditionalRules();editorElevationEl.value=currentDerived.Elevation_m;editorAboveGroundEl.value=currentDerived.Above_ground;editorHeightClassEl.value=currentDerived.Height_class_100m;editorHeightClassManual=currentHeightClassManual;editorUpdatePinButtons();updateEditorCompletionHints();editorMarkDirty();closeEditorPreviousPicker();
-    const aboveRaw=currentAboveGround===""?currentRecord.Above_ground:currentAboveGround,above=aboveRaw===null||aboveRaw===undefined||aboveRaw===""?NaN:Number(aboveRaw),movement=copied.Fly_ground,mismatch=Number.isFinite(above)&&((movement==="fly"&&above<=0)||(movement==="ground"&&above>50));
-    editorSetStatus(`${editorT("editor.copySuccess")}${mismatch?` ${editorT("editor.copyMismatch")}`:""}`,"busy");
-  };
-  const openEditorPreviousPicker=async()=>{
-    if(editorSaving||!editorCanEdit||!editorCurrentPhotoId)return;const pickerToken=++editorPreviousPickerToken;editorPreviousAnnotations=[];editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(editorT("editor.copyLoading"))}</p>`;editorPreviousPickerEl.hidden=false;editorPreviousPickerEl.classList.add("open");editorCopyPreviousBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorPreviousPicker);
-    try{const choices=await collectEditorPreviousAnnotations();if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=choices;renderEditorPreviousPicker();requestAnimationFrame(positionEditorPreviousPicker);}catch(error){if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=[];editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(error.message||editorT("editor.copyEmpty"))}</p>`;requestAnimationFrame(positionEditorPreviousPicker);}
+  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const pasteLabel=editorT("editor.pastePrevious"),pasteTitle=editorT("editor.pastePreviousTooltip");editorCopyPreviousBtn.textContent=pasteLabel;editorCopyPreviousBtn.title=pasteTitle;editorCopyPreviousBtn.setAttribute("aria-label",pasteTitle);const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
+  const pasteEditorLastAnnotation=()=>{
+    if(editorSaving||!editorCanEdit||!editorCurrentPhotoId)return;const pasted=editorReadLastAnnotation();if(!pasted){editorSetStatus(editorT("editor.pasteEmpty"),"error");editorSetBusy(editorSaving);return;}
+    const currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},currentHeightClassManual=editorHeightClassManual;
+    editorPinnedFields.clear();editorUpdatePinButtons();clearEditorInvalid();
+    for(const field of editorFieldEls){const key=field.dataset.field;if(!key||EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS.has(key)||!Object.prototype.hasOwnProperty.call(pasted,key))continue;const value=pasted[key];if(field.type==="checkbox")field.checked=String(value||"").toLowerCase()==="yes";else if(field.tagName==="SELECT")editorSelectValue(field,value);else field.value=value===null||value===undefined?"":value;}
+    editorApplyConditionalRules();editorElevationEl.value=currentDerived.Elevation_m;editorAboveGroundEl.value=currentDerived.Above_ground;editorHeightClassEl.value=currentDerived.Height_class_100m;editorHeightClassManual=currentHeightClassManual;editorUpdatePinButtons();updateEditorCompletionHints();editorMarkDirty();editorSetStatus(editorT("editor.pasteSuccess"),"busy");
   };
 
   const editorSetBusy = (busy) => {
@@ -5009,7 +4957,7 @@ loopCurrentEl.checked = false;
     editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || editorPhotoIndex >= activeEditorSequence().length - 1;
     editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
     editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
-    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||!editorCurrentPhotoId;
+    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||!editorCurrentPhotoId||!editorHasLastAnnotation();
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
     const currentPhoto=activeEditorSequence()[editorPhotoIndex];
@@ -5447,7 +5395,6 @@ loopCurrentEl.checked = false;
 
   const editorLoadPhoto = async (index,{syncViewer=true,pinnedValues=null}={}) => {
     const sequence=activeEditorSequence();if (!sequence.length) return;
-    closeEditorPreviousPicker();
     const token = ++editorLoadToken;
     const previousEditorPhotoIndex=editorPhotoIndex,previousEditorPhotoId=editorCurrentPhotoId;
     editorPhotoIndex = Math.max(0, Math.min(index, sequence.length - 1));
@@ -5527,7 +5474,7 @@ loopCurrentEl.checked = false;
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
-    closeEditorPreviousPicker();closeEditorEnvAutocomplete();
+    closeEditorEnvAutocomplete();
     if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
     editorWorkspaceEl.appendChild(editorPanelEl);
@@ -5592,6 +5539,7 @@ loopCurrentEl.checked = false;
       if (!result || result.ok === false) throw new Error((result && result.error) || "Server rejected the save.");
       editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
       editorLoadedVersion = result.version ?? editorLoadedVersion;
+      editorStoreLastAnnotation(values);
       editorDirty = false;editorOnlyPinnedChanges=false;
       const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint){savedTrackPoint.status=targetStatus;savedTrackPoint.hasAnnotation=true;}const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
       editorRecordLineEl.textContent = filename;
@@ -5648,11 +5596,7 @@ loopCurrentEl.checked = false;
   closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
   editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
   editorNextPhotoBtn.addEventListener("click", () => moveEditorPhoto(1));
-  editorCopyPreviousBtn.addEventListener("click",()=>void openEditorPreviousPicker());
-  editorPreviousPickerCloseBtn.addEventListener("click",closeEditorPreviousPicker);
-  editorPreviousChoicesEl.addEventListener("click",(event)=>{const button=event.target.closest("[data-previous-choice]");if(!button)return;copyEditorPreviousAnnotation(editorPreviousAnnotations[Number(button.dataset.previousChoice)]);});
-  document.addEventListener("pointerdown",(event)=>{if(editorPreviousPickerEl.hidden||editorPreviousPickerEl.contains(event.target)||editorCopyPreviousBtn.contains(event.target))return;closeEditorPreviousPicker();});
-  window.addEventListener("resize",()=>{if(!editorPreviousPickerEl.hidden)positionEditorPreviousPicker();});
+  editorCopyPreviousBtn.addEventListener("click",pasteEditorLastAnnotation);
   editorNextUnannotatedBtn.addEventListener("click",async()=>{const pinnedValues=editorCapturePinnedValues();if(editorDirty&&!await saveEditorRecord({markAnalysed:false,advance:false,automatic:true}))return;if(editorContributorReview){if(editorPhotoIndex<activeEditorSequence().length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("This was the last photo for the selected contributor.","ok");return;}try{const current=track[editorPhotoIndex],result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(current.photoId)}`);if(!result.photo){editorSetStatus("No more unannotated photos for this individual.","ok");return;}const index=track.findIndex((point)=>point.photoId===result.photo.id);if(index>=0)await editorLoadPhoto(index,{pinnedValues});}catch(error){editorSetStatus(`Could not find next unannotated photo: ${error.message}`,"error");}});
   editorRequestReviewBtn.addEventListener("click",async()=>{const point=activeEditorSequence()[editorPhotoIndex];if(!point?.photoId){editorSetStatus("Could not identify the current photo.","error");return;}const fieldKey=window.prompt("Field to verify (for example Spec1_name), or leave empty for the whole record:","");if(fieldKey===null)return;const reason=window.prompt("Why should the coordinator or administrator verify this?","")?.replaceAll("\0","").trim();if(!reason)return;try{await apiFetch(`/api/photos/${encodeURIComponent(point.photoId)}/review-requests`,{method:"POST",body:JSON.stringify({fieldKey:fieldKey.trim()||null,reason})});editorSetStatus("Verification request sent to the coordinator/administrator.","ok");}catch(error){editorSetStatus(`Could not submit verification: ${error.message}`,"error");}});
   editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
@@ -5673,12 +5617,11 @@ loopCurrentEl.checked = false;
 
   window.addEventListener("keydown", (event) => {
     if (!document.body.classList.contains("editorOpen")) return;
-    const blockingDialog=()=>editorPreviousPickerEl.classList.contains("open")||interfaceCoachActive||!appHelpWorkspaceEl.hidden||fieldHelpPopoverEl.classList.contains("open")||Array.from(document.querySelectorAll('dialog[open],[role="dialog"][aria-modal="true"]')).some((node)=>node.getClientRects().length>0);
+    const blockingDialog=()=>interfaceCoachActive||!appHelpWorkspaceEl.hidden||fieldHelpPopoverEl.classList.contains("open")||Array.from(document.querySelectorAll('dialog[open],[role="dialog"][aria-modal="true"]')).some((node)=>node.getClientRects().length>0);
     if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){
       if(event.repeat||editorSaving||editorSaveNextBtn.disabled||blockingDialog())return;event.preventDefault();editorSaveNextBtn.click();return;
     }
     if (event.key === "Escape") {
-      if(!editorPreviousPickerEl.hidden){event.preventDefault();closeEditorPreviousPicker();return;}
       event.preventDefault();
       closeEditorMode();
       return;
