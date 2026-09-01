@@ -29,17 +29,28 @@ test("copying keeps current derived fields, does not save and adds only the requ
   assert.match(ui,/EDITOR_COPY_EXCLUDED_FIELDS=new Set\(\["Elevation_m","Above_ground","Height_class_100m","Analysed"\]\)/);
   assert.match(ui,/currentDerived=\{Elevation_m:editorElevationEl\.value,Above_ground:editorAboveGroundEl\.value,Height_class_100m:editorHeightClassEl\.value\}/);
   assert.match(ui,/editorElevationEl\.value=currentDerived\.Elevation_m;editorAboveGroundEl\.value=currentDerived\.Above_ground;editorHeightClassEl\.value=currentDerived\.Height_class_100m/);
+  assert.match(ui,/editorPinnedFields\.clear\(\);editorUpdatePinButtons\(\);[\s\S]{0,500}populateEditorForm\([\s\S]{0,300}\{applyDefaults:false\}\)/);
+  assert.match(ui,/editorApplyConditionalRules\(\);editorElevationEl\.value=currentDerived\.Elevation_m/);
   assert.doesNotMatch(ui,/copyEditorPreviousAnnotation[\s\S]{0,1400}editorApiPost/);
   assert.match(ui,/movement==="fly"&&above<=0/);
   assert.match(ui,/movement==="ground"&&above>50/);
 });
 
 test("only stable fields can be pinned and pinned-only values are not automatically drafted",()=>{
-  assert.deepEqual([...ui.matchAll(/data-pin-field="([^"]+)"/g)].map((match)=>match[1]),["Pheno_period","Residence","Period_day","Artificial_lights"]);
+  assert.deepEqual([...ui.matchAll(/data-pin-field="([^"]+)"/g)].map((match)=>match[1]),["Pheno_period","Residence","Period_day","Artificial_lights","Fly_ground"]);
   assert.match(ui,/editorCapturePinnedValues\(\)/);
+  assert.match(ui,/\["Pheno_period","Residence","Period_day","Artificial_lights","Fly_ground"\]/);
   assert.match(ui,/editorLoadPhoto\(nextIndex,\{pinnedValues\}\)/);
   assert.match(ui,/if\(changed\)\{editorDirty=false;editorOnlyPinnedChanges=true/);
   assert.match(ui,/key!=="Artificial_lights"\|\|isNight/);
+});
+
+test("new unstarted annotations default feathers visible to yes without replacing saved or copied values",()=>{
+  assert.match(ui,/applyDefaults&&status==="unstarted"&&\(savedFeatherOccurrence===null\|\|savedFeatherOccurrence===undefined\|\|String\(savedFeatherOccurrence\)\.trim\(\)===""\)\)editorFeatherOccEl\.value="yes"/);
+  assert.match(ui,/populateEditorForm\(result\.data \|\| \{\},\{status:result\.status\|\|"unstarted"\}\)/);
+  assert.match(ui,/status:photo\.status\|\|"unstarted"/);
+  assert.match(ui,/populateEditorForm\([\s\S]{0,300}\{applyDefaults:false\}\)/);
+  assert.doesNotMatch(ui,/editorFeatherPercEl\.value\s*=\s*[^;]*yes/);
 });
 
 test("save and next shortcut reuses the existing button and mobile picker is a bottom sheet",()=>{
