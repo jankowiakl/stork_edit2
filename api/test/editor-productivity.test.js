@@ -14,11 +14,11 @@ function loadI18n(language){
   context.window=context;vm.runInNewContext(i18nSource,context,{filename:"app-i18n.js"});return context.StorkAppI18n;
 }
 
-test("copy previous opens a localized picker and scans back to three annotated photos",()=>{
+test("copy previous opens a localized picker backed by the current photo database endpoint",()=>{
   assert.match(ui,/id="editorPreviousPicker"[\s\S]*?id="editorPreviousChoices"/);
-  assert.match(ui,/for\(let index=editorPhotoIndex-1;index>=0&&choices\.length<3;index--\)/);
-  assert.match(ui,/point\?\.status==="unstarted"&&point\?\.hasAnnotation===false/);
-  assert.match(ui,/\(point\?\.bird\|\|birdId\)!==currentBird/);
+  assert.match(ui,/apiFetch\(`\/api\/photos\/\$\{encodeURIComponent\(editorCurrentPhotoId\)\}\/previous-annotations\?limit=3`\)/);
+  assert.doesNotMatch(ui,/collectEditorPreviousAnnotations[\s\S]{0,500}activeEditorSequence\(\)/);
+  assert.doesNotMatch(ui,/collectEditorPreviousAnnotations[\s\S]{0,500}editorPhotoIndex/);
   assert.match(ui,/editorCopyPreviousBtn\.addEventListener\("click",\(\)=>void openEditorPreviousPicker\(\)\)/);
   const en=loadI18n("en"),pl=loadI18n("pl");
   assert.equal(en.t("editor.copyPickerTitle"),"Choose a previous annotation");
@@ -26,11 +26,26 @@ test("copy previous opens a localized picker and scans back to three annotated p
   assert.equal(pl.optionLabel("foraging"),"Żerowanie");
 });
 
-test("the bird photo sequence exposes annotation status instead of treating every earlier photo as unstarted",()=>{
-  assert.match(serverSource,/\/api\/individuals\/:id\/photos[\s\S]{0,1800}LEFT JOIN photo_annotations a ON a\.photo_id=p\.id/);
-  assert.match(serverSource,/status:row\.annotation_status\|\|"unstarted",hasAnnotation:!!row\.has_annotation/);
-  assert.match(ui,/status:photo\.status, hasAnnotation:photo\.hasAnnotation/);
-  assert.match(ui,/point\?\.status==="unstarted"&&point\?\.hasAnnotation===false/);
+test("the previous annotation endpoint uses database chronology and meaningful saved records",()=>{
+  assert.match(serverSource,/\/api\/photos\/:id\/previous-annotations/);
+  assert.match(serverSource,/row_number\(\) OVER \(ORDER BY p\.capture_time NULLS LAST,p\.filename\) sequence_position/);
+  assert.match(serverSource,/a\.status IN \('draft','needs_review','complete'\) OR \$\{meaningful\}/);
+  assert.match(serverSource,/ORDER BY previous\.capture_time DESC NULLS LAST,previous\.filename DESC/);
+  assert.match(serverSource,/canAccessIndividual\(req\.user,current\.individual_id\)/);
+  assert.match(serverSource,/limit=positiveInt\(req\.query\.limit,3,3\)/);
+});
+
+test("copy previous remains enabled for queue index zero and maps database photos B and A",()=>{
+  assert.match(ui,/editorCopyPreviousBtn\.disabled=busy\|\|!editorCanEdit\|\|!editorCurrentPhotoId/);
+  assert.doesNotMatch(ui,/editorCopyPreviousBtn\.disabled=[^;]*editorPhotoIndex\s*<=\s*0/);
+  assert.doesNotMatch(ui,/openEditorPreviousPicker=async\(\)=>\{[^}]*editorPhotoIndex\s*<=\s*0/);
+  const editorPhotoIndex=0,editorCanEdit=true,editorSaving=false,editorCurrentPhotoId="C";
+  assert.equal(editorSaving||!editorCanEdit||!editorCurrentPhotoId,false);
+  const apiResult={annotations:[{photoId:"B",distance:1,data:{Activity_class:"foraging"}},{photoId:"A",distance:2,data:{Activity_class:"fly"}}]};
+  const choices=apiResult.annotations.map((annotation)=>({point:{photoId:annotation.photoId},record:{data:annotation.data}}));
+  assert.deepEqual(choices.map((choice)=>choice.point.photoId),["B","A"]);
+  assert.equal(choices[0].record.data.Activity_class,"foraging");
+  assert.equal(editorPhotoIndex,0);
 });
 
 test("copying keeps current derived fields, does not save and adds only the requested mismatch warning",()=>{

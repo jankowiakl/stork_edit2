@@ -4734,6 +4734,7 @@ loopCurrentEl.checked = false;
   };
   editorRemarksHistoryEl.addEventListener("toggle",()=>{if(editorRemarksHistoryEl.open)void loadEditorRemarksSuggestions();});
   let editorPhotoIndex = -1;
+  let editorCurrentPhotoId = null;
   let editorDirty = false;
   let editorSaving = false;
   let editorLoadedRecord = null;
@@ -4975,9 +4976,8 @@ loopCurrentEl.checked = false;
   };
   const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
   const collectEditorPreviousAnnotations=async()=>{
-    const sequence=activeEditorSequence(),current=sequence[editorPhotoIndex],currentBird=current?.bird||birdId,choices=[];
-    for(let index=editorPhotoIndex-1;index>=0&&choices.length<3;index--){const point=sequence[index];if((point?.bird||birdId)!==currentBird||(point?.status==="unstarted"&&point?.hasAnnotation===false))continue;try{const record=await editorApiGet({photoId:point.photoId});if(editorHasUsableAnnotation(record))choices.push({index,distance:editorPhotoIndex-index,point,record});}catch(_error){}}
-    return choices;
+    if(!editorCurrentPhotoId)return[];const result=await apiFetch(`/api/photos/${encodeURIComponent(editorCurrentPhotoId)}/previous-annotations?limit=3`);
+    return(result.annotations||[]).map((annotation)=>({distance:Number(annotation.distance)||1,point:{photoId:annotation.photoId,bird:annotation.bird,name:annotation.filename,dt:annotation.captureTime?new Date(annotation.captureTime):null},record:{ok:true,data:annotation.data||{},version:annotation.version??0,status:annotation.status||"unstarted"}}));
   };
   const copyEditorPreviousAnnotation=(choice)=>{
     if(!choice?.record?.data||!editorCanEdit)return;const currentRecord={...(editorLoadedRecord||{})},currentVersion=editorLoadedVersion,currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},currentHeightClassManual=editorHeightClassManual,currentAboveGround=editorAboveGroundEl.value,copied={};
@@ -4988,8 +4988,8 @@ loopCurrentEl.checked = false;
     editorSetStatus(`${editorT("editor.copySuccess")}${mismatch?` ${editorT("editor.copyMismatch")}`:""}`,"busy");
   };
   const openEditorPreviousPicker=async()=>{
-    if(editorPhotoIndex<=0||editorSaving||!editorCanEdit)return;const pickerToken=++editorPreviousPickerToken;editorPreviousAnnotations=[];editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(editorT("editor.copyLoading"))}</p>`;editorPreviousPickerEl.hidden=false;editorPreviousPickerEl.classList.add("open");editorCopyPreviousBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorPreviousPicker);
-    const choices=await collectEditorPreviousAnnotations();if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=choices;renderEditorPreviousPicker();requestAnimationFrame(positionEditorPreviousPicker);
+    if(editorSaving||!editorCanEdit||!editorCurrentPhotoId)return;const pickerToken=++editorPreviousPickerToken;editorPreviousAnnotations=[];editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(editorT("editor.copyLoading"))}</p>`;editorPreviousPickerEl.hidden=false;editorPreviousPickerEl.classList.add("open");editorCopyPreviousBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorPreviousPicker);
+    try{const choices=await collectEditorPreviousAnnotations();if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=choices;renderEditorPreviousPicker();requestAnimationFrame(positionEditorPreviousPicker);}catch(error){if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=[];editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(error.message||editorT("editor.copyEmpty"))}</p>`;requestAnimationFrame(positionEditorPreviousPicker);}
   };
 
   const editorSetBusy = (busy) => {
@@ -4999,7 +4999,7 @@ loopCurrentEl.checked = false;
     editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || editorPhotoIndex >= activeEditorSequence().length - 1;
     editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
     editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
-    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||editorPhotoIndex<=0;
+    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||!editorCurrentPhotoId;
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
     const currentPhoto=activeEditorSequence()[editorPhotoIndex];
@@ -5437,12 +5437,13 @@ loopCurrentEl.checked = false;
     const sequence=activeEditorSequence();if (!sequence.length) return;
     closeEditorPreviousPicker();
     const token = ++editorLoadToken;
-    const previousEditorPhotoIndex=editorPhotoIndex;
+    const previousEditorPhotoIndex=editorPhotoIndex,previousEditorPhotoId=editorCurrentPhotoId;
     editorPhotoIndex = Math.max(0, Math.min(index, sequence.length - 1));
     const point = sequence[editorPhotoIndex],pointBird=point.bird||birdId;
     const filename = editorLookupFilename(point);
 
-    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus("Browsing limit reached. Use Start annotating to open a photo available for your work.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
+    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorCurrentPhotoId=previousEditorPhotoId;editorSetStatus("Browsing limit reached. Use Start annotating to open a photo available for your work.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorCurrentPhotoId=previousEditorPhotoId;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
+    editorCurrentPhotoId=point.photoId||null;
     if(syncViewer){if(pointBird&&(birdId!==pointBird||!track.some((candidate)=>candidate.photoId===point.photoId))){setBirdSelection(pointBird);await loadTrackFor(pointBird,{autoplay:false,deferInitialAccess:true,preservePlayback:!!editorContributorReview&&playing,lazyMedia:!!editorContributorReview});}const viewerIndex=track.findIndex((candidate)=>candidate.photoId===point.photoId);if(viewerIndex>=0){track[viewerIndex].url=point.url;track[viewerIndex].previewUrl=point.previewUrl;track[viewerIndex].accessGranted=true;await showPhotoAtIndex(viewerIndex,{purpose:"annotation",skipAccess:true,preservePlayback:!!editorContributorReview&&playing});}else loadPhotoSocial(point.photoId);}else loadPhotoSocial(point.photoId);
     editorPhotoEl.src = point.url || "";
     editorBirdBadgeEl.textContent = "Bird: " + (pointBird || "—")+(editorContributorReview?` • ${editorContributorReview.userName}`:"");
@@ -5522,6 +5523,7 @@ loopCurrentEl.checked = false;
     editorVisualEl.appendChild(editorVisualNavEl);
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.remove("editorOpen");
+    editorCurrentPhotoId=null;
     wrapEl.insertBefore(editorMapDividerEl, sideEl);
     wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
     applyLayoutSplit({persist:false});
