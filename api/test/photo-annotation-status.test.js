@@ -27,3 +27,17 @@ test("touch swipe ignores the status button and Survey/read-only viewers do not 
   assert.match(ui,/body\.sharedPhotoSafeReadOnly [^\n]*#photoAnnotationStatus/);
   assert.match(ui,/\.photoStage\.touchControlsVisible \.photoInfoToggle,\.photoStage\.touchControlsVisible \.photoAnnotationStatus/);
 });
+
+test("viewer download uses authenticated or signed media and stays out of Survey",()=>{
+  assert.match(ui,/id="photoDownloadPhoto"[^>]*>↓<\/button>/);
+  assert.match(ui,/\.photoDownloadToggle\{right:100px/);
+  assert.match(ui,/\.photoStage\.navControlsVisible \.photoDownloadToggle/);
+  assert.match(ui,/\.photoStage\.touchControlsVisible \.photoDownloadToggle/);
+  assert.match(ui,/body\.surveyMode \.photoDownloadToggle,body\.surveyRewardMode \.photoDownloadToggle \{ display:none!important; \}/);
+  assert.match(ui,/body\.editorOpen \.photoDownloadToggle \{ display:none!important; \}/);
+  assert.match(ui,/if\(source\.remoteUrl\)await downloadRemoteImage\(source\.remoteUrl,source\.filename\);else await downloadApiFile\(`\/api\/photos\/\$\{encodeURIComponent\(source\.photoId\)\}\/download`/);
+  assert.match(ui,/const downloadRemoteImage=async\(url,fallbackName\)=>\{const response=await fetch\(url\);if\(!response\.ok\)throw new Error/);
+  assert.match(i18n,/"photo\.download":"Download photo"/);
+  assert.match(i18n,/"photo\.download":"Pobierz zdjęcie"/);
+  assert.match(ui,/id="editorDownloadPhoto"/);
+});

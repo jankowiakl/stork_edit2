@@ -31,6 +31,15 @@ test("main application language detection and persistence are independent",()=>{
   for(const language of ["en-US","de-DE","fr-FR"])assert.equal(loadI18n({languages:[language]}).i18n.language,"en");
 });
 
+test("the single main language switch stays inside the responsive drawer footer",()=>{
+  assert.equal((indexSource.match(/id="appLanguage"/g)||[]).length,1);
+  assert.match(indexSource,/<div class="appNavFooter">[\s\S]*?<div class="appNavFooterAccount">[\s\S]*?id="appNavAccess"[\s\S]*?id="appNavLogout"[\s\S]*?<div class="appLanguage" id="appLanguage"/);
+  assert.match(indexSource,/\.appNavFooter \{ display:grid; width:100%; min-width:0; box-sizing:border-box;/);
+  assert.match(indexSource,/\.appNavFooterAccount \{ display:flex;[\s\S]*?min-width:0; width:100%; \}/);
+  assert.doesNotMatch(indexSource,/\.appLanguage \{ position:fixed;/);
+  assert.equal((indexSource.match(/data-survey-lang="pl"/g)||[]).length>0,true);
+});
+
 test("all annotation fields and current options have Polish presentation without changing values",()=>{
   const {i18n}=loadI18n({stored:"pl"}),schema=publicAnnotationSchema();
   assert.equal(Object.keys(i18n.fieldGuidancePl).length,schema.fields.length);
@@ -68,6 +77,6 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-51/);
+  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-52/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
 });
