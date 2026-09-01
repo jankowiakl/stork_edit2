@@ -158,6 +158,8 @@
     .mapBasemapPreview { position:absolute; inset:3px; border-radius:8px; background-color:#26384b; background-position:center; background-size:cover; }
     .mapBasemapName { position:absolute; right:3px; bottom:3px; left:3px; overflow:hidden; padding:2px 3px; border-radius:0 0 7px 7px; background:linear-gradient(transparent,rgba(0,0,0,.88)); color:#fff; font-size:10px; line-height:1.25; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
     .mapSettingsToggle { width:44px; height:44px; font-size:20px!important; line-height:1; }
+    .mapStreetViewToggle { width:44px; min-width:44px; height:44px; min-height:44px; font-size:11px!important; font-weight:800; letter-spacing:.02em; background:rgba(9,18,31,.76)!important; }
+    .mapStreetViewToggle[hidden],body.surveyMode .mapStreetViewToggle { display:none!important; }
     .mapControlPanel {
       position:absolute;
       right:0;
@@ -873,9 +875,19 @@
     .editorPreviousActivity { color:#fff; font-weight:750; }
     .editorPreviousSecondary { color:var(--muted); font-size:var(--ui-font-small); }
     .editorPreviousEmpty { margin:6px 2px; color:var(--muted); }
+    .editorEnvCombobox { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:stretch; min-width:0; }
+    .editorEnvCombobox #editorEnvDesc { grid-column:1/-1; padding-right:38px; }
+    .editorEnvToggle { position:absolute; top:1px; right:1px; bottom:1px; width:34px; min-width:34px; padding:0!important; border:0!important; border-left:1px solid rgba(255,255,255,.11)!important; border-radius:0 8px 8px 0!important; background:rgba(119,209,255,.035)!important; color:#b8c9db; font-size:17px!important; line-height:1; }
+    .editorEnvToggle[aria-expanded="true"] { color:#fff; background:rgba(119,209,255,.14)!important; }
+    .editorEnvAutocomplete { position:fixed; z-index:7360; display:grid; gap:3px; max-height:min(40dvh,260px); overflow:auto; box-sizing:border-box; padding:5px; border:1px solid rgba(119,209,255,.4); border-radius:10px; background:rgba(10,19,33,.99); box-shadow:0 16px 44px rgba(0,0,0,.55); backdrop-filter:blur(14px); }
+    .editorEnvAutocomplete[hidden] { display:none!important; }
+    .editorEnvOption { width:100%; min-height:34px; padding:6px 8px!important; border:0!important; border-radius:7px; background:transparent!important; color:var(--text); text-align:left; white-space:normal; }
+    .editorEnvOption:hover,.editorEnvOption.active,.editorEnvOption[aria-selected="true"] { background:rgba(119,209,255,.15)!important; color:#fff; }
+    .editorEnvNoMatches { padding:7px 8px; color:var(--muted); font-size:var(--ui-font-small); }
     @media(max-width:700px){
       .editorPreviousPicker { left:max(8px,env(safe-area-inset-left))!important; right:max(8px,env(safe-area-inset-right)); top:auto!important; bottom:max(8px,env(safe-area-inset-bottom)); width:auto; max-height:min(62dvh,480px); border-radius:16px; }
       .editorPreviousChoice { min-height:68px; }
+      .editorEnvOption { min-height:44px; }
     }
     .editorInvalid {
       border-color: rgba(255,107,107,.8) !important;
@@ -1376,6 +1388,7 @@
   .mapControlDock { right:max(7px,env(safe-area-inset-right)); bottom:8px; left:max(7px,env(safe-area-inset-left)); gap:5px; --map-control-font:clamp(11px,var(--ui-font-small),12.5px); }
   .mapBasemapToggle { width:62px; height:44px; }
   .mapSettingsToggle { width:42px; min-width:42px; height:42px; min-height:42px; font-size:18px!important; }
+  .mapStreetViewToggle { width:42px; min-width:42px; height:42px; min-height:42px; }
   .mapControlPanel { width:min(330px,100%); max-height:min(calc(var(--mobile-map-height) - 66px),36dvh,280px); padding:8px; }
   .basemapChoice { min-height:66px; }
   .mapSettingsContent .row { gap:7px; }
@@ -1793,6 +1806,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
     <div class="mapControlDock" id="mapControlDock" aria-label="Map controls">
       <button class="mapControlButton mapBasemapToggle" id="mapBasemapToggle" type="button" aria-expanded="false" aria-controls="mapBasemapPanel" title="Choose basemap"><span class="mapBasemapPreview" id="mapBasemapPreview"></span><span class="mapBasemapName" id="mapBasemapName">Basemap</span></button>
+      <button class="mapControlButton mapStreetViewToggle" id="mapStreetView" type="button" title="Open Street View for this location" aria-label="Open Street View for this location" hidden>SV</button>
       <button class="mapControlButton mapSettingsToggle" id="mapSettingsToggle" type="button" aria-expanded="false" aria-controls="mapSettingsPanel" aria-label="Map settings" title="Map settings">⚙</button>
       <section class="mapControlPanel" id="mapBasemapPanel" aria-label="Choose basemap" hidden><div class="mapControlHeader"><strong>Choose basemap</strong><button class="secondary tiny mapControlClose" id="mapBasemapClose" type="button" aria-label="Close basemap chooser">×</button></div><div class="basemapGrid" id="basemapGrid"></div></section>
       <section class="mapControlPanel" id="mapSettingsPanel" aria-label="Map settings" hidden><div class="mapControlHeader"><strong>Map settings</strong><button class="secondary tiny mapControlClose" id="mapSettingsClose" type="button" aria-label="Close map settings">×</button></div><div class="mapSettingsContent" id="mapSettingsContent"></div></section>
@@ -2302,8 +2316,8 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
           <div class="editorFields">
             <div class="editorField full">
               <label for="editorEnvDesc">Environment description <span class="required">*</span></label>
-              <input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvDescOptions" autocomplete="off">
-              <datalist id="editorEnvDescOptions"><option value="field"><option value="landfill"><option value="landfill slope"><option value="building"><option value="savanna/field"><option value="meadow"><option value="wastewater treatment plant"><option value="tree"><option value="savanna/tree"><option value="roof"><option value="nest"><option value="desert"><option value="river island"><option value="savanna"><option value="tree/shrub"><option value="semi-desert/field"><option value="landfill fence"><option value="dike"><option value="meadow/pasture"><option value="riverbank"><option value="field/pasture"><option value="arable field"><option value="urban area"><option value="dry riverbed"></datalist>
+              <div class="editorEnvCombobox" id="editorEnvCombobox"><input id="editorEnvDesc" data-field="Env_desc_en" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="editorEnvAutocomplete" aria-expanded="false"><button class="editorEnvToggle" id="editorEnvToggle" type="button" aria-controls="editorEnvAutocomplete" aria-expanded="false" title="Show environment suggestions" aria-label="Show environment suggestions">⌄</button></div>
+              <div class="editorEnvAutocomplete" id="editorEnvAutocomplete" role="listbox" hidden></div>
             </div>
             <div class="editorField full">
               <label for="editorRemarks">Remarks</label>
@@ -2506,6 +2520,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const mapBasemapPanelEl = el("mapBasemapPanel");
   const mapBasemapCloseBtn = el("mapBasemapClose");
   const basemapGridEl = el("basemapGrid");
+  const mapStreetViewBtn = el("mapStreetView");
   const mapSettingsToggleBtn = el("mapSettingsToggle");
   const mapSettingsPanelEl = el("mapSettingsPanel");
   const mapSettingsCloseBtn = el("mapSettingsClose");
@@ -2628,6 +2643,9 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const editorRoostFieldEl = el("editorRoostField");
   const editorWaterEl = el("editorWater");
   const editorEnvDescEl = el("editorEnvDesc");
+  const editorEnvComboboxEl = el("editorEnvCombobox");
+  const editorEnvToggleBtn = el("editorEnvToggle");
+  const editorEnvAutocompleteEl = el("editorEnvAutocomplete");
   const editorRemarksEl = el("editorRemarks");
   const editorRemarksHistoryEl = el("editorRemarksHistory");
   const editorRemarksSuggestionsEl = el("editorRemarksSuggestions");
@@ -4339,6 +4357,13 @@ loopCurrentEl.checked = false;
   const removeOwnRating=async()=>{if(!socialPhotoId||socialState.ownRating==null)return;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"DELETE"});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not remove rating: ${error.message}`);}};
   const renderPhotoSocial=()=>{const readOnlySafe=!!photoSafeViewerContext?.readOnly,photoSafeMode=document.body.classList.contains("collectionMode")&&activeCollectionType==="favorites";photoSocialEl.hidden=readOnlySafe||!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=readOnlySafe||authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"🔐":"🔒";favoritePhotoBtn.title=socialState.favorite?"Remove from my photo safe":"Save in my photo safe";photoRatingEl.hidden=photoSafeMode;if(readOnlySafe)photoRatingEl.hidden=true;ratingClearBtn.hidden=readOnlySafe||photoSafeMode||socialState.ownRating==null;ratingAverageEl.hidden=readOnlySafe||photoSafeMode;photoRatingEl.replaceChildren();if(!readOnlySafe&&!photoSafeMode)for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${Number(socialState.averageRating).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1})} (${socialState.ratingCount})`;};
   let currentPhotoDetails=null,photoInfoEnabled=false;
+  const streetViewCoordinates=()=>{
+    const collectionPhoto=document.body.classList.contains("collectionMode")?collectionSequence[collectionSequenceIndex]:null,editorPhoto=document.body.classList.contains("editorOpen")?activeEditorSequence()[editorPhotoIndex]:null,trackPhoto=track[currentPhotoIndex()],photo=currentPhotoDetails||collectionPhoto||editorPhoto||trackPhoto;
+    const lat=Number(photo?.lat??photo?.latitude??photo?.Latitude),lon=Number(photo?.lon??photo?.longitude??photo?.Longitude);
+    return Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lon)&&lon>=-180&&lon<=180?{lat,lon}:null;
+  };
+  const updateStreetViewControl=()=>{const coordinates=streetViewCoordinates(),label=appT("map.streetView");mapStreetViewBtn.hidden=!coordinates;mapStreetViewBtn.disabled=!coordinates;mapStreetViewBtn.title=label;mapStreetViewBtn.setAttribute("aria-label",label);};
+  mapStreetViewBtn.addEventListener("click",()=>{const coordinates=streetViewCoordinates();if(!coordinates)return;const url=new URL("https://www.google.com/maps/@");url.searchParams.set("api","1");url.searchParams.set("map_action","pano");url.searchParams.set("viewpoint",`${coordinates.lat},${coordinates.lon}`);window.open(url.toString(),"_blank","noopener,noreferrer");});
   const renderPhotoAnnotationStatus=()=>{const unavailable=!editorHasConnection()||!socialPhotoId||!currentPhotoDetails||!!photoSafeViewerContext?.readOnly||document.body.classList.contains("surveyMode");photoAnnotationStatusBtn.hidden=unavailable;if(unavailable)return;const complete=currentPhotoDetails.status==="complete",label=appT(complete?"photo.annotationComplete":"photo.annotationIncomplete");photoAnnotationStatusBtn.textContent=complete?"✓":"○";photoAnnotationStatusBtn.classList.toggle("complete",complete);photoAnnotationStatusBtn.title=label;photoAnnotationStatusBtn.setAttribute("aria-label",label);};
   const countryShort=(country)=>{const value=String(country||"").trim();if(!value)return"";const known={poland:"PL",germany:"DE",czechia:"CZ","czech republic":"CZ",slovakia:"SK",ukraine:"UA",belarus:"BY",lithuania:"LT",latvia:"LV",estonia:"EE",romania:"RO",bulgaria:"BG",hungary:"HU",croatia:"HR",serbia:"RS",turkey:"TR",türkiye:"TR",israel:"IL",jordan:"JO",egypt:"EG",sudan:"SD",chad:"TD",ethiopia:"ET",kenya:"KE",tanzania:"TZ",spain:"ES",france:"FR",italy:"IT",austria:"AT",greece:"GR"};return value.length<=3?value.toUpperCase():(known[value.toLowerCase()]||value.slice(0,3).toUpperCase());};
   const hasInfoNumber=(value)=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value)),infoNumber=(value)=>String(Math.round(Number(value)*100)/100);
@@ -4346,7 +4371,14 @@ loopCurrentEl.checked = false;
   const renderPhotoInfo=()=>{photoInfoOverlayEl.hidden=!photoInfoEnabled;if(!photoInfoEnabled)return;if(!currentPhotoDetails){photoInfoOverlayEl.replaceChildren();return;}const annotation=currentPhotoDetails.annotation||{},country=countryShort(currentPhotoDetails.country),place=String(currentPhotoDetails.closeCity||currentPhotoDetails.country||"").trim(),geo=String(currentPhotoDetails.geoDescription||"").trim(),remarks=String(annotation.Remarks||"").trim(),placeHtml=country||place?`<div class="photoInfoSide photoInfoPlace">${country?`<b>${escapeHtml(country)}</b>`:""}${country&&place?"<br>":""}${place?`<span>${escapeHtml(place)}</span>`:""}</div>`:"",aboveGround=photoAboveGround(currentPhotoDetails),gpsAltitude=currentPhotoDetails.altitudeM,heightHtml=hasInfoNumber(aboveGround)||hasInfoNumber(gpsAltitude)?`<div class="photoInfoSide photoInfoHeight">${hasInfoNumber(gpsAltitude)?`<div><b>GPS altitude (m):</b> ${escapeHtml(infoNumber(gpsAltitude))}</div>`:""}${hasInfoNumber(aboveGround)?`<div><b>Above ground (m):</b> ${escapeHtml(infoNumber(aboveGround))}</div>`:""}</div>`:"",descriptionHtml=geo||remarks?`<div class="photoInfoDescription">${geo?escapeHtml(geo):""}${remarks?`<span class="remarks">${escapeHtml(remarks)}</span>`:""}</div>`:"";photoInfoOverlayEl.innerHTML=placeHtml+heightHtml+descriptionHtml;};
   const setPhotoInfoEnabled=(enabled)=>{photoInfoEnabled=!!enabled;photoInfoToggleBtn.setAttribute("aria-expanded",String(photoInfoEnabled));photoInfoToggleBtn.setAttribute("aria-pressed",String(photoInfoEnabled));photoInfoToggleBtn.title=photoInfoEnabled?"Hide photo information":"Show photo information";renderPhotoInfo();};
   photoInfoToggleBtn.addEventListener("click",()=>setPhotoInfoEnabled(!photoInfoEnabled));
-  const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;currentPhotoDetails=null;renderPhotoAnnotationStatus();const token=++socialLoadToken;if(photoSafeViewerContext?.readOnly){currentPhotoDetails=collectionSequence.find((photo)=>photo.id===socialPhotoId)||null;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};renderPhotoSocial();renderPhotoAnnotationStatus();if(photoInfoEnabled)renderPhotoInfo();return;}if(!editorHasConnection()||!socialPhotoId){renderPhotoSocial();renderPhotoAnnotationStatus();if(photoInfoEnabled)renderPhotoInfo();return;}try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}renderPhotoSocial();renderPhotoAnnotationStatus();if(photoInfoEnabled)renderPhotoInfo();};
+  const loadPhotoSocial=async(photoId)=>{
+    socialPhotoId=photoId||null;currentPhotoDetails=null;renderPhotoAnnotationStatus();updateStreetViewControl();const token=++socialLoadToken;
+    if(photoSafeViewerContext?.readOnly){currentPhotoDetails=collectionSequence.find((photo)=>photo.id===socialPhotoId)||null;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};renderPhotoSocial();renderPhotoAnnotationStatus();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();return;}
+    if(!editorHasConnection()||!socialPhotoId){renderPhotoSocial();renderPhotoAnnotationStatus();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();return;}
+    try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}
+    catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}
+    renderPhotoSocial();renderPhotoAnnotationStatus();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();
+  };
   photoAnnotationStatusBtn.addEventListener("click",async()=>{if(photoAnnotationStatusBtn.hidden||!socialPhotoId)return;if(document.body.classList.contains("collectionMode"))stopCollectionPlayback();else stopAnim();const index=track.findIndex((point)=>point.photoId===socialPhotoId);if(index<0){setStatus("Could not open the annotation sheet for this photo.");return;}if(index!==currentPhotoIndex())await showPhotoAtIndex(index,{purpose:"annotation"});await openEditorMode();});
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private photo safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update photo safe: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
@@ -4867,6 +4899,7 @@ loopCurrentEl.checked = false;
     .replace(/\s*\(\d+\)(?=\.[^.]+$)/, "");
   const activeEditorSequence=()=>editorContributorReview?.points?.length?editorContributorReview.points:track;
   const EDITOR_COPY_EXCLUDED_FIELDS=new Set(["Elevation_m","Above_ground","Height_class_100m","Analysed"]);
+  const EDITOR_ENV_SUGGESTIONS=["field","landfill","landfill slope","building","savanna/field","meadow","wastewater treatment plant","tree","savanna/tree","roof","nest","desert","river island","savanna","tree/shrub","semi-desert/field","landfill fence","dike","meadow/pasture","riverbank","field/pasture","arable field","urban area","dry riverbed"];
   const editorPinnedFields=new Set();
   let editorPreviousAnnotations=[];
   let editorPreviousPickerToken=0;
@@ -4924,7 +4957,23 @@ loopCurrentEl.checked = false;
     if(!editorPreviousAnnotations.length){const empty=document.createElement("p");empty.className="editorPreviousEmpty";empty.textContent=editorT("editor.copyEmpty");editorPreviousChoicesEl.append(empty);return;}
     editorPreviousAnnotations.forEach((choice,index)=>{const summary=editorPreviousSummary(choice.record.data||{}),button=document.createElement("button");button.type="button";button.className="editorPreviousChoice";button.dataset.previousChoice=String(index);const distance=document.createElement("span"),primary=document.createElement("span");distance.className="editorPreviousDistance";distance.textContent=editorPhotoEarlierText(choice.distance);primary.className="editorPreviousActivity";primary.textContent=summary.primary;button.append(distance,primary);if(summary.secondary){const secondary=document.createElement("span");secondary.className="editorPreviousSecondary";secondary.textContent=summary.secondary;button.append(secondary);}editorPreviousChoicesEl.append(button);});
   };
-  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();};
+  let editorEnvActiveIndex=-1,editorEnvVisibleSuggestions=[];
+  const closeEditorEnvAutocomplete=()=>{editorEnvAutocompleteEl.hidden=true;editorEnvActiveIndex=-1;editorEnvDescEl.setAttribute("aria-expanded","false");editorEnvDescEl.removeAttribute("aria-activedescendant");editorEnvToggleBtn.setAttribute("aria-expanded","false");};
+  const positionEditorEnvAutocomplete=()=>{
+    if(editorEnvAutocompleteEl.hidden)return;const rect=editorEnvComboboxEl.getBoundingClientRect(),listHeight=editorEnvAutocompleteEl.offsetHeight,margin=8,spaceBelow=window.innerHeight-rect.bottom-margin,openAbove=spaceBelow<Math.min(listHeight,180)&&rect.top>spaceBelow;
+    editorEnvAutocompleteEl.style.left=`${Math.max(margin,Math.min(window.innerWidth-rect.width-margin,rect.left))}px`;editorEnvAutocompleteEl.style.width=`${Math.min(rect.width,window.innerWidth-margin*2)}px`;editorEnvAutocompleteEl.style.top=`${Math.max(margin,openAbove?rect.top-listHeight-4:rect.bottom+4)}px`;
+  };
+  const setEditorEnvActive=(index)=>{
+    const options=Array.from(editorEnvAutocompleteEl.querySelectorAll(".editorEnvOption"));if(!options.length){editorEnvActiveIndex=-1;return;}editorEnvActiveIndex=(index+options.length)%options.length;options.forEach((option,itemIndex)=>{const active=itemIndex===editorEnvActiveIndex;option.classList.toggle("active",active);option.setAttribute("aria-selected",String(active));});const active=options[editorEnvActiveIndex];editorEnvDescEl.setAttribute("aria-activedescendant",active.id);active.scrollIntoView({block:"nearest"});
+  };
+  const chooseEditorEnvSuggestion=(value)=>{editorEnvDescEl.value=value;editorEnvDescEl.dispatchEvent(new Event("input",{bubbles:true}));closeEditorEnvAutocomplete();editorEnvDescEl.focus();};
+  const renderEditorEnvAutocomplete=({showAll=false}={})=>{
+    const query=showAll?"":String(editorEnvDescEl.value||"").trim().toLocaleLowerCase();editorEnvVisibleSuggestions=EDITOR_ENV_SUGGESTIONS.filter((value)=>!query||value.toLocaleLowerCase().includes(query));editorEnvAutocompleteEl.replaceChildren();editorEnvActiveIndex=-1;
+    if(!editorEnvVisibleSuggestions.length){const empty=document.createElement("div");empty.className="editorEnvNoMatches";empty.textContent=editorT("editor.environmentNoMatches");editorEnvAutocompleteEl.append(empty);}
+    else editorEnvVisibleSuggestions.forEach((value,index)=>{const option=document.createElement("button");option.type="button";option.className="editorEnvOption";option.id=`editorEnvOption-${index}`;option.setAttribute("role","option");option.setAttribute("aria-selected","false");option.textContent=value;option.addEventListener("pointerdown",(event)=>event.preventDefault());option.addEventListener("pointerenter",()=>setEditorEnvActive(index));option.addEventListener("click",()=>chooseEditorEnvSuggestion(value));editorEnvAutocompleteEl.append(option);});
+    editorEnvAutocompleteEl.hidden=false;editorEnvDescEl.setAttribute("aria-expanded","true");editorEnvToggleBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorEnvAutocomplete);
+  };
+  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
   const collectEditorPreviousAnnotations=async()=>{
     const sequence=activeEditorSequence(),current=sequence[editorPhotoIndex],currentBird=current?.bird||birdId,choices=[];
     for(let index=editorPhotoIndex-1;index>=0&&choices.length<3;index--){const point=sequence[index];if((point?.bird||birdId)!==currentBird||String(point?.status||"")==="unstarted")continue;try{const record=await editorApiGet({photoId:point.photoId});if(editorHasUsableAnnotation(record))choices.push({index,distance:editorPhotoIndex-index,point,record});}catch(_error){}}
@@ -4955,6 +5004,7 @@ loopCurrentEl.checked = false;
     const currentPhoto=activeEditorSequence()[editorPhotoIndex];
     editorDownloadPhotoBtn.hidden=!!photoSafeViewerContext?.readOnly;
     editorDownloadPhotoBtn.disabled=busy||!editorHasConnection()||!currentPhoto?.photoId||!!photoSafeViewerContext?.readOnly;
+    editorEnvToggleBtn.disabled=busy||!editorCanEdit;
     editorUpdatePinButtons();
   };
 
@@ -4962,6 +5012,7 @@ loopCurrentEl.checked = false;
     editorCanEdit=!!editable;
     editorFormEl.classList.toggle("readOnly",!editorCanEdit);
     for(const field of editorFieldEls)field.disabled=!editorCanEdit;
+    editorEnvToggleBtn.disabled=!editorCanEdit;if(!editorCanEdit)closeEditorEnvAutocomplete();
     if(editorCanEdit)editorApplyConditionalRules();
     editorSetBusy(editorSaving);
   };
@@ -5209,7 +5260,7 @@ loopCurrentEl.checked = false;
   const openOnboarding=async({force=false}={})=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`;if(!force){try{if(localStorage.getItem(key)==="complete")return;}catch(_error){}}helpWorkspaceMode="onboarding";openHelpWorkspace();appHelpEyebrowEl.textContent="Introduction";appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width="8%";appHelpBodyEl.innerHTML='<p class="appHelpLead">Preparing your introduction…</p>';appHelpActionsEl.replaceChildren(helpButton("Close for now","secondary",closeHelpWorkspace));try{const result=await createOnboardingSteps();onboardingSteps=result.steps;onboardingFieldMap=result.fieldMap;onboardingIndex=0;renderOnboardingStep();}catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the introduction: ${escapeHtml(error.message)}</div>`;}};
   const maybeShowOnboarding=()=>{if(!authState.user||authState.user.mustChangePassword)return;let completed=false;try{completed=localStorage.getItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`)==="complete";}catch(_error){}if(completed){void startInterfaceCoach();return;}void openOnboarding();};
   closeAppHelpBtn.addEventListener("click",closeHelpWorkspace);openFieldGuideBtn.addEventListener("click",openFieldGuide);
-  appI18n?.onChange(async()=>{updateEditorProductivityLanguage();renderPhotoAnnotationStatus();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
+  appI18n?.onChange(async()=>{updateEditorProductivityLanguage();updateStreetViewControl();renderPhotoAnnotationStatus();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
   document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(interfaceCoachActive){completeInterfaceCoach({markComplete:true});return;}if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
 
   const loadEditorHelp = async () => {
@@ -5229,6 +5280,7 @@ loopCurrentEl.checked = false;
   };
 
   const populateEditorForm = (record = {}) => {
+    closeEditorEnvAutocomplete();
     editorFormEl.reset();
     clearEditorInvalid();
 
@@ -5459,7 +5511,7 @@ loopCurrentEl.checked = false;
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
-    closeEditorPreviousPicker();
+    closeEditorPreviousPicker();closeEditorEnvAutocomplete();
     if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
     editorWorkspaceEl.appendChild(editorPanelEl);
@@ -5559,6 +5611,19 @@ loopCurrentEl.checked = false;
       editorMarkDirty();
     });
   }
+  editorEnvDescEl.addEventListener("focus",()=>{if(editorCanEdit)renderEditorEnvAutocomplete();});
+  editorEnvDescEl.addEventListener("input",()=>{if(editorCanEdit)renderEditorEnvAutocomplete();});
+  editorEnvDescEl.addEventListener("keydown",(event)=>{
+    if(event.key==="Escape"&&!editorEnvAutocompleteEl.hidden){event.preventDefault();event.stopPropagation();closeEditorEnvAutocomplete();return;}
+    if(!["ArrowDown","ArrowUp","Enter"].includes(event.key))return;
+    if(editorEnvAutocompleteEl.hidden&&event.key!=="Enter")renderEditorEnvAutocomplete();
+    if(event.key==="ArrowDown"||event.key==="ArrowUp"){event.preventDefault();if(editorEnvVisibleSuggestions.length){const next=editorEnvActiveIndex<0?(event.key==="ArrowDown"?0:editorEnvVisibleSuggestions.length-1):editorEnvActiveIndex+(event.key==="ArrowDown"?1:-1);setEditorEnvActive(next);}return;}
+    if(event.key==="Enter"&&editorEnvActiveIndex>=0&&editorEnvVisibleSuggestions[editorEnvActiveIndex]!==undefined){event.preventDefault();chooseEditorEnvSuggestion(editorEnvVisibleSuggestions[editorEnvActiveIndex]);}
+  });
+  editorEnvToggleBtn.addEventListener("click",()=>{if(editorEnvToggleBtn.disabled)return;if(editorEnvAutocompleteEl.hidden){editorEnvDescEl.focus();renderEditorEnvAutocomplete({showAll:true});}else closeEditorEnvAutocomplete();});
+  document.addEventListener("pointerdown",(event)=>{if(editorEnvAutocompleteEl.hidden||editorEnvComboboxEl.contains(event.target)||editorEnvAutocompleteEl.contains(event.target))return;closeEditorEnvAutocomplete();});
+  window.addEventListener("resize",positionEditorEnvAutocomplete);
+  window.addEventListener("scroll",positionEditorEnvAutocomplete,true);
   for(const button of editorPinButtons)button.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();const key=button.dataset.pinField;if(!editorCanEdit||(key==="Artificial_lights"&&editorPeriodDayEl.value!=="night"))return;if(editorPinnedFields.has(key))editorPinnedFields.delete(key);else editorPinnedFields.add(key);editorUpdatePinButtons();});
 
   editorModeBtn.addEventListener("click",()=>{editorReturnDataMode=null;openEditorMode();});
@@ -5798,6 +5863,7 @@ loopCurrentEl.checked = false;
 
     cleanupObjectURLs();
     track = [];
+    loadPhotoSocial(null);
     updatePhotoNavButtons(-1);
     birdId = null;
     segIndex = 0; segT = 0;
@@ -5876,7 +5942,7 @@ loopCurrentEl.checked = false;
 
   const loadGithubFiles = async () => {
     if(!editorHasConnection()){
-      stopAnim();groupedFiles.clear();trackCache.clear();track=[];updateBirdSelectors([]);setStatus("Log in to view protected photographs and scientific records.");return;
+      stopAnim();groupedFiles.clear();trackCache.clear();track=[];loadPhotoSocial(null);updateBirdSelectors([]);setStatus("Log in to view protected photographs and scientific records.");return;
     }
     viewerReturnBarEl.hidden=true;
     groupedFiles.clear();
@@ -5885,6 +5951,7 @@ loopCurrentEl.checked = false;
 
     cleanupObjectURLs();
     track = [];
+    loadPhotoSocial(null);
     updatePhotoNavButtons(-1);
     birdId = null;
     segIndex = 0; segT = 0;
@@ -5998,6 +6065,7 @@ loopCurrentEl.checked = false;
     cleanupObjectURLs();
     track = points.map(p => ({...p, url: (p.file instanceof File ? URL.createObjectURL(p.file) : p.file)}));
     applyAdaptiveTrackStyle(track.length);
+    updateStreetViewControl();
   };
 
   const updateSliderMax = () => {
@@ -6093,6 +6161,7 @@ loopCurrentEl.checked = false;
     renderBackgroundLayers(id);
 
     if (track.length < 1) {
+      loadPhotoSocial(null);
       playBtn.disabled = true;
       pauseBtn.disabled = true;
       resetBtn.disabled = false;
