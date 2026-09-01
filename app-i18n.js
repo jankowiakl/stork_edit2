@@ -8,13 +8,43 @@
       "help.what":"What is it?","help.how":"How to record it","help.categories":"Categories","help.important":"Important","help.technical":"Technical metadata","help.dataType":"Data type","help.unit":"Unit / format","help.source":"Source / role",
       "help.search":"Search fields, categories or guidance…","help.noResults":"No results","help.fieldGuide":"Scientific field guide","help.home":"Help / Guide","help.close":"Close","help.back":"Back","help.next":"Next","help.finish":"Finish",
       "warning.photo":"Photo-based annotation describes what can be detected in the camera frame. A feature that is not visible in a photograph is not necessarily absent from the surrounding environment.",
-      "survey.show":"Show","survey.hide":"Hide","survey.previous":"Previous","survey.next":"Next","survey.page":"Page {current} of {total}","survey.perPage":"20 photos per page","survey.photoResults":"Photo results","survey.comparison":"Global campaign comparison","survey.campaigns":"Research campaigns"
+      "survey.show":"Show","survey.hide":"Hide","survey.previous":"Previous","survey.next":"Next","survey.page":"Page {current} of {total}","survey.perPage":"20 photos per page","survey.photoResults":"Photo results","survey.comparison":"Global campaign comparison","survey.campaigns":"Research campaigns",
+      "help.interfaceTutorialTitle":"Interface tutorial","help.interfaceTutorialDescription":"A short tour showing where the main controls are and how to use them.","help.interfaceTutorialAgain":"Show interface tutorial again",
+      "coach.1":"This is where you can access the main application functions. Click the arrow to open the menu — you can return here at any time.",
+      "coach.2":"Use this menu to move between the map and photos, the photo annotation sheet, progress, the data table, Photo Safe, and other functions available to your account.",
+      "coach.3":"The map shows the location of the currently displayed photograph along the stork's route. When you change the photo, the map automatically moves to the corresponding location.",
+      "coach.4":"Prefer a standard map, satellite view, or another background? Change the basemap here. This affects only how the map is displayed — it does not change the data.",
+      "coach.5":"Additional map and layer options are available here. You can adjust the view to suit what you need during analysis.",
+      "coach.6":"You can freely pan the map. Zoom with the mouse wheel or a two-finger gesture on a phone to inspect the photo location more closely.",
+      "coach.7":"This is the photograph currently being analysed. On a computer you can use the navigation buttons; on a phone you can swipe left or right to move between photos.",
+      "coach.8":"The photograph and map work together. When you move to another photo, its position on the route is shown as well, so you can interpret the image in the context of location and movement.",
+      "coach.9":"This is where you make the scientific annotation. Record only information that can be reliably determined from the photograph and available data.",
+      "coach.10":"Not sure what a field or category means? Click the ⓘ next to the variable or open the full Field Guide. You do not need to remember everything.",
+      "coach.11":"You do not have to finish everything at once. Save a draft if you want to return to the photograph later, or complete the analysis when all required information has been checked.",
+      "coach.12":"Lots of photographs to annotate? If it starts to feel stressful, turn on our relaxing music 🎵, get comfortable, and return calmly to the storks. Science can be enjoyable too 🙂",
+      "coach.13":"That's it! Thank you for helping us process the White Stork data. Your work is an important part of the project. We hope you enjoy working with the application and have a great day! 🐦",
+      "coach.back":"Back","coach.next":"Next","coach.skip":"Skip","coach.finish":"Finish"
     },
     pl:{
       "help.what":"Co to jest?","help.how":"Jak zapisać","help.categories":"Kategorie","help.important":"Ważne","help.technical":"Metadane techniczne","help.dataType":"Typ danych","help.unit":"Jednostka / format","help.source":"Źródło / rola",
       "help.search":"Szukaj pól, kategorii lub wskazówek…","help.noResults":"Brak wyników","help.fieldGuide":"Instrukcja pól naukowych","help.home":"Pomoc / instrukcja","help.close":"Zamknij","help.back":"Wstecz","help.next":"Dalej","help.finish":"Zakończ",
       "warning.photo":"Opis na podstawie zdjęcia dotyczy tego, co można rozpoznać w kadrze kamery. Brak widocznej cechy na zdjęciu nie oznacza, że nie występuje ona w otaczającym środowisku.",
-      "survey.show":"Pokaż","survey.hide":"Ukryj","survey.previous":"Poprzednia","survey.next":"Następna","survey.page":"Strona {current} z {total}","survey.perPage":"20 zdjęć na stronę","survey.photoResults":"Wyniki zdjęć","survey.comparison":"Porównanie kampanii","survey.campaigns":"Kampanie badawcze"
+      "survey.show":"Pokaż","survey.hide":"Ukryj","survey.previous":"Poprzednia","survey.next":"Następna","survey.page":"Strona {current} z {total}","survey.perPage":"20 zdjęć na stronę","survey.photoResults":"Wyniki zdjęć","survey.comparison":"Porównanie kampanii","survey.campaigns":"Kampanie badawcze",
+      "help.interfaceTutorialTitle":"Samouczek interfejsu","help.interfaceTutorialDescription":"Krótki przewodnik pokazujący, gdzie znajdują się główne elementy sterowania i jak z nich korzystać.","help.interfaceTutorialAgain":"Pokaż ponownie samouczek interfejsu",
+      "coach.1":"Tu znajdziesz główne funkcje aplikacji. Kliknij strzałkę, aby rozwinąć menu — możesz wrócić tutaj w dowolnym momencie.",
+      "coach.2":"Z tego miejsca przechodzisz między mapą i zdjęciami, arkuszem opisu, postępem pracy, tabelą danych, Photo Safe oraz innymi funkcjami dostępnymi dla Twojego konta.",
+      "coach.3":"Mapa pokazuje położenie aktualnie oglądanego zdjęcia na trasie bociana. Zmieniając zdjęcie, automatycznie przechodzisz do odpowiadającej mu lokalizacji.",
+      "coach.4":"Wolisz mapę klasyczną, satelitarną albo inny podkład? Tutaj możesz zmienić mapę bazową. Nie zmienia to danych — tylko sposób ich wyświetlania.",
+      "coach.5":"Tutaj znajdziesz dodatkowe opcje mapy i warstw. Możesz dostosować widok do tego, czego potrzebujesz podczas analizy.",
+      "coach.6":"Mapę możesz swobodnie przesuwać. Powiększaj ją kółkiem myszy lub gestem dwóch palców na telefonie, aby dokładniej obejrzeć miejsce wykonania zdjęcia.",
+      "coach.7":"To jest aktualnie analizowane zdjęcie. Na komputerze możesz używać przycisków nawigacji, a na telefonie przesuwać zdjęcia palcem w lewo lub w prawo.",
+      "coach.8":"Zdjęcie i mapa działają razem. Przechodząc do kolejnego zdjęcia, zobaczysz również jego pozycję na trasie — dzięki temu możesz analizować obraz w kontekście miejsca i ruchu ptaka.",
+      "coach.9":"Tutaj opisujesz zdjęcie naukowo. Wypełniaj tylko informacje, które można wiarygodnie określić na podstawie zdjęcia i dostępnych danych.",
+      "coach.10":"Nie pamiętasz, co oznacza pole albo jedna z kategorii? Kliknij ⓘ przy zmiennej lub otwórz pełną instrukcję pól. Nie musisz uczyć się wszystkiego na pamięć.",
+      "coach.11":"Nie musisz kończyć wszystkiego od razu. Zapisz wersję roboczą, jeśli chcesz wrócić do zdjęcia później, albo zakończ analizę, gdy wszystkie potrzebne informacje są już sprawdzone.",
+      "coach.12":"Dużo zdjęć do oznaczenia? Jeżeli robi się stresująco, włącz naszą muzykę relaksacyjną 🎵, usiądź wygodnie i spokojnie wróć do bocianów. Nauka też może być przyjemna 🙂",
+      "coach.13":"To wszystko! Dziękujemy za pomoc w opracowywaniu danych o bocianach białych. Twoja praca jest ważną częścią projektu. Życzymy przyjemnej pracy i miłego dnia! 🐦",
+      "coach.back":"Wstecz","coach.next":"Dalej","coach.skip":"Pomiń","coach.finish":"Zakończ"
     }
   };
 

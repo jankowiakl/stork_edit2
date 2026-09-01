@@ -180,7 +180,7 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-09-01-40/);
+  assert.match(worker,/stork-edit2-shell-v2026-09-01-41/);
 });
 
 test("mobile Survey keeps a compact rating row between photo and map",()=>{
