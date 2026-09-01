@@ -43,6 +43,7 @@ test("the GitHub Pages application is installable as a PWA",()=>{
   assert.match(ui,/rel="manifest" href="manifest\.webmanifest"/);
   assert.match(ui,/serviceWorker\.register\("\.\/sw\.js"\)/);
   assert.match(serviceWorker,/APP_SHELL/);
+  assert.match(serviceWorker,/\.\/app-i18n\.js/);
 });
 
 test("a user cannot create a second active draft",()=>{

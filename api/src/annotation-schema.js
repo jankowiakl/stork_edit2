@@ -2,7 +2,7 @@ import { FIELD_INFO,fieldInfoHelp } from "./field-info.js";
 
 export const ANNOTATION_FIELDS = Object.freeze([
   { key:"Quality_selected", db:"quality_selected", label:"Quality selected", type:"select", options:["yes","no"], required:true, help:"Whether the photograph is retained in the analytical dataset." },
-  { key:"Pheno_period", db:"pheno_period", label:"Phenological period", type:"select", options:["fledging","pre-migratory","A_migration","Wintering"], extensible:true, help:"Phenological or annual-cycle phase assigned to the observation." },
+  { key:"Pheno_period", db:"pheno_period", label:"Phenological period", type:"select", options:["fledging","pre-migratory","S_migration","A_migration","Wintering"], extensible:true, help:"Phenological or annual-cycle phase assigned to the observation." },
   { key:"Residence", db:"residence", label:"Residence", type:"select", options:["yes","no"], help:"Residence or stopover segment versus transit." },
   { key:"Feather_perc", db:"feather_perc", label:"Feather coverage (%)", type:"number", min:0, max:100, help:"Estimated percentage of the image obscured by feathers." },
   { key:"Feather_occ", db:"feather_occ", label:"Feathers visible", type:"select", options:["yes","no"], help:"Whether feathers occur in the camera field of view." },

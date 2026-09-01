@@ -40,6 +40,15 @@ test("touch navigation hides side buttons while desktop controls remain defined"
   assert.match(ui,/prevPhotoBtn\.addEventListener\("click"/);
 });
 
+test("the shared photo-stage swipe also serves the mobile editor without blocking vertical form scrolling",()=>{
+  const begin=ui.slice(ui.indexOf("const beginPhotoSwipe="),ui.indexOf("const movePhotoSwipe="));
+  assert.doesNotMatch(begin,/editorOpen/);
+  assert.match(ui,/\.photoStage \{ touch-action:pan-y pinch-zoom; \}/);
+  assert.match(ui,/document\.body\.classList\.contains\("editorOpen"\)\)\{const next=editorPhotoIndex\+direction,total=activeEditorSequence\(\)\.length;return\{allowed:next>=0&&next<total/);
+  assert.match(ui,/document\.body\.classList\.contains\("editorOpen"\)\)return!!\(await moveEditorPhoto\(direction\)\)/);
+  assert.match(ui,/Saving draft before changing photo/);
+});
+
 test("initial Maps & Photos bird is random, has photos, and avoids the prior automatic choice",()=>{
   const counts=new Map([["empty",0],["A",10],["B",4]]);
   assert.equal(interactions.chooseInitialBird(["empty","A","B"],(id)=>counts.get(id),"A",0),"B");
