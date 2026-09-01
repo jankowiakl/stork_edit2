@@ -1647,7 +1647,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 .interfaceCoachPointer::after { content:""; position:absolute; right:-1px; top:50%; width:9px; height:9px; border-top:2px solid #77d1ff; border-right:2px solid #77d1ff; transform:translateY(-50%) rotate(45deg); }
 .interfaceCoachCard { position:fixed; z-index:10003; width:min(390px,calc(100vw - 24px)); max-height:min(56vh,520px); overflow:auto; box-sizing:border-box; padding:16px; border:1px solid rgba(119,209,255,.42); border-radius:16px; background:rgba(9,18,31,.97); box-shadow:0 18px 58px rgba(0,0,0,.52); backdrop-filter:blur(16px); color:var(--text); pointer-events:auto; }
 .interfaceCoachProgress { margin:0 0 8px; color:#77d1ff; font-size:var(--ui-font-small); font-weight:750; letter-spacing:.04em; }
-.interfaceCoachText { margin:0; color:#eef7ff; line-height:1.55; }
+.interfaceCoachText { margin:0; color:#eef7ff; line-height:1.55; white-space:pre-line; }
 .interfaceCoachActions { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
 .interfaceCoachActions>div { display:flex; gap:7px; margin-left:auto; }
 .interfaceCoachFinal .interfaceCoachHighlight,.interfaceCoachFinal .interfaceCoachPointer { display:none; }
@@ -5170,7 +5170,7 @@ loopCurrentEl.checked = false;
     {key:"coach.6",targets:()=>[el("mapFollow")],prepare:()=>{closeMapControlPanels();return true;}},
     {key:"coach.7",targets:()=>[photoStageEl]},
     {key:"coach.8",targets:()=>[mapStackEl,photoStageEl]},
-    {key:"coach.9",targets:()=>[editorPanelEl],prepare:prepareInterfaceCoachEditor},
+    {key:"coach.9",desktopNoteKey:"coach.editorResize",targets:()=>[editorPanelEl],prepare:prepareInterfaceCoachEditor},
     {key:"coach.10",targets:()=>[openFieldGuideBtn],prepare:prepareInterfaceCoachEditor},
     {key:"coach.11",targets:()=>[editorSaveDraftBtn,editorSaveAnalysedBtn,editorSaveNextBtn],prepare:prepareInterfaceCoachEditor},
     {key:"coach.12",targets:()=>[musicToggleBtn],prepare:prepareInterfaceCoachMusic},
@@ -5191,25 +5191,26 @@ loopCurrentEl.checked = false;
   };
   const renderInterfaceCoachStep=async({direction=1,scroll=true}={})=>{
     if(!interfaceCoachActive)return;const token=++interfaceCoachRenderToken;
-    while(interfaceCoachIndex>=0&&interfaceCoachIndex<interfaceCoachSteps.length){const step=interfaceCoachSteps[interfaceCoachIndex],ready=step.prepare?await step.prepare():true;if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;let targets=(step.targets?.()||[]).filter((target)=>target?.isConnected);if(ready!==false&&!step.final&&scroll&&targets[0]){targets[0].scrollIntoView({behavior:"smooth",block:"center",inline:"center"});await interfaceCoachNextFrame();if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;}targets=(step.targets?.()||[]).filter(interfaceCoachVisible);if(step.final||(ready!==false&&targets.length)){interfaceCoachProgressEl.textContent=`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`;interfaceCoachTextEl.textContent=appT(step.key);interfaceCoachSkipBtn.textContent=appT("coach.skip");interfaceCoachBackBtn.textContent=appT("coach.back");interfaceCoachNextBtn.textContent=appT(step.final?"coach.finish":"coach.next");interfaceCoachBackBtn.hidden=interfaceCoachIndex===0;interfaceCoachSkipBtn.hidden=!!step.final;interfaceCoachCardEl.setAttribute("aria-label",`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`);await interfaceCoachNextFrame();positionInterfaceCoach();interfaceCoachNextBtn.focus({preventScroll:true});return;}interfaceCoachIndex+=direction>=0?1:-1;}
+    while(interfaceCoachIndex>=0&&interfaceCoachIndex<interfaceCoachSteps.length){const step=interfaceCoachSteps[interfaceCoachIndex],ready=step.prepare?await step.prepare():true;if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;let targets=(step.targets?.()||[]).filter((target)=>target?.isConnected);if(ready!==false&&!step.final&&scroll&&targets[0]){targets[0].scrollIntoView({behavior:"smooth",block:"center",inline:"center"});await interfaceCoachNextFrame();if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;}targets=(step.targets?.()||[]).filter(interfaceCoachVisible);if(step.final||(ready!==false&&targets.length)){interfaceCoachProgressEl.textContent=`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`;const coachText=[appT(step.key)];if(step.desktopNoteKey&&!isMobile())coachText.push(appT(step.desktopNoteKey));interfaceCoachTextEl.textContent=coachText.join("\n\n");interfaceCoachSkipBtn.textContent=appT("coach.skip");interfaceCoachBackBtn.textContent=appT("coach.back");interfaceCoachNextBtn.textContent=appT(step.final?"coach.finish":"coach.next");interfaceCoachBackBtn.hidden=interfaceCoachIndex===0;interfaceCoachSkipBtn.hidden=!!step.final;interfaceCoachCardEl.setAttribute("aria-label",`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`);await interfaceCoachNextFrame();positionInterfaceCoach();interfaceCoachNextBtn.focus({preventScroll:true});return;}interfaceCoachIndex+=direction>=0?1:-1;}
     interfaceCoachIndex=Math.max(0,Math.min(interfaceCoachSteps.length-1,interfaceCoachIndex));
   };
-  const completeInterfaceCoach=({markComplete=true}={})=>{
-    if(!interfaceCoachActive)return;if(markComplete){const key=interfaceCoachStorageKey();if(key)try{localStorage.setItem(key,"complete");}catch(_error){}}
+  const completeInterfaceCoach=async({markComplete=true,finishedFinal=false}={})=>{
+    if(!interfaceCoachActive)return;const snapshot=interfaceCoachSnapshot,firstFinalFinish=markComplete&&finishedFinal&&interfaceCoachSteps[interfaceCoachIndex]?.final&&!snapshot?.previouslyComplete;if(markComplete){const key=interfaceCoachStorageKey();if(key)try{localStorage.setItem(key,"complete");}catch(_error){}}
     interfaceCoachActive=false;interfaceCoachRenderToken++;interfaceCoachEl.hidden=true;interfaceCoachEl.setAttribute("aria-hidden","true");document.body.classList.remove("interfaceCoachOpen");closeMapControlPanels();
-    const snapshot=interfaceCoachSnapshot;interfaceCoachSnapshot=null;
-    if(snapshot?.openedEditor&&document.body.classList.contains("editorOpen")&&!editorDirty)closeEditorMode({force:true,returnPrevious:false});
+    interfaceCoachSnapshot=null;
+    if(!firstFinalFinish&&snapshot?.openedEditor&&document.body.classList.contains("editorOpen")&&!editorDirty)closeEditorMode({force:true,returnPrevious:false});
     if(snapshot){setSettingsCollapsed(snapshot.settingsCollapsed);musicDetailsEl.open=snapshot.musicDetailsOpen;snapshot.audioDetails.open=snapshot.audioDetailsOpen;if(snapshot.mobilePanelOpen)openMobilePanel();else closeMobilePanel();if(snapshot.basemapOpen)openMapControlPanel("basemap");else if(snapshot.mapSettingsOpen)openMapControlPanel("settings");if(snapshot.menuOpen)openAppNavigation();else closeAppNavigation();}
+    if(firstFinalFinish){editorPaneRatios=[0.20,0.35,0.45];if(!document.body.classList.contains("editorOpen"))await openEditorMode();if(document.body.classList.contains("editorOpen")){setEditorTab("form");applyEditorPaneRatios({persist:true});requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));}}
   };
   const startInterfaceCoach=async({force=false}={})=>{
-    if(interfaceCoachActive||!authState.user||authState.user.mustChangePassword||appI18n?.isPublicSurvey)return;const key=interfaceCoachStorageKey();if(!force&&key)try{if(localStorage.getItem(key)==="complete")return;}catch(_error){}
+    if(interfaceCoachActive||!authState.user||authState.user.mustChangePassword||appI18n?.isPublicSurvey)return;const key=interfaceCoachStorageKey();let previouslyComplete=false;if(key)try{previouslyComplete=localStorage.getItem(key)==="complete";}catch(_error){}if(!force&&previouslyComplete)return;
     closeHelpWorkspace();closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();
-    const audioDetails=audioOptionsBody.closest("details");interfaceCoachSnapshot={menuOpen:appNavDrawerEl.classList.contains("open"),basemapOpen:!mapBasemapPanelEl.hidden,mapSettingsOpen:!mapSettingsPanelEl.hidden,settingsCollapsed:settingsCard.classList.contains("settingsCollapsed"),musicDetailsOpen:musicDetailsEl.open,audioDetails,audioDetailsOpen:audioDetails.open,mobilePanelOpen:document.body.classList.contains("mobilePanelOpen"),openedEditor:false};
+    const audioDetails=audioOptionsBody.closest("details");interfaceCoachSnapshot={menuOpen:appNavDrawerEl.classList.contains("open"),basemapOpen:!mapBasemapPanelEl.hidden,mapSettingsOpen:!mapSettingsPanelEl.hidden,settingsCollapsed:settingsCard.classList.contains("settingsCollapsed"),musicDetailsOpen:musicDetailsEl.open,audioDetails,audioDetailsOpen:audioDetails.open,mobilePanelOpen:document.body.classList.contains("mobilePanelOpen"),openedEditor:false,previouslyComplete};
     interfaceCoachActive=true;interfaceCoachIndex=0;interfaceCoachEl.hidden=false;interfaceCoachEl.setAttribute("aria-hidden","false");document.body.classList.add("interfaceCoachOpen");await renderInterfaceCoachStep();
   };
-  interfaceCoachSkipBtn.addEventListener("click",()=>completeInterfaceCoach({markComplete:true}));
+  interfaceCoachSkipBtn.addEventListener("click",()=>void completeInterfaceCoach({markComplete:true}));
   interfaceCoachBackBtn.addEventListener("click",()=>{if(interfaceCoachIndex<=0)return;interfaceCoachIndex--;void renderInterfaceCoachStep({direction:-1});});
-  interfaceCoachNextBtn.addEventListener("click",()=>{if(interfaceCoachIndex>=interfaceCoachSteps.length-1){completeInterfaceCoach({markComplete:true});return;}interfaceCoachIndex++;void renderInterfaceCoachStep({direction:1});});
+  interfaceCoachNextBtn.addEventListener("click",()=>{if(interfaceCoachIndex>=interfaceCoachSteps.length-1){void completeInterfaceCoach({markComplete:true,finishedFinal:true});return;}interfaceCoachIndex++;void renderInterfaceCoachStep({direction:1});});
   const scheduleInterfaceCoachPosition=()=>{if(interfaceCoachActive)requestAnimationFrame(positionInterfaceCoach);};
   window.addEventListener("resize",scheduleInterfaceCoachPosition);window.addEventListener("orientationchange",scheduleInterfaceCoachPosition);window.addEventListener("scroll",scheduleInterfaceCoachPosition,true);window.visualViewport?.addEventListener("resize",scheduleInterfaceCoachPosition);window.visualViewport?.addEventListener("scroll",scheduleInterfaceCoachPosition);
 
@@ -5235,7 +5236,7 @@ loopCurrentEl.checked = false;
   const maybeShowOnboarding=()=>{if(!authState.user||authState.user.mustChangePassword)return;let completed=false;try{completed=localStorage.getItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`)==="complete";}catch(_error){}if(completed){void startInterfaceCoach();return;}void openOnboarding();};
   closeAppHelpBtn.addEventListener("click",closeHelpWorkspace);openFieldGuideBtn.addEventListener("click",openFieldGuide);
   appI18n?.onChange(async()=>{updateEditorProductivityLanguage();updateStreetViewControl();renderPhotoAnnotationStatus();renderPhotoDownload();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
-  document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(interfaceCoachActive){completeInterfaceCoach({markComplete:true});return;}if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
+  document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(interfaceCoachActive){void completeInterfaceCoach({markComplete:true});return;}if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
 
   const loadEditorHelp = async () => {
     try {

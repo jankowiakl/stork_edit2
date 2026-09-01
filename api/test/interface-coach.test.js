@@ -34,8 +34,26 @@ test("coach follows onboarding, supports replay, skip and live app-language rere
   assert.match(indexSource,/closeHelpWorkspace\(\);void startInterfaceCoach\(\);/);
   assert.match(indexSource,/if\(completed\)\{void startInterfaceCoach\(\);return;\}void openOnboarding\(\);/);
   assert.match(indexSource,/if\(interfaceCoachActive\)await renderInterfaceCoachStep\(\{direction:1,scroll:false\}\)/);
-  assert.match(indexSource,/interfaceCoachSkipBtn\.addEventListener\("click",\(\)=>completeInterfaceCoach\(\{markComplete:true\}\)\)/);
+  assert.match(indexSource,/interfaceCoachSkipBtn\.addEventListener\("click",\(\)=>void completeInterfaceCoach\(\{markComplete:true\}\)\)/);
   assert.match(indexSource,/appI18n\?\.isPublicSurvey/);
+});
+
+test("first final Finish keeps the editor open and persists the 20/35/45 layout only once",()=>{
+  assert.match(indexSource,/firstFinalFinish=markComplete&&finishedFinal&&interfaceCoachSteps\[interfaceCoachIndex\]\?\.final&&!snapshot\?\.previouslyComplete/);
+  assert.match(indexSource,/if\(!firstFinalFinish&&snapshot\?\.openedEditor/);
+  assert.match(indexSource,/if\(firstFinalFinish\)\{editorPaneRatios=\[0\.20,0\.35,0\.45\];if\(!document\.body\.classList\.contains\("editorOpen"\)\)await openEditorMode\(\)/);
+  assert.match(indexSource,/if\(firstFinalFinish\)\{editorPaneRatios=\[0\.20,0\.35,0\.45\]/);
+  assert.match(indexSource,/setEditorTab\("form"\);applyEditorPaneRatios\(\{persist:true\}\)/);
+  assert.match(indexSource,/completeInterfaceCoach\(\{markComplete:true,finishedFinal:true\}\)/);
+  assert.match(indexSource,/openedEditor:false,previouslyComplete/);
+});
+
+test("editor coach resize note is bilingual and desktop-only",()=>{
+  const en=loadI18n("en"),pl=loadI18n("pl");
+  assert.match(en.t("coach.editorResize"),/dragging the vertical separators/);
+  assert.match(pl.t("coach.editorResize"),/przeciągając pionowe separatory/);
+  assert.match(indexSource,/desktopNoteKey:"coach\.editorResize"/);
+  assert.match(indexSource,/if\(step\.desktopNoteKey&&!isMobile\(\)\)coachText\.push/);
 });
 
 test("coach targets the real responsive interface and preserves dirty editor state",()=>{
