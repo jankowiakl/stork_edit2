@@ -23,7 +23,8 @@
       "coach.11":"You do not have to finish everything at once. Save a draft if you want to return to the photograph later, or complete the analysis when all required information has been checked.",
       "coach.12":"Lots of photographs to annotate? If it starts to feel stressful, turn on our relaxing music 🎵, get comfortable, and return calmly to the storks. Science can be enjoyable too 🙂",
       "coach.13":"That's it! Thank you for helping us process the White Stork data. Your work is an important part of the project. We hope you enjoy working with the application and have a great day! 🐦",
-      "coach.back":"Back","coach.next":"Next","coach.skip":"Skip","coach.finish":"Finish"
+      "coach.back":"Back","coach.next":"Next","coach.skip":"Skip","coach.finish":"Finish",
+      "photo.annotationComplete":"Annotation complete — open editor","photo.annotationIncomplete":"Annotation not complete — open editor"
     },
     pl:{
       "help.what":"Co to jest?","help.how":"Jak zapisać","help.categories":"Kategorie","help.important":"Ważne","help.technical":"Metadane techniczne","help.dataType":"Typ danych","help.unit":"Jednostka / format","help.source":"Źródło / rola",
@@ -44,7 +45,8 @@
       "coach.11":"Nie musisz kończyć wszystkiego od razu. Zapisz wersję roboczą, jeśli chcesz wrócić do zdjęcia później, albo zakończ analizę, gdy wszystkie potrzebne informacje są już sprawdzone.",
       "coach.12":"Dużo zdjęć do oznaczenia? Jeżeli robi się stresująco, włącz naszą muzykę relaksacyjną 🎵, usiądź wygodnie i spokojnie wróć do bocianów. Nauka też może być przyjemna 🙂",
       "coach.13":"To wszystko! Dziękujemy za pomoc w opracowywaniu danych o bocianach białych. Twoja praca jest ważną częścią projektu. Życzymy przyjemnej pracy i miłego dnia! 🐦",
-      "coach.back":"Wstecz","coach.next":"Dalej","coach.skip":"Pomiń","coach.finish":"Zakończ"
+      "coach.back":"Wstecz","coach.next":"Dalej","coach.skip":"Pomiń","coach.finish":"Zakończ",
+      "photo.annotationComplete":"Opis zakończony — otwórz arkusz","photo.annotationIncomplete":"Opis niezakończony — otwórz arkusz"
     }
   };
 
