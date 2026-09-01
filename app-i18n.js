@@ -24,7 +24,8 @@
       "coach.12":"Lots of photographs to annotate? If it starts to feel stressful, turn on our relaxing music 🎵, get comfortable, and return calmly to the storks. Science can be enjoyable too 🙂",
       "coach.13":"That's it! Thank you for helping us process the White Stork data. Your work is an important part of the project. We hope you enjoy working with the application and have a great day! 🐦",
       "coach.back":"Back","coach.next":"Next","coach.skip":"Skip","coach.finish":"Finish",
-      "photo.annotationComplete":"Annotation complete — open editor","photo.annotationIncomplete":"Annotation not complete — open editor"
+      "photo.annotationComplete":"Annotation complete — open editor","photo.annotationIncomplete":"Annotation not complete — open editor",
+      "editor.copyPickerTitle":"Choose a previous annotation","editor.copyLoading":"Loading previous annotations…","editor.copyEmpty":"No usable previous annotations for this bird.","editor.noActivity":"No activity specified","editor.photoEarlierOne":"1 photo earlier","editor.photoEarlierMany":"{n} photos earlier","editor.copySuccess":"Previous annotation copied. Review the values before saving.","editor.copyMismatch":"Check flight state and activity — the copied annotation may not match the current photograph.","editor.pinTooltip":"Keep this value when moving to the next photo","editor.pinned":"Pinned","editor.unpin":"Unpin","editor.cancel":"Cancel","editor.pinsApplied":"Pinned values were applied. Review them before saving.","editor.saveNextShortcut":"Save & next (Ctrl/Cmd + Enter)"
     },
     pl:{
       "help.what":"Co to jest?","help.how":"Jak zapisać","help.categories":"Kategorie","help.important":"Ważne","help.technical":"Metadane techniczne","help.dataType":"Typ danych","help.unit":"Jednostka / format","help.source":"Źródło / rola",
@@ -46,7 +47,8 @@
       "coach.12":"Dużo zdjęć do oznaczenia? Jeżeli robi się stresująco, włącz naszą muzykę relaksacyjną 🎵, usiądź wygodnie i spokojnie wróć do bocianów. Nauka też może być przyjemna 🙂",
       "coach.13":"To wszystko! Dziękujemy za pomoc w opracowywaniu danych o bocianach białych. Twoja praca jest ważną częścią projektu. Życzymy przyjemnej pracy i miłego dnia! 🐦",
       "coach.back":"Wstecz","coach.next":"Dalej","coach.skip":"Pomiń","coach.finish":"Zakończ",
-      "photo.annotationComplete":"Opis zakończony — otwórz arkusz","photo.annotationIncomplete":"Opis niezakończony — otwórz arkusz"
+      "photo.annotationComplete":"Opis zakończony — otwórz arkusz","photo.annotationIncomplete":"Opis niezakończony — otwórz arkusz",
+      "editor.copyPickerTitle":"Wybierz poprzedni opis","editor.copyLoading":"Ładowanie poprzednich opisów…","editor.copyEmpty":"Brak wcześniejszych opisów tego osobnika, które można skopiować.","editor.noActivity":"Brak określonej aktywności","editor.photoEarlierOne":"1 zdjęcie wcześniej","editor.photoEarlierFew":"{n} zdjęcia wcześniej","editor.photoEarlierMany":"{n} zdjęć wcześniej","editor.copySuccess":"Skopiowano poprzedni opis. Sprawdź wartości przed zapisaniem.","editor.copyMismatch":"Sprawdź stan lotu i aktywność — skopiowany opis może nie pasować do aktualnego zdjęcia.","editor.pinTooltip":"Zachowaj tę wartość przy przejściu do następnego zdjęcia","editor.pinned":"Przypięte","editor.unpin":"Odepnij","editor.cancel":"Anuluj","editor.pinsApplied":"Zastosowano przypięte wartości. Sprawdź je przed zapisaniem.","editor.saveNextShortcut":"Zapisz i następne (Ctrl/Cmd + Enter)"
     }
   };
 

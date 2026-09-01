@@ -128,5 +128,5 @@ test("share actions are audited without storing the raw public token",()=>{
 });
 
 test("the service worker cache remains newer than the Photo Safe sharing release",()=>{
-  assert.match(worker,/stork-edit2-shell-v2026-09-01-43/);
+  assert.match(worker,/stork-edit2-shell-v2026-09-01-44/);
 });

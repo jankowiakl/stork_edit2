@@ -856,6 +856,27 @@
     }
     .editorFooter .primarySave { background: linear-gradient(180deg, rgba(57,217,138,.28), rgba(57,217,138,.11)); }
     .editorFooter .saveNext { background: linear-gradient(180deg, rgba(119,209,255,.28), rgba(119,209,255,.10)); }
+    .editorFieldLabelRow { display:flex; align-items:center; justify-content:space-between; gap:7px; min-width:0; }
+    .editorFieldLabelRow>label { min-width:0; margin:0; }
+    .editorPin { flex:0 0 auto; width:27px; min-width:27px; height:27px; padding:0!important; border:1px solid rgba(119,209,255,.25); border-radius:50%; background:rgba(119,209,255,.05); color:#a9b7c8; font-size:13px!important; line-height:1; opacity:.68; }
+    .editorPin:hover,.editorPin:focus-visible { opacity:1; border-color:rgba(119,209,255,.62); }
+    .editorPin.active { opacity:1; color:#ffe18a; border-color:rgba(255,225,138,.72); background:rgba(255,225,138,.16); box-shadow:0 0 0 2px rgba(255,225,138,.08); }
+    .editorPin[hidden] { display:none!important; }
+    .editorPreviousPicker { position:fixed; z-index:7350; width:min(370px,calc(100vw - 24px)); max-height:min(62dvh,520px); overflow:auto; box-sizing:border-box; padding:12px; border:1px solid rgba(119,209,255,.38); border-radius:14px; background:rgba(10,19,33,.98); box-shadow:0 20px 58px rgba(0,0,0,.58); backdrop-filter:blur(16px); }
+    .editorPreviousPicker[hidden] { display:none!important; }
+    .editorPreviousPickerHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
+    .editorPreviousPickerHeader strong { color:#fff; }
+    .editorPreviousChoices { display:grid; gap:7px; }
+    .editorPreviousChoice { display:grid; width:100%; min-height:64px; gap:3px; padding:9px 10px!important; border:1px solid rgba(119,209,255,.2); border-radius:10px; background:rgba(119,209,255,.055); color:var(--text); text-align:left; white-space:normal; }
+    .editorPreviousChoice:hover,.editorPreviousChoice:focus-visible { border-color:rgba(119,209,255,.58); background:rgba(119,209,255,.12); }
+    .editorPreviousDistance { color:#8bd9ff; font-size:var(--ui-font-small); }
+    .editorPreviousActivity { color:#fff; font-weight:750; }
+    .editorPreviousSecondary { color:var(--muted); font-size:var(--ui-font-small); }
+    .editorPreviousEmpty { margin:6px 2px; color:var(--muted); }
+    @media(max-width:700px){
+      .editorPreviousPicker { left:max(8px,env(safe-area-inset-left))!important; right:max(8px,env(safe-area-inset-right)); top:auto!important; bottom:max(8px,env(safe-area-inset-bottom)); width:auto; max-height:min(62dvh,480px); border-radius:16px; }
+      .editorPreviousChoice { min-height:68px; }
+    }
     .editorInvalid {
       border-color: rgba(255,107,107,.8) !important;
       box-shadow: 0 0 0 2px rgba(255,107,107,.13);
@@ -2127,7 +2148,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
               </select>
             </div>
             <div class="editorField">
-              <label for="editorPheno">Phenological period <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorPheno">Phenological period <span class="required">*</span></label><button class="editorPin" data-pin-field="Pheno_period" type="button">📌</button></div>
               <select id="editorPheno" data-field="Pheno_period">
                 <option value="">— select —</option>
                 <option value="fledging">fledging</option>
@@ -2138,7 +2159,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
               </select>
             </div>
             <div class="editorField">
-              <label for="editorResidence">Residence <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorResidence">Residence <span class="required">*</span></label><button class="editorPin" data-pin-field="Residence" type="button">📌</button></div>
               <select id="editorResidence" data-field="Residence">
                 <option value="">— select —</option>
                 <option value="yes">yes</option>
@@ -2146,7 +2167,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
               </select>
             </div>
             <div class="editorField">
-              <label for="editorPeriodDay">Period of day <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorPeriodDay">Period of day <span class="required">*</span></label><button class="editorPin" data-pin-field="Period_day" type="button">📌</button></div>
               <select id="editorPeriodDay" data-field="Period_day">
                 <option value="">— select —</option>
                 <option value="day">day</option>
@@ -2154,9 +2175,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
               </select>
             </div>
             <div class="editorField full" id="editorArtificialLightsField" hidden>
-              <label class="editorInlineCheck" for="editorArtificialLights">
-                <input id="editorArtificialLights" data-field="Artificial_lights" type="checkbox"> Artificial lights visible
-              </label>
+              <div class="editorFieldLabelRow"><label class="editorInlineCheck" for="editorArtificialLights"><input id="editorArtificialLights" data-field="Artificial_lights" type="checkbox"> Artificial lights visible</label><button class="editorPin" data-pin-field="Artificial_lights" type="button">📌</button></div>
             </div>
           </div>
         </section>
@@ -2348,15 +2367,19 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
       </form>
 
       <div class="editorFooter">
-        <button id="editorCopyPrevious" class="secondary" type="button">Copy previous</button>
+        <button id="editorCopyPrevious" class="secondary" type="button" aria-haspopup="dialog" aria-expanded="false">Copy previous</button>
         <button id="editorNextUnannotated" class="secondary" type="button">Next unannotated</button>
         <button id="editorRequestReview" class="secondary" type="button">Request verification</button>
         <button id="editorSaveDraft" class="secondary" type="button">Save draft</button>
         <button id="editorSaveAnalysed" class="primarySave" type="button">Save analysed</button>
-        <button id="editorSaveNext" class="saveNext" type="button">Save &amp; next</button>
+        <button id="editorSaveNext" class="saveNext" type="button" title="Save &amp; next (Ctrl/Cmd + Enter)">Save &amp; next</button>
         <button id="editorDownloadPhoto" class="secondary editorDownloadPhoto" type="button" title="Download the current photo in original quality">Download photo</button>
       </div>
     </aside>
+    <section class="editorPreviousPicker" id="editorPreviousPicker" role="dialog" aria-labelledby="editorPreviousPickerTitle" hidden>
+      <div class="editorPreviousPickerHeader"><strong id="editorPreviousPickerTitle">Choose a previous annotation</strong><button class="secondary tiny" id="editorPreviousPickerClose" type="button">Cancel</button></div>
+      <div class="editorPreviousChoices" id="editorPreviousChoices"></div>
+    </section>
   </div>
 </div>
 
@@ -2574,6 +2597,11 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const editorSaveNextBtn = el("editorSaveNext");
   const editorDownloadPhotoBtn = el("editorDownloadPhoto");
   const editorCopyPreviousBtn = el("editorCopyPrevious");
+  const editorPreviousPickerEl = el("editorPreviousPicker");
+  const editorPreviousPickerTitleEl = el("editorPreviousPickerTitle");
+  const editorPreviousPickerCloseBtn = el("editorPreviousPickerClose");
+  const editorPreviousChoicesEl = el("editorPreviousChoices");
+  const editorPinButtons = Array.from(document.querySelectorAll(".editorPin[data-pin-field]"));
   const editorNextUnannotatedBtn = el("editorNextUnannotated");
   const editorRequestReviewBtn = el("editorRequestReview");
   const editorQualityEl = el("editorQuality");
@@ -4681,6 +4709,7 @@ loopCurrentEl.checked = false;
   let editorCanEdit = false;
   let editorLoadToken = 0;
   let editorHeightClassManual = false;
+  let editorOnlyPinnedChanges = false;
   const defaultEditorPaneRatios = [0.18,0.30,0.52];
   let editorPaneRatios = [...defaultEditorPaneRatios];
   try {
@@ -4837,6 +4866,81 @@ loopCurrentEl.checked = false;
   const editorLookupFilename = (point) => String(point && point.name || "")
     .replace(/\s*\(\d+\)(?=\.[^.]+$)/, "");
   const activeEditorSequence=()=>editorContributorReview?.points?.length?editorContributorReview.points:track;
+  const EDITOR_COPY_EXCLUDED_FIELDS=new Set(["Elevation_m","Above_ground","Height_class_100m","Analysed"]);
+  const editorPinnedFields=new Set();
+  let editorPreviousAnnotations=[];
+  let editorPreviousPickerToken=0;
+  const editorT=(key,vars)=>appI18n?.t(key,vars)||key;
+  const editorFieldForKey=(key)=>editorFieldEls.find((field)=>field.dataset.field===key);
+  const editorUpdatePinButtons=()=>{
+    const isNight=editorPeriodDayEl.value==="night";
+    for(const button of editorPinButtons){
+      const key=button.dataset.pinField,active=editorPinnedFields.has(key),available=key!=="Artificial_lights"||isNight;
+      button.hidden=!available;button.disabled=editorSaving||!editorCanEdit||!available;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));
+      const action=active?editorT("editor.unpin"):editorT("editor.pinTooltip");button.title=active?`${editorT("editor.pinned")} — ${editorT("editor.pinTooltip")}`:action;button.setAttribute("aria-label",action);
+    }
+  };
+  const editorCapturePinnedValues=()=>{
+    const values={};
+    for(const key of ["Pheno_period","Residence","Period_day","Artificial_lights"]){if(!editorPinnedFields.has(key))continue;const field=editorFieldForKey(key);if(!field)continue;values[key]=field.type==="checkbox"?field.checked:field.value;}
+    return values;
+  };
+  const editorApplyPinnedValues=(values)=>{
+    if(!values||!editorCanEdit)return false;let changed=false;
+    for(const key of ["Pheno_period","Residence","Period_day","Artificial_lights"]){const value=values[key];
+      if(!Object.prototype.hasOwnProperty.call(values,key))continue;
+      if(!editorPinnedFields.has(key))continue;
+      const field=editorFieldForKey(key);if(!field||(key==="Artificial_lights"&&editorPeriodDayEl.value!=="night"))continue;
+      if(field.type==="checkbox"){const next=!!value;if(field.checked!==next){field.checked=next;changed=true;}}
+      else if(field.value!==String(value??"")){field.value=String(value??"");changed=true;}
+    }
+    editorApplyConditionalRules();editorUpdatePinButtons();
+    if(changed){editorDirty=false;editorOnlyPinnedChanges=true;editorSetStatus(editorT("editor.pinsApplied"),"busy");}
+    return changed;
+  };
+  const editorPhotoEarlierText=(distance)=>{
+    if(appI18n?.language!=="pl")return distance===1?editorT("editor.photoEarlierOne"):editorT("editor.photoEarlierMany",{n:distance});
+    if(distance===1)return editorT("editor.photoEarlierOne");const mod10=distance%10,mod100=distance%100;
+    return mod10>=2&&mod10<=4&&!(mod100>=12&&mod100<=14)?editorT("editor.photoEarlierFew",{n:distance}):editorT("editor.photoEarlierMany",{n:distance});
+  };
+  const editorPreviousSummary=(annotation)=>{
+    const activity=annotation.Activity_class||annotation.Fly_ground||"",primary=activity?appI18n?.optionLabel(activity)||activity:editorT("editor.noActivity");
+    const secondaryKey=["Foraging_habitat_group","Roost_site_group","Agriculture_type","Env_desc_en"].find((key)=>annotation[key]);
+    const secondaryValue=secondaryKey?(secondaryKey==="Env_desc_en"?String(annotation[secondaryKey]):appI18n?.optionLabel(annotation[secondaryKey])||String(annotation[secondaryKey])):"";
+    return{primary,secondary:secondaryValue};
+  };
+  const editorHasUsableAnnotation=(record)=>{
+    if(["draft","needs_review","complete"].includes(String(record?.status||"")))return true;
+    return editorFieldEls.some((field)=>!EDITOR_COPY_EXCLUDED_FIELDS.has(field.dataset.field)&&record?.data?.[field.dataset.field]!==null&&record?.data?.[field.dataset.field]!==undefined&&String(record.data[field.dataset.field]).trim()!=="");
+  };
+  const positionEditorPreviousPicker=()=>{
+    if(editorPreviousPickerEl.hidden||window.matchMedia("(max-width:700px)").matches)return;
+    const anchor=editorCopyPreviousBtn.getBoundingClientRect(),picker=editorPreviousPickerEl.getBoundingClientRect(),left=Math.max(12,Math.min(window.innerWidth-picker.width-12,anchor.left)),top=Math.max(12,anchor.top-picker.height-8);
+    editorPreviousPickerEl.style.left=`${left}px`;editorPreviousPickerEl.style.top=`${top}px`;
+  };
+  const closeEditorPreviousPicker=()=>{editorPreviousPickerToken++;editorPreviousPickerEl.hidden=true;editorPreviousPickerEl.classList.remove("open");editorCopyPreviousBtn.setAttribute("aria-expanded","false");};
+  const renderEditorPreviousPicker=()=>{
+    editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.replaceChildren();
+    if(!editorPreviousAnnotations.length){const empty=document.createElement("p");empty.className="editorPreviousEmpty";empty.textContent=editorT("editor.copyEmpty");editorPreviousChoicesEl.append(empty);return;}
+    editorPreviousAnnotations.forEach((choice,index)=>{const summary=editorPreviousSummary(choice.record.data||{}),button=document.createElement("button");button.type="button";button.className="editorPreviousChoice";button.dataset.previousChoice=String(index);const distance=document.createElement("span"),primary=document.createElement("span");distance.className="editorPreviousDistance";distance.textContent=editorPhotoEarlierText(choice.distance);primary.className="editorPreviousActivity";primary.textContent=summary.primary;button.append(distance,primary);if(summary.secondary){const secondary=document.createElement("span");secondary.className="editorPreviousSecondary";secondary.textContent=summary.secondary;button.append(secondary);}editorPreviousChoicesEl.append(button);});
+  };
+  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));editorUpdatePinButtons();if(!editorPreviousPickerEl.hidden)renderEditorPreviousPicker();};
+  const collectEditorPreviousAnnotations=async()=>{
+    const sequence=activeEditorSequence(),current=sequence[editorPhotoIndex],currentBird=current?.bird||birdId,choices=[];
+    for(let index=editorPhotoIndex-1;index>=0&&choices.length<3;index--){const point=sequence[index];if((point?.bird||birdId)!==currentBird||String(point?.status||"")==="unstarted")continue;try{const record=await editorApiGet({photoId:point.photoId});if(editorHasUsableAnnotation(record))choices.push({index,distance:editorPhotoIndex-index,point,record});}catch(_error){}}
+    return choices;
+  };
+  const copyEditorPreviousAnnotation=(choice)=>{
+    if(!choice?.record?.data||!editorCanEdit)return;const currentRecord={...(editorLoadedRecord||{})},currentVersion=editorLoadedVersion,currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},currentHeightClassManual=editorHeightClassManual,currentAboveGround=editorAboveGroundEl.value,copied={};
+    for(const field of editorFieldEls){const key=field.dataset.field;if(!EDITOR_COPY_EXCLUDED_FIELDS.has(key))copied[key]=choice.record.data[key]??null;}
+    populateEditorForm({...currentRecord,...copied,Analysed:currentRecord.Analysed});editorElevationEl.value=currentDerived.Elevation_m;editorAboveGroundEl.value=currentDerived.Above_ground;editorHeightClassEl.value=currentDerived.Height_class_100m;editorHeightClassManual=currentHeightClassManual;editorLoadedRecord=currentRecord;editorLoadedVersion=currentVersion;editorMarkDirty();closeEditorPreviousPicker();
+    const aboveRaw=currentAboveGround===""?currentRecord.Above_ground:currentAboveGround,above=aboveRaw===null||aboveRaw===undefined||aboveRaw===""?NaN:Number(aboveRaw),movement=copied.Fly_ground,mismatch=Number.isFinite(above)&&((movement==="fly"&&above<=0)||(movement==="ground"&&above>50));
+    editorSetStatus(`${editorT("editor.copySuccess")}${mismatch?` ${editorT("editor.copyMismatch")}`:""}`,"busy");
+  };
+  const openEditorPreviousPicker=async()=>{
+    if(editorPhotoIndex<=0||editorSaving||!editorCanEdit)return;const pickerToken=++editorPreviousPickerToken;editorPreviousAnnotations=[];editorPreviousPickerTitleEl.textContent=editorT("editor.copyPickerTitle");editorPreviousPickerCloseBtn.textContent=editorT("editor.cancel");editorPreviousChoicesEl.innerHTML=`<p class="editorPreviousEmpty">${escapeHtml(editorT("editor.copyLoading"))}</p>`;editorPreviousPickerEl.hidden=false;editorPreviousPickerEl.classList.add("open");editorCopyPreviousBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorPreviousPicker);
+    const choices=await collectEditorPreviousAnnotations();if(editorPreviousPickerEl.hidden||pickerToken!==editorPreviousPickerToken)return;editorPreviousAnnotations=choices;renderEditorPreviousPicker();requestAnimationFrame(positionEditorPreviousPicker);
+  };
 
   const editorSetBusy = (busy) => {
     editorSaving = busy;
@@ -4851,6 +4955,7 @@ loopCurrentEl.checked = false;
     const currentPhoto=activeEditorSequence()[editorPhotoIndex];
     editorDownloadPhotoBtn.hidden=!!photoSafeViewerContext?.readOnly;
     editorDownloadPhotoBtn.disabled=busy||!editorHasConnection()||!currentPhoto?.photoId||!!photoSafeViewerContext?.readOnly;
+    editorUpdatePinButtons();
   };
 
   const editorSetEditable=(editable)=>{
@@ -4864,7 +4969,7 @@ loopCurrentEl.checked = false;
   const editorMarkDirty = () => {
     if (editorSaving||!editorCanEdit) return;
     if(playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus("Playback stopped while you edit this record.");}
-    editorDirty = true;
+    editorDirty = true;editorOnlyPinnedChanges=false;
     if (!editorStatusEl.classList.contains("error")) {
       editorSetStatus("Unsaved changes.", "busy");
     }
@@ -4951,6 +5056,7 @@ loopCurrentEl.checked = false;
 
     editorUpdateDerived();
     updateEditorCompletionHints();
+    editorUpdatePinButtons();
   };
 
   const updateEditorCompletionHints = () => {
@@ -5103,7 +5209,7 @@ loopCurrentEl.checked = false;
   const openOnboarding=async({force=false}={})=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`;if(!force){try{if(localStorage.getItem(key)==="complete")return;}catch(_error){}}helpWorkspaceMode="onboarding";openHelpWorkspace();appHelpEyebrowEl.textContent="Introduction";appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width="8%";appHelpBodyEl.innerHTML='<p class="appHelpLead">Preparing your introduction…</p>';appHelpActionsEl.replaceChildren(helpButton("Close for now","secondary",closeHelpWorkspace));try{const result=await createOnboardingSteps();onboardingSteps=result.steps;onboardingFieldMap=result.fieldMap;onboardingIndex=0;renderOnboardingStep();}catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the introduction: ${escapeHtml(error.message)}</div>`;}};
   const maybeShowOnboarding=()=>{if(!authState.user||authState.user.mustChangePassword)return;let completed=false;try{completed=localStorage.getItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`)==="complete";}catch(_error){}if(completed){void startInterfaceCoach();return;}void openOnboarding();};
   closeAppHelpBtn.addEventListener("click",closeHelpWorkspace);openFieldGuideBtn.addEventListener("click",openFieldGuide);
-  appI18n?.onChange(async()=>{renderPhotoAnnotationStatus();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
+  appI18n?.onChange(async()=>{updateEditorProductivityLanguage();renderPhotoAnnotationStatus();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
   document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(interfaceCoachActive){completeInterfaceCoach({markComplete:true});return;}if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
 
   const loadEditorHelp = async () => {
@@ -5149,7 +5255,7 @@ loopCurrentEl.checked = false;
     editorApplyConditionalRules();
     editorUpdateDerived({forceClass:!editorHeightClassManual});
     updateEditorCompletionHints();
-    editorDirty = false;
+    editorDirty = false;editorOnlyPinnedChanges=false;
   };
 
   const editorNormalizeValues = () => {
@@ -5272,8 +5378,9 @@ loopCurrentEl.checked = false;
     return errors;
   };
 
-  const editorLoadPhoto = async (index,{syncViewer=true}={}) => {
+  const editorLoadPhoto = async (index,{syncViewer=true,pinnedValues=null}={}) => {
     const sequence=activeEditorSequence();if (!sequence.length) return;
+    closeEditorPreviousPicker();
     const token = ++editorLoadToken;
     const previousEditorPhotoIndex=editorPhotoIndex;
     editorPhotoIndex = Math.max(0, Math.min(index, sequence.length - 1));
@@ -5322,6 +5429,7 @@ loopCurrentEl.checked = false;
     } finally {
       if (token === editorLoadToken) editorSetBusy(false);
     }
+    if(token===editorLoadToken&&pinnedValues)editorApplyPinnedValues(pinnedValues);
     if(editorContributorReview&&!playing){playBtn.disabled=sequence.length<2;pauseBtn.disabled=true;sliderOverlay.style.display=sequence.length<2?"none":"block";syncSliderPlayPause();}
   };
 
@@ -5351,6 +5459,7 @@ loopCurrentEl.checked = false;
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    closeEditorPreviousPicker();
     if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
     editorWorkspaceEl.appendChild(editorPanelEl);
@@ -5362,7 +5471,7 @@ loopCurrentEl.checked = false;
     wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
     applyLayoutSplit({persist:false});
     delete document.body.dataset.editorTab;
-    editorDirty = false;
+    editorDirty = false;editorOnlyPinnedChanges=false;
     editorLoadToken++;
     refreshMapSizes();
     if(returnMode)setTimeout(()=>openDataWorkspace(returnMode),0);
@@ -5371,11 +5480,12 @@ loopCurrentEl.checked = false;
 
   const moveEditorPhoto = async (delta, { force = false } = {}) => {
     if (editorSaving) return false;
+    const pinnedValues=delta>0?editorCapturePinnedValues():null;
     if(editorContributorReview&&playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();}
     if(!force&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved)return false;}
     const nextIndex = Math.max(0, Math.min(editorPhotoIndex + delta, activeEditorSequence().length - 1));
     if (nextIndex === editorPhotoIndex) return false;
-    await editorLoadPhoto(nextIndex);
+    await editorLoadPhoto(nextIndex,{pinnedValues});
     return true;
   };
 
@@ -5391,7 +5501,7 @@ loopCurrentEl.checked = false;
       return false;
     }
 
-    const sequence=activeEditorSequence(),point = sequence[editorPhotoIndex];
+    const sequence=activeEditorSequence(),point = sequence[editorPhotoIndex],pinnedValues=advance?editorCapturePinnedValues():null;
     const filename = editorLookupFilename(point);
     const values = editorNormalizeValues();
     const existingAnalysed = String(editorLoadedRecord && editorLoadedRecord.Analysed || "").toLowerCase() === "yes";
@@ -5413,13 +5523,13 @@ loopCurrentEl.checked = false;
       if (!result || result.ok === false) throw new Error((result && result.error) || "Server rejected the save.");
       editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
       editorLoadedVersion = result.version ?? editorLoadedVersion;
-      editorDirty = false;
+      editorDirty = false;editorOnlyPinnedChanges=false;
       const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint)savedTrackPoint.status=targetStatus;const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
       editorRecordLineEl.textContent = filename;
       editorSetStatus(values.Analysed === "yes" ? "Saved and marked as analysed." : "Draft saved.", "ok");
       if (advance) {
-        if(editorContributorReview){if(editorPhotoIndex<sequence.length-1)await editorLoadPhoto(editorPhotoIndex+1);else editorSetStatus("Saved. This was the last photo for the selected contributor.","ok");}
-        else{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex);else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}
+        if(editorContributorReview){if(editorPhotoIndex<sequence.length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("Saved. This was the last photo for the selected contributor.","ok");}
+        else{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex,{pinnedValues});else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}
       }
       return true;
     } catch(error) {
@@ -5449,14 +5559,19 @@ loopCurrentEl.checked = false;
       editorMarkDirty();
     });
   }
+  for(const button of editorPinButtons)button.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();const key=button.dataset.pinField;if(!editorCanEdit||(key==="Artificial_lights"&&editorPeriodDayEl.value!=="night"))return;if(editorPinnedFields.has(key))editorPinnedFields.delete(key);else editorPinnedFields.add(key);editorUpdatePinButtons();});
 
   editorModeBtn.addEventListener("click",()=>{editorReturnDataMode=null;openEditorMode();});
   toggleEditorHeaderBtn.addEventListener("click",()=>{const compact=editorPanelHeaderEl.classList.toggle("compact");toggleEditorHeaderBtn.textContent=compact?"Details":"Hide";toggleEditorHeaderBtn.setAttribute("aria-expanded",String(!compact));});
   closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
   editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
   editorNextPhotoBtn.addEventListener("click", () => moveEditorPhoto(1));
-  editorCopyPreviousBtn.addEventListener("click",async()=>{if(editorPhotoIndex<=0||editorSaving)return;try{const previous=await editorApiGet({photoId:activeEditorSequence()[editorPhotoIndex-1].photoId}),currentRecord={...(editorLoadedRecord||{})},currentVersion=editorLoadedVersion,excluded=new Set(["Elevation_m","Above_ground","Height_class_100m","Analysed"]),copied={};for(const field of editorFieldEls){const key=field.dataset.field;if(!excluded.has(key))copied[key]=previous.data?.[key]??null;}populateEditorForm({...currentRecord,...copied,Analysed:currentRecord.Analysed});editorLoadedRecord=currentRecord;editorLoadedVersion=currentVersion;editorMarkDirty();editorSetStatus("Values copied from the previous photo. Review them before saving.","busy");}catch(error){editorSetStatus(`Could not copy previous values: ${error.message}`,"error");}});
-  editorNextUnannotatedBtn.addEventListener("click",async()=>{if(editorDirty&&!await saveEditorRecord({markAnalysed:false,advance:false,automatic:true}))return;if(editorContributorReview){if(editorPhotoIndex<activeEditorSequence().length-1)await editorLoadPhoto(editorPhotoIndex+1);else editorSetStatus("This was the last photo for the selected contributor.","ok");return;}try{const current=track[editorPhotoIndex],result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(current.photoId)}`);if(!result.photo){editorSetStatus("No more unannotated photos for this individual.","ok");return;}const index=track.findIndex((point)=>point.photoId===result.photo.id);if(index>=0)await editorLoadPhoto(index);}catch(error){editorSetStatus(`Could not find next unannotated photo: ${error.message}`,"error");}});
+  editorCopyPreviousBtn.addEventListener("click",()=>void openEditorPreviousPicker());
+  editorPreviousPickerCloseBtn.addEventListener("click",closeEditorPreviousPicker);
+  editorPreviousChoicesEl.addEventListener("click",(event)=>{const button=event.target.closest("[data-previous-choice]");if(!button)return;copyEditorPreviousAnnotation(editorPreviousAnnotations[Number(button.dataset.previousChoice)]);});
+  document.addEventListener("pointerdown",(event)=>{if(editorPreviousPickerEl.hidden||editorPreviousPickerEl.contains(event.target)||editorCopyPreviousBtn.contains(event.target))return;closeEditorPreviousPicker();});
+  window.addEventListener("resize",()=>{if(!editorPreviousPickerEl.hidden)positionEditorPreviousPicker();});
+  editorNextUnannotatedBtn.addEventListener("click",async()=>{const pinnedValues=editorCapturePinnedValues();if(editorDirty&&!await saveEditorRecord({markAnalysed:false,advance:false,automatic:true}))return;if(editorContributorReview){if(editorPhotoIndex<activeEditorSequence().length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("This was the last photo for the selected contributor.","ok");return;}try{const current=track[editorPhotoIndex],result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(current.photoId)}`);if(!result.photo){editorSetStatus("No more unannotated photos for this individual.","ok");return;}const index=track.findIndex((point)=>point.photoId===result.photo.id);if(index>=0)await editorLoadPhoto(index,{pinnedValues});}catch(error){editorSetStatus(`Could not find next unannotated photo: ${error.message}`,"error");}});
   editorRequestReviewBtn.addEventListener("click",async()=>{const point=activeEditorSequence()[editorPhotoIndex];if(!point?.photoId){editorSetStatus("Could not identify the current photo.","error");return;}const fieldKey=window.prompt("Field to verify (for example Spec1_name), or leave empty for the whole record:","");if(fieldKey===null)return;const reason=window.prompt("Why should the coordinator or administrator verify this?","")?.replaceAll("\0","").trim();if(!reason)return;try{await apiFetch(`/api/photos/${encodeURIComponent(point.photoId)}/review-requests`,{method:"POST",body:JSON.stringify({fieldKey:fieldKey.trim()||null,reason})});editorSetStatus("Verification request sent to the coordinator/administrator.","ok");}catch(error){editorSetStatus(`Could not submit verification: ${error.message}`,"error");}});
   editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
   editorSaveAnalysedBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: false }));
@@ -5476,7 +5591,12 @@ loopCurrentEl.checked = false;
 
   window.addEventListener("keydown", (event) => {
     if (!document.body.classList.contains("editorOpen")) return;
+    const blockingDialog=()=>editorPreviousPickerEl.classList.contains("open")||interfaceCoachActive||!appHelpWorkspaceEl.hidden||fieldHelpPopoverEl.classList.contains("open")||Array.from(document.querySelectorAll('dialog[open],[role="dialog"][aria-modal="true"]')).some((node)=>node.getClientRects().length>0);
+    if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){
+      if(event.repeat||editorSaving||editorSaveNextBtn.disabled||blockingDialog())return;event.preventDefault();editorSaveNextBtn.click();return;
+    }
     if (event.key === "Escape") {
+      if(!editorPreviousPickerEl.hidden){event.preventDefault();closeEditorPreviousPicker();return;}
       event.preventDefault();
       closeEditorMode();
       return;
@@ -5496,6 +5616,7 @@ loopCurrentEl.checked = false;
     event.preventDefault();void navigatePhotoSequenceBy(event.key==="ArrowLeft"?-1:1);
   });
 
+  updateEditorProductivityLanguage();
   editorSetBusy(false);
 
   let photoNavHideTimer = null;
