@@ -7,7 +7,6 @@ import { publicAnnotationSchema } from "../src/annotation-schema.js";
 const source=fs.readFileSync(new URL("../../app-i18n.js",import.meta.url),"utf8");
 const indexSource=fs.readFileSync(new URL("../../index.html",import.meta.url),"utf8");
 const workerSource=fs.readFileSync(new URL("../../sw.js",import.meta.url),"utf8");
-const workerRegistrationSource=fs.readFileSync(new URL("../../sw-registration.js",import.meta.url),"utf8");
 
 function loadI18n({stored=null,languages=["en-US"],search=""}={}){
   const storage=new Map(stored?[['storkAppLanguageV1',stored]]:[]),languageButtons=[];
@@ -78,24 +77,20 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/BUILD_VERSION="2026-09-02-55"/);
+  assert.match(workerSource,/BUILD_VERSION="2026-09-02-56"/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
 });
 
 test("service worker updates bypass stale HTTP caches and take control without clearing user data",()=>{
-  assert.match(workerRegistrationSource,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
-  assert.match(workerRegistrationSource,/serviceWorker\.addEventListener\("controllerchange"/);
-  assert.match(workerRegistrationSource,/RELOAD_SESSION_KEY="ciconiaSwReloadedVersionV1"/);
-  assert.doesNotMatch(workerRegistrationSource,/registration\.update\(\)/);
+  assert.match(indexSource,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
+  assert.doesNotMatch(indexSource,/serviceWorker\.addEventListener\("controllerchange"/);
   assert.match(workerSource,/new Request\(shellUrl\(path\),\{cache:"reload"\}\)/);
-  assert.match(workerSource,/new Request\(event\.request,\{cache:"no-store"\}\)/);
+  assert.match(workerSource,/if\(event\.request\.mode==="navigate"\)return/);
   assert.match(workerSource,/self\.skipWaiting\(\)/);
   assert.match(workerSource,/self\.clients\.claim\(\)/);
-  assert.match(workerSource,/self\.clients\.matchAll\(\{type:"window",includeUncontrolled:true\}\)/);
   assert.doesNotMatch(workerSource,/client\.navigate|\.navigate\(client\.url\)/);
-  assert.doesNotMatch(workerSource,/cache\.put\(OFFLINE_DOCUMENT_URL,copy\)/);
   assert.match(workerSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
-  assert.doesNotMatch(`${indexSource}\n${workerSource}\n${workerRegistrationSource}`,/indexedDB\.deleteDatabase|localStorage\.clear\(\)/);
+  assert.doesNotMatch(`${indexSource}\n${workerSource}`,/indexedDB\.deleteDatabase|localStorage\.clear\(\)/);
 });
 
 test("application product name is Ciconia Flight Photo Viewer",()=>{

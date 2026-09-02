@@ -8,7 +8,7 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-55" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-56" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -2470,16 +2470,15 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js?v=2026-09-02-55"></script>
-<script src="vendor/jspdf.umd.min.js?v=2026-09-02-55"></script>
-<script src="app-i18n.js?v=2026-09-02-55"></script>
-<script src="config.js?v=2026-09-02-55"></script>
-<script src="viewer-interactions.js?v=2026-09-02-55"></script>
-<script src="sw-registration.js?v=2026-09-02-55"></script>
+<script src="vendor/qrcode.min.js?v=2026-09-02-56"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-09-02-56"></script>
+<script src="app-i18n.js?v=2026-09-02-56"></script>
+<script src="config.js?v=2026-09-02-56"></script>
+<script src="viewer-interactions.js?v=2026-09-02-56"></script>
 
 <script>
 (() => {
-  const appLifecycleLog=window.CiconiaServiceWorker?.lifecycleLog||((event,detail)=>detail===undefined?console.info(`[Ciconia lifecycle] ${event}`):console.info(`[Ciconia lifecycle] ${event}`,detail));
+  const appLifecycleLog=(event,detail)=>detail===undefined?console.info(`[Ciconia lifecycle] ${event}`):console.info(`[Ciconia lifecycle] ${event}`,detail);
   appLifecycleLog("PAGE SCRIPT START");
   const el = (id) => document.getElementById(id);
   const appI18n=window.StorkAppI18n;
@@ -2864,7 +2863,11 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   refreshAppVersionBtn.addEventListener("click",async()=>{refreshAppVersionBtn.disabled=true;try{if(!("serviceWorker" in navigator))return window.location.reload();const registration=await navigator.serviceWorker.getRegistration();if(!registration)return window.location.reload();appLifecycleLog("SW UPDATE CHECK","manual refresh");await registration.update();if(registration.waiting){registration.waiting.postMessage({type:"SKIP_WAITING"});updateInstallStatus("Activating the new application version…");return;}if(registration.installing){updateInstallStatus("Installing the new application version…");return;}window.location.reload();}finally{refreshAppVersionBtn.disabled=false;}});
   window.addEventListener("beforeinstallprompt",(event)=>{event.preventDefault();deferredInstallPrompt=event;updateInstallStatus("The application can be installed on this device. Click Install application.");});
   window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallStatus("The application was installed successfully.");});
-  window.CiconiaServiceWorker?.start();
+  if("serviceWorker" in navigator)window.addEventListener("load",()=>{
+    appLifecycleLog("WINDOW LOAD");
+    appLifecycleLog("SW REGISTER START");
+    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(()=>appLifecycleLog("SW REGISTERED")).catch((error)=>console.warn("Application installation worker failed",error));
+  },{once:true});
 
   // Remember settings panel state when toggling the photo modal
   let prevSettingsCollapsed = false;
@@ -6012,7 +6015,6 @@ loopCurrentEl.checked = false;
       if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
       loadEditorHelp();
       if(editorHasConnection())await loadGithubFiles();
-      maybeShowOnboarding();
     }finally{
       appLifecycleLog("APP INIT COMPLETE");
     }
