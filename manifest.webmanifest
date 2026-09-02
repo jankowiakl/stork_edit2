@@ -1,7 +1,7 @@
 {
   "id": "/stork_edit2/",
-  "name": "Stork Photo Journey",
-  "short_name": "Stork Journey",
+  "name": "Ciconia Flight Photo Viewer",
+  "short_name": "Ciconia Flight Photo Viewer",
   "description": "Mapa, zdjęcia i naukowy opis podróży bocianów.",
   "start_url": "./index.html",
   "scope": "./",

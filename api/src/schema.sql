@@ -544,9 +544,9 @@ CREATE TABLE IF NOT EXISTS email_invitation_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 INSERT INTO email_invitation_settings(id,subject_template,body_template)
-VALUES(1,'Zaproszenie do Stork Photo Editor',$invite_default$Witaj {{name}},
+VALUES(1,'Zaproszenie do Ciconia Flight Photo Viewer',$invite_default$Witaj {{name}},
 
-Masz konto w aplikacji Stork Photo Editor.
+Masz konto w aplikacji Ciconia Flight Photo Viewer.
 
 Aplikacja: {{appUrl}}
 Email: {{email}}
@@ -563,8 +563,12 @@ Instrukcja:
 3. Ustaw własne hasło.
 4. Rozpocznij pracę z przydzielonymi zdjęciami.
 
-Stork Photo Editor$invite_default$)
-ON CONFLICT(id) DO NOTHING;
+Ciconia Flight Photo Viewer$invite_default$)
+ON CONFLICT(id) DO UPDATE SET
+  subject_template=EXCLUDED.subject_template,
+  body_template=EXCLUDED.body_template,
+  updated_at=now()
+WHERE email_invitation_settings.updated_by IS NULL;
 
 -- Upgrade historical actor references from login accounts to durable attribution.
 -- Authentication-owned tables keep their users(id) CASCADE constraints.
