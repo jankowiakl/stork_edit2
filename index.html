@@ -158,6 +158,11 @@
     .mapBasemapPreview { position:absolute; inset:3px; border-radius:8px; background-color:#26384b; background-position:center; background-size:cover; }
     .mapBasemapName { position:absolute; right:3px; bottom:3px; left:3px; overflow:hidden; padding:2px 3px; border-radius:0 0 7px 7px; background:linear-gradient(transparent,rgba(0,0,0,.88)); color:#fff; font-size:10px; line-height:1.25; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
     .mapSettingsToggle { width:44px; height:44px; font-size:20px!important; line-height:1; }
+    .mapStreetViewToggle { width:44px; min-width:44px; height:44px; min-height:44px; font-size:11px!important; font-weight:800; letter-spacing:.02em; background:rgba(9,18,31,.76)!important; }
+    .mapStreetViewToggle[hidden],body.surveyMode .mapStreetViewToggle,body.surveyMode .mapGoogleMenu { display:none!important; }
+    .mapGoogleMenu { right:49px; width:min(190px,calc(100% - 49px)); padding:6px; overflow:visible; }
+    .mapGoogleMenu button { width:100%; min-height:38px; padding:7px 9px!important; text-align:left; white-space:normal; }
+    .mapGoogleMenu button + button { margin-top:4px; }
     .mapControlPanel {
       position:absolute;
       right:0;
@@ -856,6 +861,24 @@
     }
     .editorFooter .primarySave { background: linear-gradient(180deg, rgba(57,217,138,.28), rgba(57,217,138,.11)); }
     .editorFooter .saveNext { background: linear-gradient(180deg, rgba(119,209,255,.28), rgba(119,209,255,.10)); }
+    .editorFieldLabelRow { display:flex; align-items:center; justify-content:space-between; gap:7px; min-width:0; }
+    .editorFieldLabelRow>label { min-width:0; margin:0; }
+    .editorPin { flex:0 0 auto; width:27px; min-width:27px; height:27px; padding:0!important; border:1px solid rgba(119,209,255,.25); border-radius:50%; background:rgba(119,209,255,.05); color:#a9b7c8; font-size:13px!important; line-height:1; opacity:.68; }
+    .editorPin:hover,.editorPin:focus-visible { opacity:1; border-color:rgba(119,209,255,.62); }
+    .editorPin.active { opacity:1; color:#ffe18a; border-color:rgba(255,225,138,.72); background:rgba(255,225,138,.16); box-shadow:0 0 0 2px rgba(255,225,138,.08); }
+    .editorPin[hidden] { display:none!important; }
+    .editorEnvCombobox { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 34px; align-items:stretch; min-width:0; }
+    .editorEnvCombobox #editorEnvDesc { grid-column:1/-1; padding-right:38px; }
+    .editorEnvToggle { position:absolute; top:1px; right:1px; bottom:1px; width:34px; min-width:34px; padding:0!important; border:0!important; border-left:1px solid rgba(255,255,255,.11)!important; border-radius:0 8px 8px 0!important; background:rgba(119,209,255,.035)!important; color:#b8c9db; font-size:17px!important; line-height:1; }
+    .editorEnvToggle[aria-expanded="true"] { color:#fff; background:rgba(119,209,255,.14)!important; }
+    .editorEnvAutocomplete { position:fixed; z-index:7360; display:grid; gap:3px; max-height:min(40dvh,260px); overflow:auto; box-sizing:border-box; padding:5px; border:1px solid rgba(119,209,255,.4); border-radius:10px; background:rgba(10,19,33,.99); box-shadow:0 16px 44px rgba(0,0,0,.55); backdrop-filter:blur(14px); }
+    .editorEnvAutocomplete[hidden] { display:none!important; }
+    .editorEnvOption { width:100%; min-height:34px; padding:6px 8px!important; border:0!important; border-radius:7px; background:transparent!important; color:var(--text); text-align:left; white-space:normal; }
+    .editorEnvOption:hover,.editorEnvOption.active,.editorEnvOption[aria-selected="true"] { background:rgba(119,209,255,.15)!important; color:#fff; }
+    .editorEnvNoMatches { padding:7px 8px; color:var(--muted); font-size:var(--ui-font-small); }
+    @media(max-width:700px){
+      .editorEnvOption { min-height:44px; }
+    }
     .editorInvalid {
       border-color: rgba(255,107,107,.8) !important;
       box-shadow: 0 0 0 2px rgba(255,107,107,.13);
@@ -912,7 +935,8 @@
     body.collectionMode.mapControlPanelOpen .collectionModeBar { opacity:0; pointer-events:none; }
     body.collectionMode #sliderOverlay { display:none!important; }
     body.collectionMode .photoNav { width:44px; min-width:44px; height:44px; padding:0; font-size:clamp(12px,var(--ui-font-control),14px); }
-    body.collectionMode .photoInfoToggle { width:36px; height:36px; font-size:clamp(12px,var(--ui-font-control),14px); }
+    body.collectionMode .photoInfoToggle,body.collectionMode .photoDownloadToggle { width:36px; height:36px; font-size:clamp(12px,var(--ui-font-control),14px); }
+    body.collectionMode .photoAnnotationStatus { width:36px; height:36px; font-size:clamp(13px,var(--ui-font-control),15px); }
     body.collectionMode .photoTools button,body.collectionMode .photoBirdPicker { font-size:clamp(11px,var(--ui-font-small),13px)!important; }
     .sharedSafeGrid { display:grid; gap:8px; margin:10px 0 14px; }
     .sharedSafeCard { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid rgba(119,209,255,.22); border-radius:11px; background:rgba(119,209,255,.05); }
@@ -926,7 +950,7 @@
     .shareSafeLinkLine { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; width:100%; }
     .shareSafeLinkLine input { width:100%; min-width:0; }
     @media(max-width:520px){.shareSafePublicSummary{align-items:flex-start}.shareSafeLinkLine{grid-template-columns:1fr}.shareSafeLinkLine button{width:100%}}
-    body.sharedPhotoSafeReadOnly .photoSocialControls,body.sharedPhotoSafeReadOnly #editorModeBtn,body.sharedPhotoSafeReadOnly #collectionShare,body.sharedPhotoSafeReadOnly #editorDownloadPhoto { display:none!important; }
+    body.sharedPhotoSafeReadOnly .photoSocialControls,body.sharedPhotoSafeReadOnly #photoAnnotationStatus,body.sharedPhotoSafeReadOnly #editorModeBtn,body.sharedPhotoSafeReadOnly #collectionShare,body.sharedPhotoSafeReadOnly #editorDownloadPhoto { display:none!important; }
     body.publicSharedSafeMode .appNavDrawer,body.publicSharedSafeMode .appNavHandle,body.publicSharedSafeMode .quickLogin,body.publicSharedSafeMode header,body.publicSharedSafeMode #mobilePanelBtn,body.publicSharedSafeMode .publicLanding { display:none!important; }
     body.loggedOut.publicSharedSafeMode .wrap,body.loggedOut.publicSharedSafeMode .collectionModeBar { visibility:visible; }
     body.publicSharedSafeMode .wrap { height:100dvh; padding:0; }
@@ -1354,6 +1378,7 @@
   .mapControlDock { right:max(7px,env(safe-area-inset-right)); bottom:8px; left:max(7px,env(safe-area-inset-left)); gap:5px; --map-control-font:clamp(11px,var(--ui-font-small),12.5px); }
   .mapBasemapToggle { width:62px; height:44px; }
   .mapSettingsToggle { width:42px; min-width:42px; height:42px; min-height:42px; font-size:18px!important; }
+  .mapStreetViewToggle { width:42px; min-width:42px; height:42px; min-height:42px; }
   .mapControlPanel { width:min(330px,100%); max-height:min(calc(var(--mobile-map-height) - 66px),36dvh,280px); padding:8px; }
   .basemapChoice { min-height:66px; }
   .mapSettingsContent .row { gap:7px; }
@@ -1410,7 +1435,10 @@ header .hint, .metaGrid { font-size: var(--ui-font-label); }
 .appNavTile strong { font-size:var(--ui-font-title); }
 .appNavTile small { position:absolute; z-index:20; left:10px; right:10px; top:calc(100% - 3px); padding:7px 9px; border:1px solid rgba(119,209,255,.3); border-radius:9px; background:rgba(6,13,23,.96); color:#dcebf5; font-size:var(--ui-font-small); line-height:1.25; box-shadow:0 8px 24px rgba(0,0,0,.36); opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .16s ease,transform .16s ease; pointer-events:none; }
 .appNavTile:hover small,.appNavTile:focus-visible small { opacity:1; visibility:visible; transform:translateY(0); }
-.appNavFooter { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
+.appNavFooter { display:grid; width:100%; min-width:0; box-sizing:border-box; gap:7px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); }
+.appNavFooterAccount { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; width:100%; }
+#appNavAccess { min-width:0; flex:1 1 auto; overflow-wrap:anywhere; }
+#appNavLogout { flex:0 1 auto; max-width:100%; }
 .appNavHandle { position:fixed; z-index:6960; left:max(0px,env(safe-area-inset-left)); top:clamp(calc(56px + env(safe-area-inset-top)),50dvh,calc(100dvh - 56px - env(safe-area-inset-bottom))); transform:translateY(-50%); width:42px; min-width:42px; height:clamp(64px,14dvh,104px); max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px); padding:8px 5px!important; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border-left:0; border-radius:0 14px 14px 0; color:#dff6ff; background:rgba(15,39,64,.86); border-color:rgba(119,209,255,.62); box-shadow:0 5px 24px rgba(0,0,0,.38),0 0 0 2px rgba(119,209,255,.09); backdrop-filter:blur(10px); opacity:.94; transition:left .24s ease,opacity .2s ease,background .2s ease; box-sizing:border-box; }
 .appNavHandle:hover,.appNavHandle:focus-visible { opacity:1; background:rgba(21,43,69,.88); }
 .appNavDrawer.open + .appNavHandle { left:min(330px,calc(100vw - 42px)); }
@@ -1449,7 +1477,7 @@ body.appPanelOpen #mobilePanelBtn,body.dataWorkspaceOpen #mobilePanelBtn,body.co
 @media (hover:none){.appNavDrawer{background:rgba(8,14,25,.94)}}
 
 .publicLanding{position:fixed;inset:0;z-index:1200;display:none;place-items:center;padding:24px;background:radial-gradient(circle at 70% 15%,rgba(54,127,177,.22),transparent 42%),linear-gradient(145deg,#07101d,#101b2b);color:#edf7ff}.loggedOut .publicLanding{display:grid}.loggedOut .wrap,.loggedOut .collectionModeBar,.loggedOut .viewerReturnBar,.loggedOut #mobilePanelBtn{visibility:hidden}.publicLandingCard{width:min(760px,94vw);padding:clamp(24px,5vw,52px);border:1px solid rgba(151,211,247,.28);border-radius:22px;background:rgba(7,15,27,.82);box-shadow:0 24px 80px rgba(0,0,0,.38);backdrop-filter:blur(16px)}.publicLandingMark{display:flex;gap:14px;align-items:center}.publicLandingMark img{width:68px;height:68px}.publicLanding h1{margin:0 0 8px;font-size:clamp(30px,6vw,58px)}.publicLanding p{max-width:62ch;line-height:1.65;color:#bcd1e3}.publicLanding .primarySave{font-size:1.08rem;padding:12px 22px}
-.contributionDashboard{display:grid;gap:12px;margin-bottom:16px}.contributionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.contributionMetric,.nextRewardBox{padding:12px;border:1px solid rgba(133,194,231,.22);border-radius:12px;background:rgba(121,199,244,.055)}.contributionMetric b{display:block;font-size:1.45rem;margin-top:5px}.nextRewardBox{border-color:rgba(221,185,96,.32)}.contributionPath{display:grid;gap:9px}.levelBox{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(144,181,207,.22);border-radius:13px;background:linear-gradient(120deg,rgba(236,247,255,.045),rgba(87,139,178,.035));box-shadow:0 6px 18px rgba(0,0,0,.12)}.levelBox.locked{filter:saturate(.5);opacity:.65}.levelBox.active{border-color:#64b9ec;background:linear-gradient(120deg,rgba(81,174,232,.14),rgba(231,193,103,.055))}.levelBox.unlocked{border-color:rgba(231,193,103,.5)}.storkBadge{width:58px;height:58px;border-radius:10px;border:2px solid rgba(154,197,225,.32);display:grid;place-items:center;background:#152638;image-rendering:pixelated;font-size:31px}.levelBox.unlocked .storkBadge{border-color:#d7b866}.levelNumbers{text-align:right;white-space:nowrap}.levelProgress{grid-column:2/-1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.levelProgress span{display:block;height:100%;background:linear-gradient(90deg,#5ab5e8,#d7ba66)}.milestoneNotice{padding:11px;border-radius:10px;border:1px solid rgba(95,207,155,.38);background:rgba(56,176,119,.11);color:#b8f2d3}.browseLock{position:absolute;inset:0;z-index:46;display:none;place-items:center;text-align:center;padding:20px;background:linear-gradient(145deg,rgba(8,16,29,.94),rgba(13,31,49,.96));backdrop-filter:blur(12px)}.browseLock.show{display:grid}.browseLockCard{width:min(650px,100%);max-height:100%;overflow:auto;padding:4px;box-sizing:border-box}.browseLockIcon{font-size:48px}.browseLockRewards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0;text-align:left}.browseLockReward{min-width:0;padding:9px 10px;border:1px solid rgba(139,198,232,.23);border-radius:10px;background:rgba(255,255,255,.045);overflow-wrap:anywhere}.browseLockReward.fullAccess{border-color:rgba(221,185,96,.48);background:rgba(221,185,96,.08)}.browseLockReward.unlocked{border-color:rgba(76,209,147,.42);background:rgba(57,217,138,.07)}.browseLockReward b,.browseLockReward span{display:block}.browseLockReward span{margin-top:3px;color:var(--muted);font-size:var(--ui-font-small)}.browseLockActions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.browseLockAccountNote{margin:10px auto 0;max-width:56ch}.photoInfoToggle{position:absolute;right:12px;bottom:12px;z-index:45;border-radius:50%!important;width:38px;height:38px;padding:0!important}.photoInfoOverlay{position:absolute;inset:12px;z-index:44;pointer-events:none;color:#eef8ff;line-height:1.4}.photoInfoOverlay[hidden]{display:none}.photoInfoSide,.photoInfoDescription{position:absolute;padding:8px 10px;border:1px solid rgba(160,215,246,.24);border-radius:10px;background:rgba(4,13,24,.58);backdrop-filter:blur(9px);box-shadow:0 5px 18px rgba(0,0,0,.2)}.photoInfoPlace{left:0;top:48px}.photoInfoHeight{right:0;top:94px;text-align:right}.photoInfoDescription{left:4%;right:4%;bottom:48px;text-align:center}.photoInfoDescription .remarks{display:block;margin-top:5px;color:#cfe3f1}.editorMobileMeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:flex;gap:12px;justify-content:center;padding:7px 10px;border-radius:9px;background:rgba(2,10,18,.67);backdrop-filter:blur(8px);color:#fff;font-size:var(--ui-font-small)}
+.contributionDashboard{display:grid;gap:12px;margin-bottom:16px}.contributionMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.contributionMetric,.nextRewardBox{padding:12px;border:1px solid rgba(133,194,231,.22);border-radius:12px;background:rgba(121,199,244,.055)}.contributionMetric b{display:block;font-size:1.45rem;margin-top:5px}.nextRewardBox{border-color:rgba(221,185,96,.32)}.contributionPath{display:grid;gap:9px}.levelBox{display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(144,181,207,.22);border-radius:13px;background:linear-gradient(120deg,rgba(236,247,255,.045),rgba(87,139,178,.035));box-shadow:0 6px 18px rgba(0,0,0,.12)}.levelBox.locked{filter:saturate(.5);opacity:.65}.levelBox.active{border-color:#64b9ec;background:linear-gradient(120deg,rgba(81,174,232,.14),rgba(231,193,103,.055))}.levelBox.unlocked{border-color:rgba(231,193,103,.5)}.storkBadge{width:58px;height:58px;border-radius:10px;border:2px solid rgba(154,197,225,.32);display:grid;place-items:center;background:#152638;image-rendering:pixelated;font-size:31px}.levelBox.unlocked .storkBadge{border-color:#d7b866}.levelNumbers{text-align:right;white-space:nowrap}.levelProgress{grid-column:2/-1;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.levelProgress span{display:block;height:100%;background:linear-gradient(90deg,#5ab5e8,#d7ba66)}.milestoneNotice{padding:11px;border-radius:10px;border:1px solid rgba(95,207,155,.38);background:rgba(56,176,119,.11);color:#b8f2d3}.browseLock{position:absolute;inset:0;z-index:46;display:none;place-items:center;text-align:center;padding:20px;background:linear-gradient(145deg,rgba(8,16,29,.94),rgba(13,31,49,.96));backdrop-filter:blur(12px)}.browseLock.show{display:grid}.browseLockCard{width:min(650px,100%);max-height:100%;overflow:auto;padding:4px;box-sizing:border-box}.browseLockIcon{font-size:48px}.browseLockRewards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0;text-align:left}.browseLockReward{min-width:0;padding:9px 10px;border:1px solid rgba(139,198,232,.23);border-radius:10px;background:rgba(255,255,255,.045);overflow-wrap:anywhere}.browseLockReward.fullAccess{border-color:rgba(221,185,96,.48);background:rgba(221,185,96,.08)}.browseLockReward.unlocked{border-color:rgba(76,209,147,.42);background:rgba(57,217,138,.07)}.browseLockReward b,.browseLockReward span{display:block}.browseLockReward span{margin-top:3px;color:var(--muted);font-size:var(--ui-font-small)}.browseLockActions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.browseLockAccountNote{margin:10px auto 0;max-width:56ch}.photoInfoToggle{position:absolute;right:12px;bottom:12px;z-index:45;border-radius:50%!important;width:38px;height:38px;padding:0!important}.photoAnnotationStatus,.photoDownloadToggle{position:absolute;bottom:12px;z-index:45;display:grid;place-items:center;width:38px;height:38px;padding:0!important;border-radius:50%!important;font-size:15px!important;line-height:1;background:rgba(26,43,62,.66)!important;border-color:rgba(142,184,214,.34)!important;color:#d6e5f0;backdrop-filter:blur(9px);opacity:0;pointer-events:none;transition:opacity .18s ease,background .18s ease,border-color .18s ease,color .18s ease}.photoAnnotationStatus{right:56px}.photoDownloadToggle{right:100px}.photoAnnotationStatus.complete{color:#bdf4d5;background:rgba(26,111,76,.58)!important;border-color:rgba(94,215,153,.46)!important}.photoAnnotationStatus[hidden],.photoDownloadToggle[hidden]{display:none!important}.photoInfoOverlay{position:absolute;inset:12px;z-index:44;pointer-events:none;color:#eef8ff;line-height:1.4}.photoInfoOverlay[hidden]{display:none}.photoInfoSide,.photoInfoDescription{position:absolute;padding:8px 10px;border:1px solid rgba(160,215,246,.24);border-radius:10px;background:rgba(4,13,24,.58);backdrop-filter:blur(9px);box-shadow:0 5px 18px rgba(0,0,0,.2)}.photoInfoPlace{left:0;top:48px}.photoInfoHeight{right:0;top:94px;text-align:right}.photoInfoDescription{left:4%;right:4%;bottom:48px;text-align:center}.photoInfoDescription .remarks{display:block;margin-top:5px;color:#cfe3f1}.editorMobileMeta{position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:flex;gap:12px;justify-content:center;padding:7px 10px;border-radius:9px;background:rgba(2,10,18,.67);backdrop-filter:blur(8px);color:#fff;font-size:var(--ui-font-small)}
 @media(max-width:700px){:root{--ui-font-scale:1;--ui-font-body:14px;--ui-font-control:13px;--ui-font-label:12px;--ui-font-small:11px;--ui-font-title:13px;--ui-font-heading:16px;--ui-font-display:24px}.contributionMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.levelBox{grid-template-columns:54px minmax(0,1fr)}.levelNumbers{grid-column:2;text-align:left}.levelProgress{grid-column:1/-1}.browseLock{padding:10px}.browseLockIcon{font-size:34px}.browseLockRewards{grid-template-columns:1fr;margin:10px 0}.editorMobileMeta{display:flex}.photoInfoOverlay{inset:8px}.photoInfoPlace{top:40px}.photoInfoHeight{top:82px}.photoInfoDescription{bottom:54px}}
 @media(max-width:700px){.contributorReviewToolbar{flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap}.contributorReviewToolbar select{width:min(100%,320px);flex:1 1 190px}.contributorReviewCount{flex:0 0 auto}}
 
@@ -1473,12 +1501,11 @@ button { white-space:normal; line-height:1.2; }
 .surveyCard { width:min(880px,100%); max-height:calc(100dvh - 20px); overflow:auto; padding:clamp(15px,3vw,28px); border:1px solid rgba(119,209,255,.28); border-radius:18px; background:rgba(13,23,38,.96); box-shadow:0 20px 70px rgba(0,0,0,.5); box-sizing:border-box; }
 .surveyLanguage { display:flex; justify-content:flex-end; gap:5px; position:sticky; top:0; z-index:2; }
 .surveyLanguage button.active { border-color:#77d1ff; color:#fff; background:rgba(27,130,194,.35); }
-.appLanguage { position:fixed; z-index:9850; top:max(8px,env(safe-area-inset-top)); right:max(8px,env(safe-area-inset-right)); display:flex; justify-content:flex-end; gap:5px; padding:4px; border:1px solid rgba(119,209,255,.24); border-radius:10px; background:rgba(7,13,23,.72); box-shadow:0 7px 22px rgba(0,0,0,.24); backdrop-filter:blur(10px); }
+.appLanguage { position:static; display:flex; justify-content:flex-start; gap:5px; width:max-content; max-width:100%; padding:3px; box-sizing:border-box; border:1px solid rgba(119,209,255,.24); border-radius:9px; background:rgba(7,13,23,.48); }
 .appLanguage button { min-width:30px; min-height:28px; padding:3px 6px!important; }
 .appLanguage button.active { border-color:#77d1ff; color:#fff; background:rgba(27,130,194,.35); }
 .appLanguage[hidden] { display:none!important; }
 body.surveyMode .appLanguage { display:none!important; }
-body.appHelpOpen .appLanguage { right:max(68px,calc(68px + env(safe-area-inset-right))); }
 .surveyIntroText { white-space:pre-wrap; line-height:1.55; }
 .surveyConsent { display:grid; gap:9px; margin:16px 0; }
 .surveyConsent label { display:flex; align-items:flex-start; gap:9px; padding:10px; border:1px solid var(--border); border-radius:10px; }
@@ -1533,7 +1560,9 @@ body.surveyMode .surveyRatingDock.surveyReadyToSubmit #surveyFinish{min-height:4
 body.surveyMode .publicLanding,body.surveyMode .appNavDrawer,body.surveyMode .appNavHandle,body.surveyMode .quickLogin,body.surveyMode #collectionPlay,body.surveyMode #collectionDetailsToggle,body.surveyMode #leaveCollectionMode,body.surveyMode .photoSocialControls,body.surveyMode .photoBirdPicker,body.surveyMode .photoTools,body.surveyMode #sliderOverlay,body.surveyMode .metaCard { display:none!important; }
 body.surveyMode .collectionModeBar { display:none!important; }
 body.surveyMode .collectionModeLabel { margin:auto; }
-body.surveyMode .photoInfoToggle { bottom:calc(86px + env(safe-area-inset-bottom)); }
+body.surveyMode .photoInfoToggle,body.surveyMode .photoInfoOverlay,body.surveyMode .photoDownloadToggle,body.surveyRewardMode .photoDownloadToggle { display:none!important; }
+body.editorOpen .photoDownloadToggle { display:none!important; }
+body.surveyMode .photoAnnotationStatus { display:none!important; }
 body.surveyMode .photoNav { top:43%; bottom:auto; opacity:.86!important; pointer-events:auto!important; background:rgba(7,11,20,.68); border-color:rgba(119,209,255,.58); box-shadow:0 7px 24px rgba(0,0,0,.48); }
 body.surveyMode .photoNav:disabled { opacity:.28!important; pointer-events:none!important; filter:saturate(.45); }
 body.surveyMode .photoNav:not(:disabled):focus-visible { opacity:1!important; outline:3px solid rgba(119,209,255,.72); outline-offset:3px; }
@@ -1611,6 +1640,27 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 /* Unified introduction and scientific field guide. */
 .appHelpWorkspace { position:fixed; inset:0; z-index:9800; display:grid; place-items:center; padding:clamp(12px,3vw,34px); box-sizing:border-box; background:radial-gradient(circle at 20% 10%,rgba(38,117,172,.24),transparent 38%),rgba(5,10,18,.94); backdrop-filter:blur(14px); }
 .appHelpWorkspace[hidden] { display:none!important; }
+.interfaceCoach { position:fixed; inset:0; z-index:10000; pointer-events:none; overflow:hidden; }
+.interfaceCoach[hidden] { display:none!important; }
+.interfaceCoachHighlight { position:fixed; z-index:10001; border:2px solid #77d1ff; border-radius:14px; box-shadow:0 0 0 9999px rgba(2,7,14,.76),0 0 0 5px rgba(119,209,255,.18),0 12px 38px rgba(0,0,0,.4); pointer-events:none; transition:left .2s ease,top .2s ease,width .2s ease,height .2s ease; }
+.interfaceCoachPointer { position:fixed; z-index:10002; height:2px; border-radius:999px; background:linear-gradient(90deg,#77d1ff,rgba(119,209,255,.28)); transform-origin:0 50%; pointer-events:none; }
+.interfaceCoachPointer::after { content:""; position:absolute; right:-1px; top:50%; width:9px; height:9px; border-top:2px solid #77d1ff; border-right:2px solid #77d1ff; transform:translateY(-50%) rotate(45deg); }
+.interfaceCoachCard { position:fixed; z-index:10003; width:min(390px,calc(100vw - 24px)); max-height:min(56vh,520px); overflow:auto; box-sizing:border-box; padding:16px; border:1px solid rgba(119,209,255,.42); border-radius:16px; background:rgba(9,18,31,.97); box-shadow:0 18px 58px rgba(0,0,0,.52); backdrop-filter:blur(16px); color:var(--text); pointer-events:auto; }
+.interfaceCoachProgress { margin:0 0 8px; color:#77d1ff; font-size:var(--ui-font-small); font-weight:750; letter-spacing:.04em; }
+.interfaceCoachText { margin:0; color:#eef7ff; line-height:1.55; white-space:pre-line; }
+.interfaceCoachActions { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
+.interfaceCoachActions>div { display:flex; gap:7px; margin-left:auto; }
+.interfaceCoachFinal .interfaceCoachHighlight,.interfaceCoachFinal .interfaceCoachPointer { display:none; }
+.interfaceCoachFinal { display:grid; place-items:center; box-sizing:border-box; padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); overflow:auto; background:rgba(2,7,14,.76); }
+.interfaceCoachFinal .interfaceCoachCard { position:relative; left:auto!important; top:auto!important; width:min(390px,100%); max-height:100%; margin:auto; transform:none!important; text-align:center; }
+.interfaceCoachFinal .interfaceCoachActions { position:sticky; bottom:0; padding-top:10px; background:rgba(9,18,31,.98); }
+body.interfaceCoachOpen .appLanguage { z-index:10100; }
+@media (max-width:700px) {
+  .interfaceCoachCard { width:calc(100vw - 20px); max-height:min(42dvh,390px); padding:13px; border-radius:14px; }
+  .interfaceCoachFinal .interfaceCoachCard { width:100%; max-height:100%; }
+  .interfaceCoachActions button { min-height:42px; padding:7px 10px!important; }
+  .interfaceCoachHighlight { border-radius:10px; }
+}
 .appHelpCard { display:flex; flex-direction:column; width:min(900px,100%); max-height:min(900px,calc(100dvh - 24px)); min-width:0; overflow:hidden; border:1px solid rgba(119,209,255,.28); border-radius:20px; background:linear-gradient(160deg,rgba(19,31,49,.98),rgba(8,15,27,.98)); box-shadow:0 28px 80px rgba(0,0,0,.58); }
 .appHelpTopbar { display:flex; align-items:center; gap:12px; padding:16px 18px 12px; border-bottom:1px solid rgba(255,255,255,.09); }
 .appHelpTopbar > div { flex:1; min-width:0; }
@@ -1648,12 +1698,14 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
 /* Info is a persistent layer; only its toggle follows fading photo controls. */
 .photoInfoToggle { right:12px; bottom:calc(92px + env(safe-area-inset-bottom)); opacity:0; pointer-events:none; transition:opacity .18s ease,background .18s ease,border-color .18s ease; }
-.photoStage.navControlsVisible .photoInfoToggle,.photoInfoToggle:focus-visible { opacity:.78; pointer-events:auto; }
+.photoAnnotationStatus { right:56px; bottom:calc(92px + env(safe-area-inset-bottom)); }
+.photoDownloadToggle { right:100px; bottom:calc(92px + env(safe-area-inset-bottom)); }
+.photoStage.navControlsVisible .photoInfoToggle,.photoInfoToggle:focus-visible,.photoStage.navControlsVisible .photoAnnotationStatus,.photoAnnotationStatus:focus-visible,.photoStage.navControlsVisible .photoDownloadToggle,.photoDownloadToggle:focus-visible { opacity:.78; pointer-events:auto; }
 .photoInfoToggle[aria-expanded="true"] { color:#fff; border-color:rgba(119,209,255,.78); background:rgba(20,93,137,.78); }
 .photoInfoDescription { left:4%; right:58px; bottom:calc(72px + env(safe-area-inset-bottom)); }
 @media (hover:none) {
-  .photoInfoToggle,.photoInfoToggle:focus { opacity:0; pointer-events:none; }
-  .photoStage.touchControlsVisible .photoInfoToggle { opacity:.88; pointer-events:auto; }
+  .photoInfoToggle,.photoInfoToggle:focus,.photoAnnotationStatus,.photoAnnotationStatus:focus,.photoDownloadToggle,.photoDownloadToggle:focus { opacity:0; pointer-events:none; }
+  .photoStage.touchControlsVisible .photoInfoToggle,.photoStage.touchControlsVisible .photoAnnotationStatus,.photoStage.touchControlsVisible .photoDownloadToggle { opacity:.88; pointer-events:auto; }
 }
 @media (max-width:700px) {
   .appNavDrawer { width:91vw; }
@@ -1667,6 +1719,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   .levelNumbers { grid-column:2; text-align:left; }
   .photoInfoDescription { left:2%; right:52px; bottom:calc(68px + env(safe-area-inset-bottom)); }
   .photoInfoToggle { bottom:calc(86px + env(safe-area-inset-bottom)); }
+  .photoAnnotationStatus { right:58px; bottom:calc(86px + env(safe-area-inset-bottom)); min-width:42px; width:42px; height:42px; }
+  .photoDownloadToggle { right:104px; bottom:calc(86px + env(safe-area-inset-bottom)); min-width:42px; width:42px; height:42px; }
   .appHelpWorkspace { padding:0; place-items:stretch; }
   .appHelpCard { width:100%; max-height:none; height:100dvh; border:0; border-radius:0; }
   .appHelpTopbar { padding-top:max(12px,env(safe-area-inset-top)); }
@@ -1706,11 +1760,14 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
     <button class="appNavTile" type="button" data-app-nav="survey-create" data-role="coordinator,admin"><span class="appNavIcon">✦</span><strong>Create survey</strong><small>Configure anonymous photo-rating campaigns and links</small></button>
     <button class="appNavTile" type="button" data-app-nav="survey-results" data-role="annotator,coordinator,admin"><span class="appNavIcon">★</span><strong>Survey results</strong><small>Aggregated anonymous survey ratings and research results</small></button>
   </div>
-  <div class="appNavFooter"><span class="miniNote" id="appNavAccess">Public access</span><button class="danger tiny" id="appNavLogout" type="button" hidden>Log out</button></div>
+  <div class="appNavFooter">
+    <div class="appNavFooterAccount"><span class="miniNote" id="appNavAccess">Public access</span><button class="danger tiny" id="appNavLogout" type="button" hidden>Log out</button></div>
+    <div class="appLanguage" id="appLanguage" aria-label="Application language"><button class="secondary tiny" data-app-lang="pl" type="button">PL</button><button class="secondary tiny" data-app-lang="en" type="button">EN</button></div>
+  </div>
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
-<div class="appLanguage" id="appLanguage" aria-label="Application language"><button class="secondary tiny" data-app-lang="pl" type="button">PL</button><button class="secondary tiny" data-app-lang="en" type="button">EN</button></div>
+<section class="interfaceCoach" id="interfaceCoach" hidden aria-hidden="true" aria-live="polite"><div class="interfaceCoachHighlight" id="interfaceCoachHighlight"></div><div class="interfaceCoachPointer" id="interfaceCoachPointer"></div><article class="interfaceCoachCard" id="interfaceCoachCard" role="dialog" aria-modal="true" aria-labelledby="interfaceCoachProgress"><p class="interfaceCoachProgress" id="interfaceCoachProgress"></p><p class="interfaceCoachText" id="interfaceCoachText"></p><div class="interfaceCoachActions"><button class="secondary tiny" id="interfaceCoachSkip" type="button"></button><div><button class="secondary tiny" id="interfaceCoachBack" type="button"></button><button class="primarySave tiny" id="interfaceCoachNext" type="button"></button></div></div></article></section>
 <section class="surveyWorkspace" id="surveyWorkspace" aria-hidden="true"><div class="surveyCard"><div class="surveyLanguage"><button class="secondary tiny" data-survey-lang="pl" type="button">PL</button><button class="secondary tiny" data-survey-lang="en" type="button">EN</button></div><div id="surveyWorkspaceBody"></div></div></section><aside class="surveyTutorial" id="surveyTutorial" hidden aria-live="polite"></aside><section class="surveyCompletionPrompt" id="surveyCompletionPrompt" hidden aria-modal="true" role="dialog"><div class="surveyCompletionCard" id="surveyCompletionCard"></div></section>
 <section class="appHelpWorkspace" id="appHelpWorkspace" hidden aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="appHelpTitle">
   <div class="appHelpCard">
@@ -1746,7 +1803,9 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
 
     <div class="mapControlDock" id="mapControlDock" aria-label="Map controls">
       <button class="mapControlButton mapBasemapToggle" id="mapBasemapToggle" type="button" aria-expanded="false" aria-controls="mapBasemapPanel" title="Choose basemap"><span class="mapBasemapPreview" id="mapBasemapPreview"></span><span class="mapBasemapName" id="mapBasemapName">Basemap</span></button>
+      <button class="mapControlButton mapStreetViewToggle" id="mapStreetView" type="button" aria-expanded="false" aria-controls="mapGoogleMenu" title="Google map options for this location" aria-label="Google map options for this location" hidden>G</button>
       <button class="mapControlButton mapSettingsToggle" id="mapSettingsToggle" type="button" aria-expanded="false" aria-controls="mapSettingsPanel" aria-label="Map settings" title="Map settings">⚙</button>
+      <section class="mapControlPanel mapGoogleMenu" id="mapGoogleMenu" role="menu" aria-label="Google map options for this location" hidden><button class="secondary tiny" id="mapGoogleStreetView" role="menuitem" type="button">Street View</button><button class="secondary tiny" id="mapGoogleSatellite" role="menuitem" type="button">Satellite map</button></section>
       <section class="mapControlPanel" id="mapBasemapPanel" aria-label="Choose basemap" hidden><div class="mapControlHeader"><strong>Choose basemap</strong><button class="secondary tiny mapControlClose" id="mapBasemapClose" type="button" aria-label="Close basemap chooser">×</button></div><div class="basemapGrid" id="basemapGrid"></div></section>
       <section class="mapControlPanel" id="mapSettingsPanel" aria-label="Map settings" hidden><div class="mapControlHeader"><strong>Map settings</strong><button class="secondary tiny mapControlClose" id="mapSettingsClose" type="button" aria-label="Close map settings">×</button></div><div class="mapSettingsContent" id="mapSettingsContent"></div></section>
     </div>
@@ -2016,6 +2075,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
         <div class="photoTools">
           <button id="enlargePhoto" class="secondary tiny" type="button">Enlarge photo</button>
         </div>
+        <button class="secondary photoAnnotationStatus" id="photoAnnotationStatus" type="button" title="Annotation not complete — open editor" aria-label="Annotation not complete — open editor" hidden>○</button>
+        <button class="secondary photoDownloadToggle" id="photoDownloadPhoto" type="button" title="Download photo" aria-label="Download photo" hidden>↓</button>
         <button class="secondary photoInfoToggle" id="photoInfoToggle" type="button" aria-expanded="false" aria-pressed="false" title="Show photo information">i</button>
         <div class="photoInfoOverlay" id="photoInfoOverlay" hidden></div>
         <div class="browseLock" id="browseLock"><div class="browseLockCard"><div class="browseLockIcon">▣</div><h2>You reached your current browsing limit.</h2><p id="browseLockMessage">Complete one annotation to start a new browsing cycle.</p><div class="browseLockRewards" id="browseLockRewards" aria-label="Contribution rewards"></div><div class="browseLockActions"><button class="primarySave" id="startAnnotatingLocked" type="button">Start annotating</button><button class="secondary" id="browseLockAccount" type="button">View my progress</button></div><p class="muted browseLockAccountNote">More details, rewards and your complete progress are available in your personal account.</p></div></div>
@@ -2100,7 +2161,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
               </select>
             </div>
             <div class="editorField">
-              <label for="editorPheno">Phenological period <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorPheno">Phenological period <span class="required">*</span></label><button class="editorPin" data-pin-field="Pheno_period" type="button">📌</button></div>
               <select id="editorPheno" data-field="Pheno_period">
                 <option value="">— select —</option>
                 <option value="fledging">fledging</option>
@@ -2111,7 +2172,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
               </select>
             </div>
             <div class="editorField">
-              <label for="editorResidence">Residence <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorResidence">Residence <span class="required">*</span></label><button class="editorPin" data-pin-field="Residence" type="button">📌</button></div>
               <select id="editorResidence" data-field="Residence">
                 <option value="">— select —</option>
                 <option value="yes">yes</option>
@@ -2119,7 +2180,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
               </select>
             </div>
             <div class="editorField">
-              <label for="editorPeriodDay">Period of day <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorPeriodDay">Period of day <span class="required">*</span></label><button class="editorPin" data-pin-field="Period_day" type="button">📌</button></div>
               <select id="editorPeriodDay" data-field="Period_day">
                 <option value="">— select —</option>
                 <option value="day">day</option>
@@ -2127,9 +2188,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
               </select>
             </div>
             <div class="editorField full" id="editorArtificialLightsField" hidden>
-              <label class="editorInlineCheck" for="editorArtificialLights">
-                <input id="editorArtificialLights" data-field="Artificial_lights" type="checkbox"> Artificial lights visible
-              </label>
+              <div class="editorFieldLabelRow"><label class="editorInlineCheck" for="editorArtificialLights"><input id="editorArtificialLights" data-field="Artificial_lights" type="checkbox"> Artificial lights visible</label><button class="editorPin" data-pin-field="Artificial_lights" type="button">📌</button></div>
             </div>
           </div>
         </section>
@@ -2169,7 +2228,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
           <h3>Behaviour and height</h3>
           <div class="editorFields">
             <div class="editorField">
-              <label for="editorFlyGround">Flight state <span class="required">*</span></label>
+              <div class="editorFieldLabelRow"><label for="editorFlyGround">Flight state <span class="required">*</span></label><button class="editorPin" data-pin-field="Fly_ground" type="button">📌</button></div>
               <select id="editorFlyGround" data-field="Fly_ground">
                 <option value="">— select —</option>
                 <option value="ground">ground</option>
@@ -2256,8 +2315,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
           <div class="editorFields">
             <div class="editorField full">
               <label for="editorEnvDesc">Environment description <span class="required">*</span></label>
-              <input id="editorEnvDesc" data-field="Env_desc_en" type="text" list="editorEnvDescOptions" autocomplete="off">
-              <datalist id="editorEnvDescOptions"><option value="field"><option value="landfill"><option value="landfill slope"><option value="building"><option value="savanna/field"><option value="meadow"><option value="wastewater treatment plant"><option value="tree"><option value="savanna/tree"><option value="roof"><option value="nest"><option value="desert"><option value="river island"><option value="savanna"><option value="tree/shrub"><option value="semi-desert/field"><option value="landfill fence"><option value="dike"><option value="meadow/pasture"><option value="riverbank"><option value="field/pasture"><option value="arable field"><option value="urban area"><option value="dry riverbed"></datalist>
+              <div class="editorEnvCombobox" id="editorEnvCombobox"><input id="editorEnvDesc" data-field="Env_desc_en" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="editorEnvAutocomplete" aria-expanded="false"><button class="editorEnvToggle" id="editorEnvToggle" type="button" aria-controls="editorEnvAutocomplete" aria-expanded="false" title="Show environment suggestions" aria-label="Show environment suggestions">⌄</button></div>
+              <div class="editorEnvAutocomplete" id="editorEnvAutocomplete" role="listbox" hidden></div>
             </div>
             <div class="editorField full">
               <label for="editorRemarks">Remarks</label>
@@ -2321,12 +2380,12 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
       </form>
 
       <div class="editorFooter">
-        <button id="editorCopyPrevious" class="secondary" type="button">Copy previous</button>
+        <button id="editorCopyPrevious" class="secondary" type="button" title="Paste the last annotation you saved in this browser">Paste previous entry</button>
         <button id="editorNextUnannotated" class="secondary" type="button">Next unannotated</button>
         <button id="editorRequestReview" class="secondary" type="button">Request verification</button>
         <button id="editorSaveDraft" class="secondary" type="button">Save draft</button>
         <button id="editorSaveAnalysed" class="primarySave" type="button">Save analysed</button>
-        <button id="editorSaveNext" class="saveNext" type="button">Save &amp; next</button>
+        <button id="editorSaveNext" class="saveNext" type="button" title="Save &amp; next (Ctrl/Cmd + Enter)">Save &amp; next</button>
         <button id="editorDownloadPhoto" class="secondary editorDownloadPhoto" type="button" title="Download the current photo in original quality">Download photo</button>
       </div>
     </aside>
@@ -2456,6 +2515,10 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const mapBasemapPanelEl = el("mapBasemapPanel");
   const mapBasemapCloseBtn = el("mapBasemapClose");
   const basemapGridEl = el("basemapGrid");
+  const mapStreetViewBtn = el("mapStreetView");
+  const mapGoogleMenuEl = el("mapGoogleMenu");
+  const mapGoogleStreetViewBtn = el("mapGoogleStreetView");
+  const mapGoogleSatelliteBtn = el("mapGoogleSatellite");
   const mapSettingsToggleBtn = el("mapSettingsToggle");
   const mapSettingsPanelEl = el("mapSettingsPanel");
   const mapSettingsCloseBtn = el("mapSettingsClose");
@@ -2547,6 +2610,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const editorSaveNextBtn = el("editorSaveNext");
   const editorDownloadPhotoBtn = el("editorDownloadPhoto");
   const editorCopyPreviousBtn = el("editorCopyPrevious");
+  const editorPinButtons = Array.from(document.querySelectorAll(".editorPin[data-pin-field]"));
   const editorNextUnannotatedBtn = el("editorNextUnannotated");
   const editorRequestReviewBtn = el("editorRequestReview");
   const editorQualityEl = el("editorQuality");
@@ -2573,6 +2637,9 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const editorRoostFieldEl = el("editorRoostField");
   const editorWaterEl = el("editorWater");
   const editorEnvDescEl = el("editorEnvDesc");
+  const editorEnvComboboxEl = el("editorEnvCombobox");
+  const editorEnvToggleBtn = el("editorEnvToggle");
+  const editorEnvAutocompleteEl = el("editorEnvAutocomplete");
   const editorRemarksEl = el("editorRemarks");
   const editorRemarksHistoryEl = el("editorRemarksHistory");
   const editorRemarksSuggestionsEl = el("editorRemarksSuggestions");
@@ -2632,6 +2699,15 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const appHelpBodyEl = el("appHelpBody");
   const appHelpActionsEl = el("appHelpActions");
   const closeAppHelpBtn = el("closeAppHelp");
+  const interfaceCoachEl = el("interfaceCoach");
+  const interfaceCoachHighlightEl = el("interfaceCoachHighlight");
+  const interfaceCoachPointerEl = el("interfaceCoachPointer");
+  const interfaceCoachCardEl = el("interfaceCoachCard");
+  const interfaceCoachProgressEl = el("interfaceCoachProgress");
+  const interfaceCoachTextEl = el("interfaceCoachText");
+  const interfaceCoachSkipBtn = el("interfaceCoachSkip");
+  const interfaceCoachBackBtn = el("interfaceCoachBack");
+  const interfaceCoachNextBtn = el("interfaceCoachNext");
   const accountWorkspaceEl = el("accountWorkspace");
   const closeAccountWorkspaceBtn = el("closeAccountWorkspace");
   const accountWorkspaceBodyEl = el("accountWorkspaceBody");
@@ -2650,6 +2726,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const browseLockAccountBtn = el("browseLockAccount");
   const startAnnotatingLockedBtn = el("startAnnotatingLocked");
   const photoInfoToggleBtn = el("photoInfoToggle");
+  const photoAnnotationStatusBtn = el("photoAnnotationStatus");
+  const photoDownloadPhotoBtn = el("photoDownloadPhoto");
   const photoInfoOverlayEl = el("photoInfoOverlay");
   const collectionModeBarEl = el("collectionModeBar");
   const collectionModeLabelEl = el("collectionModeLabel");
@@ -2710,6 +2788,8 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   const API_BASE = String(window.STORK_EDIT_CONFIG?.apiBase || "").replace(/\/$/, "");
   const AUTH_STORAGE_KEY = "stork-edit-auth-v1";
   const ONBOARDING_STORAGE_PREFIX = "stork-onboarding-v1:";
+  const INTERFACE_COACH_STORAGE_PREFIX = "storkInterfaceCoachV1:";
+  let interfaceCoachActive=false,interfaceCoachIndex=0,interfaceCoachRenderToken=0,interfaceCoachSnapshot=null;
   let authState = { token: "", user: null, individualIds: [], contribution:null };
   try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
   const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
@@ -2742,7 +2822,7 @@ body.surveyMode .photoStage>.surveyRatingDock .surveyFinishActions{flex:0 0 auto
   let appNavCloseTimer=null;
   function openAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.inert=false;appNavDrawerEl.classList.add("open");appNavDrawerEl.setAttribute("aria-hidden","false");appNavHandleEl.setAttribute("aria-expanded","true");}
   function closeAppNavigation(){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=null;appNavDrawerEl.classList.remove("open");appNavDrawerEl.setAttribute("aria-hidden","true");appNavDrawerEl.inert=true;appNavHandleEl.setAttribute("aria-expanded","false");}
-  const scheduleAppNavigationClose=()=>{if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
+  const scheduleAppNavigationClose=()=>{if(interfaceCoachActive)return;if(matchMedia("(hover:hover)").matches){if(appNavCloseTimer)clearTimeout(appNavCloseTimer);appNavCloseTimer=setTimeout(()=>{if(!appNavDrawerEl.matches(":hover")&&!appNavHandleEl.matches(":hover")&&!appNavDrawerEl.contains(document.activeElement))closeAppNavigation();},850);}};
   appNavHandleEl.addEventListener("mouseenter",openAppNavigation);appNavHandleEl.addEventListener("click",()=>appNavDrawerEl.classList.contains("open")?closeAppNavigation():openAppNavigation());
   appNavDrawerEl.addEventListener("mouseenter",openAppNavigation);appNavDrawerEl.addEventListener("mouseleave",scheduleAppNavigationClose);appNavHandleEl.addEventListener("mouseleave",scheduleAppNavigationClose);closeAppNavBtn.addEventListener("click",closeAppNavigation);
   quickLoginBtn.addEventListener("click",openAccountWorkspace);
@@ -3266,7 +3346,7 @@ loopCurrentEl.checked = false;
     updateBasemapControl();
     if(persist)persistMapPreferences();
   };
-  const closeMapControlPanels=()=>{mapBasemapPanelEl.hidden=true;mapSettingsPanelEl.hidden=true;mapBasemapToggleBtn.setAttribute("aria-expanded","false");mapSettingsToggleBtn.setAttribute("aria-expanded","false");document.body.classList.remove("mapControlPanelOpen");};
+  const closeMapControlPanels=()=>{mapBasemapPanelEl.hidden=true;mapSettingsPanelEl.hidden=true;mapGoogleMenuEl.hidden=true;mapBasemapToggleBtn.setAttribute("aria-expanded","false");mapSettingsToggleBtn.setAttribute("aria-expanded","false");mapStreetViewBtn.setAttribute("aria-expanded","false");document.body.classList.remove("mapControlPanelOpen");};
   const openMapControlPanel=(panel)=>{const open=panel==="basemap"?mapBasemapPanelEl.hidden:mapSettingsPanelEl.hidden;closeMapControlPanels();if(!open)return;const target=panel==="basemap"?mapBasemapPanelEl:mapSettingsPanelEl,toggle=panel==="basemap"?mapBasemapToggleBtn:mapSettingsToggleBtn;target.hidden=false;toggle.setAttribute("aria-expanded","true");document.body.classList.add("mapControlPanelOpen");if(typeof setCollectionDetailsOpen==="function")setCollectionDetailsOpen(false);};
   mapBasemapToggleBtn.addEventListener("click",()=>openMapControlPanel("basemap"));
   mapSettingsToggleBtn.addEventListener("click",()=>openMapControlPanel("settings"));
@@ -3641,7 +3721,7 @@ loopCurrentEl.checked = false;
     } catch(error){dataPanelEl.innerHTML=`<div class="editorStatus error">${escapeHtml(error.message)}</div>`;setDataStatus("Users failed");}
   };
 
-  const contributorReviewPhotoPoint=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,url:photo.imageUrl,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted});
+  const contributorReviewPhotoPoint=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,url:photo.imageUrl,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,status:photo.status,hasAnnotation:photo.hasAnnotation,accessGranted:!!photo.mediaGranted});
   const renderContributorReviewPicker=()=>{const contributors=editorContributorReview?.contributors||[],selectedId=editorContributorReview?.userId||"";contributorReviewUserEl.replaceChildren(...contributors.map((user)=>new Option(`${user.name} (${Number(user.photoCount).toLocaleString()} photos)`,user.id,false,user.id===selectedId)));contributorReviewUserEl.disabled=!contributors.length;contributorReviewCountEl.textContent=editorContributorReview?.points?.length?`${editorContributorReview.points.length.toLocaleString()} photos`:"";};
   const resetContributorReviewUi=()=>{for(const bird of contributorReviewLazyBirds){const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);trackCache.delete(bird);}contributorReviewLazyBirds.clear();document.body.classList.remove("contributorReviewMode");contributorReviewToolbarEl.hidden=true;contributorReviewUserEl.disabled=false;contributorReviewCountEl.textContent="";editorPanelTitleEl.textContent="Photo editor";updateBirdSelectors();};
   const prepareContributorReviewBirds=(points)=>{for(const bird of new Set(points.map((point)=>point.bird).filter(Boolean))){if(groupedFiles.has(bird))continue;const placeholder=[];placeholder.serverPlaceholder=true;placeholder.serverPhotoCount=0;groupedFiles.set(bird,placeholder);}updateBirdSelectors(idsSorted());};
@@ -4272,13 +4352,34 @@ loopCurrentEl.checked = false;
   const removeOwnRating=async()=>{if(!socialPhotoId||socialState.ownRating==null)return;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"DELETE"});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not remove rating: ${error.message}`);}};
   const renderPhotoSocial=()=>{const readOnlySafe=!!photoSafeViewerContext?.readOnly,photoSafeMode=document.body.classList.contains("collectionMode")&&activeCollectionType==="favorites";photoSocialEl.hidden=readOnlySafe||!editorHasConnection()||!socialPhotoId;favoritePhotoBtn.hidden=readOnlySafe||authState.contribution?.bestPicturesUnlocked===false;favoritePhotoBtn.textContent=socialState.favorite?"🔐":"🔒";favoritePhotoBtn.title=socialState.favorite?"Remove from my photo safe":"Save in my photo safe";photoRatingEl.hidden=photoSafeMode;if(readOnlySafe)photoRatingEl.hidden=true;ratingClearBtn.hidden=readOnlySafe||photoSafeMode||socialState.ownRating==null;ratingAverageEl.hidden=readOnlySafe||photoSafeMode;photoRatingEl.replaceChildren();if(!readOnlySafe&&!photoSafeMode)for(let rating=1;rating<=5;rating++){const button=document.createElement("button");button.type="button";button.textContent="★";button.title=Number(socialState.ownRating)===rating?`Remove my ${rating}-star rating`:`Rate ${rating} / 5`;button.classList.toggle("selected",rating<=Number(socialState.ownRating||0));button.addEventListener("click",async()=>{if(Number(socialState.ownRating)===rating)return removeOwnRating();try{const result=await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/rating`,{method:"PUT",body:JSON.stringify({rating})});socialState={...socialState,...result};renderPhotoSocial();}catch(error){setStatus(`Could not save rating: ${error.message}`);}});photoRatingEl.appendChild(button);}ratingAverageEl.textContent=socialState.averageRating==null?"—":`${Number(socialState.averageRating).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1})} (${socialState.ratingCount})`;};
   let currentPhotoDetails=null,photoInfoEnabled=false;
+  const streetViewCoordinates=()=>{
+    const collectionPhoto=document.body.classList.contains("collectionMode")?collectionSequence[collectionSequenceIndex]:null,editorPhoto=document.body.classList.contains("editorOpen")?activeEditorSequence()[editorPhotoIndex]:null,trackPhoto=track[currentPhotoIndex()],photo=currentPhotoDetails||collectionPhoto||editorPhoto||trackPhoto;
+    const lat=Number(photo?.lat??photo?.latitude??photo?.Latitude),lon=Number(photo?.lon??photo?.longitude??photo?.Longitude);
+    return Number.isFinite(lat)&&lat>=-90&&lat<=90&&Number.isFinite(lon)&&lon>=-180&&lon<=180?{lat,lon}:null;
+  };
+  const updateStreetViewControl=()=>{const coordinates=streetViewCoordinates(),label=appT("map.googleOptions");mapStreetViewBtn.hidden=!coordinates;mapStreetViewBtn.disabled=!coordinates;mapStreetViewBtn.title=label;mapStreetViewBtn.setAttribute("aria-label",label);mapGoogleMenuEl.setAttribute("aria-label",label);mapGoogleStreetViewBtn.textContent=appT("map.streetView");mapGoogleSatelliteBtn.textContent=appT("map.satellite");if(!coordinates)closeMapControlPanels();};
+  const openGoogleMapForPhoto=(mode)=>{const coordinates=streetViewCoordinates();if(!coordinates)return;const url=new URL("https://www.google.com/maps/@");url.searchParams.set("api","1");if(mode==="streetView"){url.searchParams.set("map_action","pano");url.searchParams.set("viewpoint",`${coordinates.lat},${coordinates.lon}`);}else{url.searchParams.set("map_action","map");url.searchParams.set("center",`${coordinates.lat},${coordinates.lon}`);url.searchParams.set("zoom","17");url.searchParams.set("basemap","satellite");}closeMapControlPanels();window.open(url.toString(),"_blank","noopener,noreferrer");};
+  mapStreetViewBtn.addEventListener("click",()=>{if(!streetViewCoordinates())return;const open=mapGoogleMenuEl.hidden;closeMapControlPanels();if(!open)return;mapGoogleMenuEl.hidden=false;mapStreetViewBtn.setAttribute("aria-expanded","true");document.body.classList.add("mapControlPanelOpen");if(typeof setCollectionDetailsOpen==="function")setCollectionDetailsOpen(false);requestAnimationFrame(()=>mapGoogleStreetViewBtn.focus({preventScroll:true}));});
+  mapGoogleStreetViewBtn.addEventListener("click",()=>openGoogleMapForPhoto("streetView"));
+  mapGoogleSatelliteBtn.addEventListener("click",()=>openGoogleMapForPhoto("satellite"));
+  const currentViewerDownload=()=>{if(document.body.classList.contains("surveyMode")||document.body.classList.contains("surveyRewardMode"))return null;if(photoSafeViewerContext?.readOnly)return currentPhotoDetails?.imageUrl?{remoteUrl:currentPhotoDetails.imageUrl,filename:currentPhotoDetails.filename||"stork-photo.jpg"}:null;if(!editorHasConnection()||!socialPhotoId)return null;const point=track.find((item)=>item.photoId===socialPhotoId);return{photoId:socialPhotoId,filename:currentPhotoDetails?.filename||point?.name||"stork-photo.jpg"};};
+  const renderPhotoDownload=()=>{const available=!!currentViewerDownload(),label=appT("photo.download");photoDownloadPhotoBtn.hidden=!available;photoDownloadPhotoBtn.disabled=!available;photoDownloadPhotoBtn.title=label;photoDownloadPhotoBtn.setAttribute("aria-label",label);};
+  const renderPhotoAnnotationStatus=()=>{const unavailable=!editorHasConnection()||!socialPhotoId||!currentPhotoDetails||!!photoSafeViewerContext?.readOnly||document.body.classList.contains("surveyMode");photoAnnotationStatusBtn.hidden=unavailable;if(unavailable)return;const complete=currentPhotoDetails.status==="complete",label=appT(complete?"photo.annotationComplete":"photo.annotationIncomplete");photoAnnotationStatusBtn.textContent=complete?"✓":"○";photoAnnotationStatusBtn.classList.toggle("complete",complete);photoAnnotationStatusBtn.title=label;photoAnnotationStatusBtn.setAttribute("aria-label",label);};
   const countryShort=(country)=>{const value=String(country||"").trim();if(!value)return"";const known={poland:"PL",germany:"DE",czechia:"CZ","czech republic":"CZ",slovakia:"SK",ukraine:"UA",belarus:"BY",lithuania:"LT",latvia:"LV",estonia:"EE",romania:"RO",bulgaria:"BG",hungary:"HU",croatia:"HR",serbia:"RS",turkey:"TR",türkiye:"TR",israel:"IL",jordan:"JO",egypt:"EG",sudan:"SD",chad:"TD",ethiopia:"ET",kenya:"KE",tanzania:"TZ",spain:"ES",france:"FR",italy:"IT",austria:"AT",greece:"GR"};return value.length<=3?value.toUpperCase():(known[value.toLowerCase()]||value.slice(0,3).toUpperCase());};
   const hasInfoNumber=(value)=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value)),infoNumber=(value)=>String(Math.round(Number(value)*100)/100);
   const photoAboveGround=(photo)=>{const annotation=photo?.annotation||{},stored=annotation.Above_ground;if(hasInfoNumber(stored))return Number(stored);if(annotation.Fly_ground==="ground")return 0;const altitude=photo?.altitudeM,elevation=photo?.elevationM;return hasInfoNumber(altitude)&&hasInfoNumber(elevation)?Math.round((Number(altitude)-Number(elevation))*100)/100:null;};
   const renderPhotoInfo=()=>{photoInfoOverlayEl.hidden=!photoInfoEnabled;if(!photoInfoEnabled)return;if(!currentPhotoDetails){photoInfoOverlayEl.replaceChildren();return;}const annotation=currentPhotoDetails.annotation||{},country=countryShort(currentPhotoDetails.country),place=String(currentPhotoDetails.closeCity||currentPhotoDetails.country||"").trim(),geo=String(currentPhotoDetails.geoDescription||"").trim(),remarks=String(annotation.Remarks||"").trim(),placeHtml=country||place?`<div class="photoInfoSide photoInfoPlace">${country?`<b>${escapeHtml(country)}</b>`:""}${country&&place?"<br>":""}${place?`<span>${escapeHtml(place)}</span>`:""}</div>`:"",aboveGround=photoAboveGround(currentPhotoDetails),gpsAltitude=currentPhotoDetails.altitudeM,heightHtml=hasInfoNumber(aboveGround)||hasInfoNumber(gpsAltitude)?`<div class="photoInfoSide photoInfoHeight">${hasInfoNumber(gpsAltitude)?`<div><b>GPS altitude (m):</b> ${escapeHtml(infoNumber(gpsAltitude))}</div>`:""}${hasInfoNumber(aboveGround)?`<div><b>Above ground (m):</b> ${escapeHtml(infoNumber(aboveGround))}</div>`:""}</div>`:"",descriptionHtml=geo||remarks?`<div class="photoInfoDescription">${geo?escapeHtml(geo):""}${remarks?`<span class="remarks">${escapeHtml(remarks)}</span>`:""}</div>`:"";photoInfoOverlayEl.innerHTML=placeHtml+heightHtml+descriptionHtml;};
   const setPhotoInfoEnabled=(enabled)=>{photoInfoEnabled=!!enabled;photoInfoToggleBtn.setAttribute("aria-expanded",String(photoInfoEnabled));photoInfoToggleBtn.setAttribute("aria-pressed",String(photoInfoEnabled));photoInfoToggleBtn.title=photoInfoEnabled?"Hide photo information":"Show photo information";renderPhotoInfo();};
   photoInfoToggleBtn.addEventListener("click",()=>setPhotoInfoEnabled(!photoInfoEnabled));
-  const loadPhotoSocial=async(photoId)=>{socialPhotoId=photoId||null;const token=++socialLoadToken;if(photoSafeViewerContext?.readOnly){currentPhotoDetails=collectionSequence.find((photo)=>photo.id===socialPhotoId)||null;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();return;}if(!editorHasConnection()||!socialPhotoId){currentPhotoDetails=null;renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();return;}try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}renderPhotoSocial();if(photoInfoEnabled)renderPhotoInfo();};
+  const loadPhotoSocial=async(photoId)=>{
+    socialPhotoId=photoId||null;currentPhotoDetails=null;renderPhotoAnnotationStatus();renderPhotoDownload();updateStreetViewControl();const token=++socialLoadToken;
+    if(photoSafeViewerContext?.readOnly){currentPhotoDetails=collectionSequence.find((photo)=>photo.id===socialPhotoId)||null;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};renderPhotoSocial();renderPhotoAnnotationStatus();renderPhotoDownload();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();return;}
+    if(!editorHasConnection()||!socialPhotoId){renderPhotoSocial();renderPhotoAnnotationStatus();renderPhotoDownload();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();return;}
+    try{const [social,detail]=await Promise.all([apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/social`),apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}`)]);if(token!==socialLoadToken)return;socialState=social.social||socialState;currentPhotoDetails=detail.photo||null;}
+    catch(error){if(token!==socialLoadToken)return;socialState={favorite:false,ownRating:null,averageRating:null,ratingCount:0};currentPhotoDetails=null;}
+    renderPhotoSocial();renderPhotoAnnotationStatus();renderPhotoDownload();updateStreetViewControl();if(photoInfoEnabled)renderPhotoInfo();
+  };
+  photoAnnotationStatusBtn.addEventListener("click",async()=>{if(photoAnnotationStatusBtn.hidden||!socialPhotoId)return;if(document.body.classList.contains("collectionMode"))stopCollectionPlayback();else stopAnim();const index=track.findIndex((point)=>point.photoId===socialPhotoId);if(index<0){setStatus("Could not open the annotation sheet for this photo.");return;}if(index!==currentPhotoIndex())await showPhotoAtIndex(index,{purpose:"annotation"});await openEditorMode();});
   favoritePhotoBtn.addEventListener("click",async()=>{if(!socialPhotoId)return;const adding=!socialState.favorite;if(adding&&!window.confirm("Save this photo in your private photo safe?"))return;try{await apiFetch(`/api/photos/${encodeURIComponent(socialPhotoId)}/favorite`,{method:adding?"PUT":"DELETE"});socialState.favorite=adding;renderPhotoSocial();}catch(error){setStatus(`Could not update photo safe: ${error.message}`);}});
   ratingClearBtn.addEventListener("click",removeOwnRating);
 
@@ -4478,6 +4579,8 @@ loopCurrentEl.checked = false;
 
   const formatRating=(value)=>value===null||value===undefined?"—":Number(value).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1});
   const downloadApiFile=async(url,fallbackName)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
+  const downloadRemoteImage=async(url,fallbackName)=>{const response=await fetch(url);if(!response.ok)throw new Error(`HTTP ${response.status}`);const blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
+  photoDownloadPhotoBtn.addEventListener("click",async()=>{const source=currentViewerDownload();if(!source)return;photoDownloadPhotoBtn.disabled=true;try{if(source.remoteUrl)await downloadRemoteImage(source.remoteUrl,source.filename);else await downloadApiFile(`/api/photos/${encodeURIComponent(source.photoId)}/download`,source.filename);}catch(error){setStatus(`${appT("photo.downloadFailed")}: ${error.message}`);}finally{renderPhotoDownload();}});
   const loadCollectionPhotosPanel=async()=>{
     const collection=activeCollectionType,isSafe=collection==="favorites";
     const readOnly=!!photoSafeViewerContext?.readOnly,label=readOnly?`${photoSafeViewerContext.ownerName}'s Photo Safe`:isSafe?"My photo safe":"Top rated";setDataStatus(`Loading ${label}…`);
@@ -4633,6 +4736,7 @@ loopCurrentEl.checked = false;
   };
   editorRemarksHistoryEl.addEventListener("toggle",()=>{if(editorRemarksHistoryEl.open)void loadEditorRemarksSuggestions();});
   let editorPhotoIndex = -1;
+  let editorCurrentPhotoId = null;
   let editorDirty = false;
   let editorSaving = false;
   let editorLoadedRecord = null;
@@ -4640,6 +4744,7 @@ loopCurrentEl.checked = false;
   let editorCanEdit = false;
   let editorLoadToken = 0;
   let editorHeightClassManual = false;
+  let editorOnlyPinnedChanges = false;
   const defaultEditorPaneRatios = [0.18,0.30,0.52];
   let editorPaneRatios = [...defaultEditorPaneRatios];
   try {
@@ -4796,6 +4901,67 @@ loopCurrentEl.checked = false;
   const editorLookupFilename = (point) => String(point && point.name || "")
     .replace(/\s*\(\d+\)(?=\.[^.]+$)/, "");
   const activeEditorSequence=()=>editorContributorReview?.points?.length?editorContributorReview.points:track;
+  const EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS=new Set(["FileName","Bird","photoId","Latitude","Longitude","GPS_time","GPS_source","Altitude_m","Elevation_m","Above_ground","Height_class_100m","version","status","Analysed"]);
+  const EDITOR_LAST_ANNOTATION_PREFIX="storkLastAnnotationV1:";
+  const EDITOR_ENV_SUGGESTIONS=["field","landfill","landfill slope","building","savanna/field","meadow","wastewater treatment plant","tree","savanna/tree","roof","nest","desert","river island","savanna","tree/shrub","semi-desert/field","landfill fence","dike","meadow/pasture","riverbank","field/pasture","arable field","urban area","dry riverbed"];
+  const editorPinnedFields=new Set();
+  const editorT=(key,vars)=>appI18n?.t(key,vars)||key;
+  const editorFieldForKey=(key)=>editorFieldEls.find((field)=>field.dataset.field===key);
+  const editorUpdatePinButtons=()=>{
+    const isNight=editorPeriodDayEl.value==="night";
+    for(const button of editorPinButtons){
+      const key=button.dataset.pinField,active=editorPinnedFields.has(key),available=key!=="Artificial_lights"||isNight;
+      button.hidden=!available;button.disabled=editorSaving||!editorCanEdit||!available;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));
+      const action=active?editorT("editor.unpin"):editorT("editor.pinTooltip");button.title=active?`${editorT("editor.pinned")} — ${editorT("editor.pinTooltip")}`:action;button.setAttribute("aria-label",action);
+    }
+  };
+  const editorCapturePinnedValues=()=>{
+    const values={};
+    for(const key of ["Pheno_period","Residence","Period_day","Artificial_lights","Fly_ground"]){if(!editorPinnedFields.has(key))continue;const field=editorFieldForKey(key);if(!field)continue;values[key]=field.type==="checkbox"?field.checked:field.value;}
+    return values;
+  };
+  const editorApplyPinnedValues=(values)=>{
+    if(!values||!editorCanEdit)return false;let changed=false;
+    for(const key of ["Pheno_period","Residence","Period_day","Artificial_lights","Fly_ground"]){const value=values[key];
+      if(!Object.prototype.hasOwnProperty.call(values,key))continue;
+      if(!editorPinnedFields.has(key))continue;
+      const field=editorFieldForKey(key);if(!field||(key==="Artificial_lights"&&editorPeriodDayEl.value!=="night"))continue;
+      if(field.type==="checkbox"){const next=!!value;if(field.checked!==next){field.checked=next;changed=true;}}
+      else if(field.value!==String(value??"")){field.value=String(value??"");changed=true;}
+    }
+    editorApplyConditionalRules();editorUpdatePinButtons();
+    if(changed){editorDirty=false;editorOnlyPinnedChanges=true;editorSetStatus(editorT("editor.pinsApplied"),"busy");}
+    return changed;
+  };
+  const editorLastAnnotationStorageKey=()=>authState.user?.id?`${EDITOR_LAST_ANNOTATION_PREFIX}${authState.user.id}`:"";
+  const editorReusableAnnotationValues=(values={})=>{const reusable={};for(const field of editorFieldEls){const key=field.dataset.field;if(!key||EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS.has(key))continue;reusable[key]=Object.prototype.hasOwnProperty.call(values,key)?values[key]:null;}return reusable;};
+  const editorReadLastAnnotation=()=>{const key=editorLastAnnotationStorageKey();if(!key)return null;try{const snapshot=JSON.parse(localStorage.getItem(key)||"null");return snapshot?.values&&typeof snapshot.values==="object"?snapshot.values:null;}catch(_error){return null;}};
+  const editorHasLastAnnotation=()=>!!editorReadLastAnnotation();
+  const editorStoreLastAnnotation=(values)=>{const key=editorLastAnnotationStorageKey();if(!key)return false;try{localStorage.setItem(key,JSON.stringify({savedAt:new Date().toISOString(),values:editorReusableAnnotationValues(values)}));return true;}catch(_error){return false;}};
+  let editorEnvActiveIndex=-1,editorEnvVisibleSuggestions=[];
+  const closeEditorEnvAutocomplete=()=>{editorEnvAutocompleteEl.hidden=true;editorEnvActiveIndex=-1;editorEnvDescEl.setAttribute("aria-expanded","false");editorEnvDescEl.removeAttribute("aria-activedescendant");editorEnvToggleBtn.setAttribute("aria-expanded","false");};
+  const positionEditorEnvAutocomplete=()=>{
+    if(editorEnvAutocompleteEl.hidden)return;const rect=editorEnvComboboxEl.getBoundingClientRect(),listHeight=editorEnvAutocompleteEl.offsetHeight,margin=8,spaceBelow=window.innerHeight-rect.bottom-margin,openAbove=spaceBelow<Math.min(listHeight,180)&&rect.top>spaceBelow;
+    editorEnvAutocompleteEl.style.left=`${Math.max(margin,Math.min(window.innerWidth-rect.width-margin,rect.left))}px`;editorEnvAutocompleteEl.style.width=`${Math.min(rect.width,window.innerWidth-margin*2)}px`;editorEnvAutocompleteEl.style.top=`${Math.max(margin,openAbove?rect.top-listHeight-4:rect.bottom+4)}px`;
+  };
+  const setEditorEnvActive=(index)=>{
+    const options=Array.from(editorEnvAutocompleteEl.querySelectorAll(".editorEnvOption"));if(!options.length){editorEnvActiveIndex=-1;return;}editorEnvActiveIndex=(index+options.length)%options.length;options.forEach((option,itemIndex)=>{const active=itemIndex===editorEnvActiveIndex;option.classList.toggle("active",active);option.setAttribute("aria-selected",String(active));});const active=options[editorEnvActiveIndex];editorEnvDescEl.setAttribute("aria-activedescendant",active.id);active.scrollIntoView({block:"nearest"});
+  };
+  const chooseEditorEnvSuggestion=(value)=>{editorEnvDescEl.value=value;editorEnvDescEl.dispatchEvent(new Event("input",{bubbles:true}));closeEditorEnvAutocomplete();editorEnvDescEl.focus();};
+  const renderEditorEnvAutocomplete=({showAll=false}={})=>{
+    const query=showAll?"":String(editorEnvDescEl.value||"").trim().toLocaleLowerCase();editorEnvVisibleSuggestions=EDITOR_ENV_SUGGESTIONS.filter((value)=>!query||value.toLocaleLowerCase().includes(query));editorEnvAutocompleteEl.replaceChildren();editorEnvActiveIndex=-1;
+    if(!editorEnvVisibleSuggestions.length){const empty=document.createElement("div");empty.className="editorEnvNoMatches";empty.textContent=editorT("editor.environmentNoMatches");editorEnvAutocompleteEl.append(empty);}
+    else editorEnvVisibleSuggestions.forEach((value,index)=>{const option=document.createElement("button");option.type="button";option.className="editorEnvOption";option.id=`editorEnvOption-${index}`;option.setAttribute("role","option");option.setAttribute("aria-selected","false");option.textContent=value;option.addEventListener("pointerdown",(event)=>event.preventDefault());option.addEventListener("pointerenter",()=>setEditorEnvActive(index));option.addEventListener("click",()=>chooseEditorEnvSuggestion(value));editorEnvAutocompleteEl.append(option);});
+    editorEnvAutocompleteEl.hidden=false;editorEnvDescEl.setAttribute("aria-expanded","true");editorEnvToggleBtn.setAttribute("aria-expanded","true");requestAnimationFrame(positionEditorEnvAutocomplete);
+  };
+  const updateEditorProductivityLanguage=()=>{editorSaveNextBtn.title=editorT("editor.saveNextShortcut");editorSaveNextBtn.setAttribute("aria-label",editorT("editor.saveNextShortcut"));const pasteLabel=editorT("editor.pastePrevious"),pasteTitle=editorT("editor.pastePreviousTooltip");editorCopyPreviousBtn.textContent=pasteLabel;editorCopyPreviousBtn.title=pasteTitle;editorCopyPreviousBtn.setAttribute("aria-label",pasteTitle);const envLabel=editorT("editor.environmentSuggestions");editorEnvToggleBtn.title=envLabel;editorEnvToggleBtn.setAttribute("aria-label",envLabel);editorUpdatePinButtons();if(!editorEnvAutocompleteEl.hidden)renderEditorEnvAutocomplete();};
+  const pasteEditorLastAnnotation=()=>{
+    if(editorSaving||!editorCanEdit||!editorCurrentPhotoId)return;const pasted=editorReadLastAnnotation();if(!pasted){editorSetStatus(editorT("editor.pasteEmpty"),"error");editorSetBusy(editorSaving);return;}
+    const currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},currentHeightClassManual=editorHeightClassManual;
+    editorPinnedFields.clear();editorUpdatePinButtons();clearEditorInvalid();
+    for(const field of editorFieldEls){const key=field.dataset.field;if(!key||EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS.has(key)||!Object.prototype.hasOwnProperty.call(pasted,key))continue;const value=pasted[key];if(field.type==="checkbox")field.checked=String(value||"").toLowerCase()==="yes";else if(field.tagName==="SELECT")editorSelectValue(field,value);else field.value=value===null||value===undefined?"":value;}
+    editorApplyConditionalRules();editorElevationEl.value=currentDerived.Elevation_m;editorAboveGroundEl.value=currentDerived.Above_ground;editorHeightClassEl.value=currentDerived.Height_class_100m;editorHeightClassManual=currentHeightClassManual;editorUpdatePinButtons();updateEditorCompletionHints();editorMarkDirty();editorSetStatus(editorT("editor.pasteSuccess"),"busy");
+  };
 
   const editorSetBusy = (busy) => {
     editorSaving = busy;
@@ -4804,26 +4970,31 @@ loopCurrentEl.checked = false;
     editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || editorPhotoIndex >= activeEditorSequence().length - 1;
     editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
     editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
-    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||editorPhotoIndex<=0;
+    editorCopyPreviousBtn.disabled=busy||!editorCanEdit||!editorCurrentPhotoId||!editorHasLastAnnotation();
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
     const currentPhoto=activeEditorSequence()[editorPhotoIndex];
     editorDownloadPhotoBtn.hidden=!!photoSafeViewerContext?.readOnly;
     editorDownloadPhotoBtn.disabled=busy||!editorHasConnection()||!currentPhoto?.photoId||!!photoSafeViewerContext?.readOnly;
+    editorEnvToggleBtn.disabled=busy||!editorCanEdit;
+    editorUpdatePinButtons();
   };
 
   const editorSetEditable=(editable)=>{
     editorCanEdit=!!editable;
     editorFormEl.classList.toggle("readOnly",!editorCanEdit);
     for(const field of editorFieldEls)field.disabled=!editorCanEdit;
+    editorEnvToggleBtn.disabled=!editorCanEdit;
+    if(!editorCanEdit)closeEditorEnvAutocomplete();
     if(editorCanEdit)editorApplyConditionalRules();
+    // canEdit resolves asynchronously; refresh every dependent editor control immediately.
     editorSetBusy(editorSaving);
   };
 
   const editorMarkDirty = () => {
     if (editorSaving||!editorCanEdit) return;
     if(playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus("Playback stopped while you edit this record.");}
-    editorDirty = true;
+    editorDirty = true;editorOnlyPinnedChanges=false;
     if (!editorStatusEl.classList.contains("error")) {
       editorSetStatus("Unsaved changes.", "busy");
     }
@@ -4910,6 +5081,7 @@ loopCurrentEl.checked = false;
 
     editorUpdateDerived();
     updateEditorCompletionHints();
+    editorUpdatePinButtons();
   };
 
   const updateEditorCompletionHints = () => {
@@ -4968,29 +5140,103 @@ loopCurrentEl.checked = false;
   const openHelpWorkspace=()=>{closeFieldHelp();closeAppNavigation();appHelpWorkspaceEl.hidden=false;appHelpWorkspaceEl.setAttribute("aria-hidden","false");document.body.classList.add("appHelpOpen");document.body.style.overflow="hidden";setTimeout(()=>closeAppHelpBtn.focus(),0);};
   const closeHelpWorkspace=()=>{appHelpWorkspaceEl.hidden=true;appHelpWorkspaceEl.setAttribute("aria-hidden","true");document.body.classList.remove("appHelpOpen");document.body.style.overflow="";helpWorkspaceMode=null;};
   const helpButton=(label,className,onClick)=>{const button=document.createElement("button");button.type="button";button.className=className;button.textContent=label;button.addEventListener("click",onClick);return button;};
+  const interfaceCoachStorageKey=()=>authState.user?.id?`${INTERFACE_COACH_STORAGE_PREFIX}${authState.user.id}`:"";
+  const interfaceCoachNextFrame=()=>new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  const interfaceCoachVisible=(target)=>{if(!target?.isConnected)return false;const style=getComputedStyle(target),rect=target.getBoundingClientRect();return style.display!=="none"&&style.visibility!=="hidden"&&rect.width>2&&rect.height>2;};
+  const prepareInterfaceCoachEditor=async()=>{
+    closeAppNavigation();closeMapControlPanels();
+    if(document.body.classList.contains("editorOpen")){setEditorTab("form");return true;}
+    if(collectionBrowseState||!editorHasConnection()||!track.length)return false;
+    await openEditorMode();
+    if(!document.body.classList.contains("editorOpen"))return false;
+    interfaceCoachSnapshot.openedEditor=true;setEditorTab("form");return true;
+  };
+  const prepareInterfaceCoachMusic=async()=>{
+    closeAppNavigation();closeMapControlPanels();
+    if(document.body.classList.contains("editorOpen")){
+      if(!interfaceCoachSnapshot?.openedEditor||editorDirty)return false;
+      closeEditorMode({force:true,returnPrevious:false});
+    }
+    setSettingsCollapsed(false);audioOptionsBody.closest("details").open=true;musicDetailsEl.open=true;
+    if(isMobile())openMobilePanel();
+    return true;
+  };
+  const interfaceCoachSteps=[
+    {key:"coach.1",targets:()=>[appNavHandleEl],prepare:()=>{closeAppNavigation();return true;}},
+    {key:"coach.2",targets:()=>[appNavDrawerEl],prepare:()=>{openAppNavigation();return true;}},
+    {key:"coach.3",targets:()=>[mapStackEl],prepare:()=>{closeAppNavigation();closeMapControlPanels();return true;}},
+    {key:"coach.4",targets:()=>[mapBasemapToggleBtn],prepare:()=>{closeAppNavigation();closeMapControlPanels();return true;}},
+    {key:"coach.5",targets:()=>[mapSettingsToggleBtn],prepare:()=>{closeMapControlPanels();return true;}},
+    {key:"coach.6",targets:()=>[el("mapFollow")],prepare:()=>{closeMapControlPanels();return true;}},
+    {key:"coach.7",targets:()=>[photoStageEl]},
+    {key:"coach.8",targets:()=>[mapStackEl,photoStageEl]},
+    {key:"coach.9",desktopNoteKey:"coach.editorResize",targets:()=>[editorPanelEl],prepare:prepareInterfaceCoachEditor},
+    {key:"coach.10",targets:()=>[openFieldGuideBtn],prepare:prepareInterfaceCoachEditor},
+    {key:"coach.11",targets:()=>[editorSaveDraftBtn,editorSaveAnalysedBtn,editorSaveNextBtn],prepare:prepareInterfaceCoachEditor},
+    {key:"coach.12",targets:()=>[musicToggleBtn],prepare:prepareInterfaceCoachMusic},
+    {key:"coach.13",targets:()=>[],final:true}
+  ];
+  const interfaceCoachRect=(targets)=>{const rects=targets.filter(interfaceCoachVisible).map((target)=>target.getBoundingClientRect());if(!rects.length)return null;const left=Math.max(0,Math.min(...rects.map((rect)=>rect.left))),top=Math.max(0,Math.min(...rects.map((rect)=>rect.top))),right=Math.min(window.innerWidth,Math.max(...rects.map((rect)=>rect.right))),bottom=Math.min(window.innerHeight,Math.max(...rects.map((rect)=>rect.bottom)));return {left,top,right,bottom,width:Math.max(0,right-left),height:Math.max(0,bottom-top)};};
+  const positionInterfaceCoach=()=>{
+    if(!interfaceCoachActive)return;const step=interfaceCoachSteps[interfaceCoachIndex];
+    interfaceCoachEl.classList.toggle("interfaceCoachFinal",!!step.final);
+    if(step.final){interfaceCoachHighlightEl.hidden=true;interfaceCoachPointerEl.hidden=true;interfaceCoachCardEl.style.removeProperty("left");interfaceCoachCardEl.style.removeProperty("top");interfaceCoachCardEl.style.removeProperty("transform");interfaceCoachCardEl.scrollTop=0;return;}
+    const targets=(step.targets?.()||[]).filter(interfaceCoachVisible),rect=interfaceCoachRect(targets);if(!rect)return;
+    const padding=7,margin=12,gap=18,left=Math.max(margin,rect.left-padding),top=Math.max(margin,rect.top-padding),right=Math.min(window.innerWidth-margin,rect.right+padding),bottom=Math.min(window.innerHeight-margin,rect.bottom+padding);
+    interfaceCoachHighlightEl.hidden=false;interfaceCoachHighlightEl.style.left=`${left}px`;interfaceCoachHighlightEl.style.top=`${top}px`;interfaceCoachHighlightEl.style.width=`${Math.max(4,right-left)}px`;interfaceCoachHighlightEl.style.height=`${Math.max(4,bottom-top)}px`;
+    const cardWidth=interfaceCoachCardEl.offsetWidth,cardHeight=interfaceCoachCardEl.offsetHeight,candidates=isMobile()?[{left:(left+right-cardWidth)/2,top:bottom+gap},{left:(left+right-cardWidth)/2,top:top-cardHeight-gap}]:[{left:right+gap,top:(top+bottom-cardHeight)/2},{left:left-cardWidth-gap,top:(top+bottom-cardHeight)/2},{left:(left+right-cardWidth)/2,top:bottom+gap},{left:(left+right-cardWidth)/2,top:top-cardHeight-gap}],fits=(candidate)=>candidate.left>=margin&&candidate.top>=margin&&candidate.left+cardWidth<=window.innerWidth-margin&&candidate.top+cardHeight<=window.innerHeight-margin,chosen=candidates.find(fits)||{left:Math.min(window.innerWidth-cardWidth-margin,Math.max(margin,(window.innerWidth-cardWidth)/2)),top:Math.min(window.innerHeight-cardHeight-margin,Math.max(margin,window.innerHeight-cardHeight-margin))};
+    interfaceCoachCardEl.style.left=`${chosen.left}px`;interfaceCoachCardEl.style.top=`${chosen.top}px`;interfaceCoachCardEl.style.transform="none";
+    const cardCenter={x:chosen.left+cardWidth/2,y:chosen.top+cardHeight/2},targetCenter={x:(left+right)/2,y:(top+bottom)/2},dx=targetCenter.x-cardCenter.x,dy=targetCenter.y-cardCenter.y,length=Math.max(0,Math.hypot(dx,dy)-Math.min(cardWidth,cardHeight)*.34);
+    interfaceCoachPointerEl.hidden=length<18;interfaceCoachPointerEl.style.left=`${cardCenter.x}px`;interfaceCoachPointerEl.style.top=`${cardCenter.y}px`;interfaceCoachPointerEl.style.width=`${length}px`;interfaceCoachPointerEl.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
+  };
+  const renderInterfaceCoachStep=async({direction=1,scroll=true}={})=>{
+    if(!interfaceCoachActive)return;const token=++interfaceCoachRenderToken;
+    while(interfaceCoachIndex>=0&&interfaceCoachIndex<interfaceCoachSteps.length){const step=interfaceCoachSteps[interfaceCoachIndex],ready=step.prepare?await step.prepare():true;if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;let targets=(step.targets?.()||[]).filter((target)=>target?.isConnected);if(ready!==false&&!step.final&&scroll&&targets[0]){targets[0].scrollIntoView({behavior:"smooth",block:"center",inline:"center"});await interfaceCoachNextFrame();if(token!==interfaceCoachRenderToken||!interfaceCoachActive)return;}targets=(step.targets?.()||[]).filter(interfaceCoachVisible);if(step.final||(ready!==false&&targets.length)){interfaceCoachProgressEl.textContent=`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`;const coachText=[appT(step.key)];if(step.desktopNoteKey&&!isMobile())coachText.push(appT(step.desktopNoteKey));interfaceCoachTextEl.textContent=coachText.join("\n\n");interfaceCoachSkipBtn.textContent=appT("coach.skip");interfaceCoachBackBtn.textContent=appT("coach.back");interfaceCoachNextBtn.textContent=appT(step.final?"coach.finish":"coach.next");interfaceCoachBackBtn.hidden=interfaceCoachIndex===0;interfaceCoachSkipBtn.hidden=!!step.final;interfaceCoachCardEl.setAttribute("aria-label",`${interfaceCoachIndex+1} / ${interfaceCoachSteps.length}`);await interfaceCoachNextFrame();positionInterfaceCoach();interfaceCoachNextBtn.focus({preventScroll:true});return;}interfaceCoachIndex+=direction>=0?1:-1;}
+    interfaceCoachIndex=Math.max(0,Math.min(interfaceCoachSteps.length-1,interfaceCoachIndex));
+  };
+  const completeInterfaceCoach=async({markComplete=true,finishedFinal=false}={})=>{
+    if(!interfaceCoachActive)return;const snapshot=interfaceCoachSnapshot,firstFinalFinish=markComplete&&finishedFinal&&interfaceCoachSteps[interfaceCoachIndex]?.final&&!snapshot?.previouslyComplete;if(markComplete){const key=interfaceCoachStorageKey();if(key)try{localStorage.setItem(key,"complete");}catch(_error){}}
+    interfaceCoachActive=false;interfaceCoachRenderToken++;interfaceCoachEl.hidden=true;interfaceCoachEl.setAttribute("aria-hidden","true");document.body.classList.remove("interfaceCoachOpen");closeMapControlPanels();
+    interfaceCoachSnapshot=null;
+    if(!firstFinalFinish&&snapshot?.openedEditor&&document.body.classList.contains("editorOpen")&&!editorDirty)closeEditorMode({force:true,returnPrevious:false});
+    if(snapshot){setSettingsCollapsed(snapshot.settingsCollapsed);musicDetailsEl.open=snapshot.musicDetailsOpen;snapshot.audioDetails.open=snapshot.audioDetailsOpen;if(snapshot.mobilePanelOpen)openMobilePanel();else closeMobilePanel();if(snapshot.basemapOpen)openMapControlPanel("basemap");else if(snapshot.mapSettingsOpen)openMapControlPanel("settings");if(snapshot.menuOpen)openAppNavigation();else closeAppNavigation();}
+    if(firstFinalFinish){editorPaneRatios=[0.20,0.35,0.45];if(!document.body.classList.contains("editorOpen"))await openEditorMode();if(document.body.classList.contains("editorOpen")){setEditorTab("form");applyEditorPaneRatios({persist:true});requestAnimationFrame(()=>requestAnimationFrame(refreshMapSizes));}}
+  };
+  const startInterfaceCoach=async({force=false}={})=>{
+    if(interfaceCoachActive||!authState.user||authState.user.mustChangePassword||appI18n?.isPublicSurvey)return;const key=interfaceCoachStorageKey();let previouslyComplete=false;if(key)try{previouslyComplete=localStorage.getItem(key)==="complete";}catch(_error){}if(!force&&previouslyComplete)return;
+    closeHelpWorkspace();closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();
+    const audioDetails=audioOptionsBody.closest("details");interfaceCoachSnapshot={menuOpen:appNavDrawerEl.classList.contains("open"),basemapOpen:!mapBasemapPanelEl.hidden,mapSettingsOpen:!mapSettingsPanelEl.hidden,settingsCollapsed:settingsCard.classList.contains("settingsCollapsed"),musicDetailsOpen:musicDetailsEl.open,audioDetails,audioDetailsOpen:audioDetails.open,mobilePanelOpen:document.body.classList.contains("mobilePanelOpen"),openedEditor:false,previouslyComplete};
+    interfaceCoachActive=true;interfaceCoachIndex=0;interfaceCoachEl.hidden=false;interfaceCoachEl.setAttribute("aria-hidden","false");document.body.classList.add("interfaceCoachOpen");await renderInterfaceCoachStep();
+  };
+  interfaceCoachSkipBtn.addEventListener("click",()=>void completeInterfaceCoach({markComplete:true}));
+  interfaceCoachBackBtn.addEventListener("click",()=>{if(interfaceCoachIndex<=0)return;interfaceCoachIndex--;void renderInterfaceCoachStep({direction:-1});});
+  interfaceCoachNextBtn.addEventListener("click",()=>{if(interfaceCoachIndex>=interfaceCoachSteps.length-1){void completeInterfaceCoach({markComplete:true,finishedFinal:true});return;}interfaceCoachIndex++;void renderInterfaceCoachStep({direction:1});});
+  const scheduleInterfaceCoachPosition=()=>{if(interfaceCoachActive)requestAnimationFrame(positionInterfaceCoach);};
+  window.addEventListener("resize",scheduleInterfaceCoachPosition);window.addEventListener("orientationchange",scheduleInterfaceCoachPosition);window.addEventListener("scroll",scheduleInterfaceCoachPosition,true);window.visualViewport?.addEventListener("resize",scheduleInterfaceCoachPosition);window.visualViewport?.addEventListener("scroll",scheduleInterfaceCoachPosition);
+
   const renderHelpHub=()=>{
-    helpWorkspaceMode="hub";openHelpWorkspace();appHelpEyebrowEl.textContent="Help / Guide";appHelpTitleEl.textContent="How can we help?";appHelpProgressEl.hidden=true;appHelpBodyEl.innerHTML=`<h1>Scientific annotation guide</h1><p class="appHelpLead">Revisit the application introduction or open the searchable guide for every annotation field.</p><div class="appHelpGrid"><article class="appHelpItem"><h3>Application introduction</h3><p>A role-aware tour of maps, photographs, annotation, saving and the modules available to you.</p><button class="primarySave" id="runIntroductionAgain" type="button">Run introduction again</button></article><article class="appHelpItem"><h3>Field guide</h3><p>Practical definitions, category meanings and scientific interpretation warnings in one searchable guide.</p><button class="secondary" id="openFullFieldGuide" type="button">Open field guide</button></article></div>`;appHelpActionsEl.replaceChildren(helpButton("Close","secondary",closeHelpWorkspace));el("runIntroductionAgain").addEventListener("click",()=>openOnboarding({force:true}));el("openFullFieldGuide").addEventListener("click",openFieldGuide);
+    helpWorkspaceMode="hub";openHelpWorkspace();appHelpEyebrowEl.textContent="Help / Guide";appHelpTitleEl.textContent="How can we help?";appHelpProgressEl.hidden=true;appHelpBodyEl.innerHTML=`<h1>Scientific annotation guide</h1><p class="appHelpLead">Revisit the application introduction or open the searchable guide for every annotation field.</p><div class="appHelpGrid"><article class="appHelpItem"><h3>Application introduction</h3><p>A role-aware tour of maps, photographs, annotation, saving and the modules available to you.</p><button class="primarySave" id="runIntroductionAgain" type="button">Run introduction again</button></article><article class="appHelpItem"><h3>${escapeHtml(appT("help.interfaceTutorialTitle"))}</h3><p>${escapeHtml(appT("help.interfaceTutorialDescription"))}</p><button class="secondary" id="showInterfaceTutorialAgain" type="button">${escapeHtml(appT("help.interfaceTutorialAgain"))}</button></article><article class="appHelpItem"><h3>Field guide</h3><p>Practical definitions, category meanings and scientific interpretation warnings in one searchable guide.</p><button class="secondary" id="openFullFieldGuide" type="button">Open field guide</button></article></div>`;appHelpActionsEl.replaceChildren(helpButton("Close","secondary",closeHelpWorkspace));el("runIntroductionAgain").addEventListener("click",()=>openOnboarding({force:true}));el("showInterfaceTutorialAgain").addEventListener("click",()=>void startInterfaceCoach({force:true}));el("openFullFieldGuide").addEventListener("click",openFieldGuide);appI18n?.apply(appHelpWorkspaceEl);
   };
   const openFieldGuide=async({query="",scrollTop=0}={})=>{
     helpWorkspaceMode="guide";openHelpWorkspace();appHelpEyebrowEl.textContent="Photo annotation";appHelpTitleEl.textContent="Scientific field guide";appHelpProgressEl.hidden=true;appHelpBodyEl.innerHTML='<p class="appHelpLead">Loading field guidance…</p>';appHelpActionsEl.replaceChildren(helpButton("← Help home","secondary",renderHelpHub),helpButton("Close","primarySave",closeHelpWorkspace));
-    try{const schema=await getAnnotationSchema(),fieldMap=fieldMapFromSchema(schema),toolbar=document.createElement("div"),search=document.createElement("input"),warning=document.createElement("div"),groups=document.createElement("div"),empty=document.createElement("p");toolbar.className="fieldGuideToolbar";search.type="search";search.placeholder=appT("help.search");search.setAttribute("aria-label",appT("help.fieldGuide"));search.value=query;toolbar.append(search);warning.className="scientificWarning";warning.textContent=generalScientificWarning();empty.className="miniNote";empty.textContent=appT("help.noResults");empty.hidden=true;for(const group of FIELD_GUIDE_GROUPS){const section=document.createElement("section"),heading=document.createElement("h3"),entries=document.createElement("div");section.className="fieldGuideGroup";heading.textContent=group.title;entries.className="fieldGuideEntries";for(const key of group.keys){const rawField=fieldMap.get(key);if(!rawField)continue;const field=appI18n?.localizeField(rawField)||rawField,article=document.createElement("article"),title=document.createElement("h4");article.className="fieldGuideEntry";article.dataset.search=[field.label,field.key,field.plainDefinition,field.howToRecord,field.important,...Object.entries(field.optionHelp||{}).flat()].filter(Boolean).join(" ").toLowerCase();title.textContent=field.label||field.key;appendFieldGuidance(article,rawField);article.prepend(title);entries.append(article);}section.append(heading,entries);groups.append(section);}appHelpBodyEl.replaceChildren(toolbar,warning,groups,empty);const filter=()=>{const term=search.value.trim().toLowerCase();groups.querySelectorAll(".fieldGuideEntry").forEach((entry)=>entry.hidden=!!term&&!entry.dataset.search.includes(term));groups.querySelectorAll(".fieldGuideGroup").forEach((group)=>group.hidden=![...group.querySelectorAll(".fieldGuideEntry")].some((entry)=>!entry.hidden));empty.hidden=[...groups.querySelectorAll(".fieldGuideEntry")].some((entry)=>!entry.hidden);};search.addEventListener("input",filter);filter();requestAnimationFrame(()=>{appHelpBodyEl.scrollTop=scrollTop;search.focus();});}
+    try{const schema=await getAnnotationSchema(),fieldMap=fieldMapFromSchema(schema),toolbar=document.createElement("div"),search=document.createElement("input"),warning=document.createElement("div"),mapContext=document.createElement("div"),groups=document.createElement("div"),empty=document.createElement("p");toolbar.className="fieldGuideToolbar";search.type="search";search.placeholder=appT("help.search");search.setAttribute("aria-label",appT("help.fieldGuide"));search.value=query;toolbar.append(search);warning.className="scientificWarning";warning.textContent=generalScientificWarning();mapContext.className="miniNote";mapContext.textContent=appT("help.googleContext");empty.className="miniNote";empty.textContent=appT("help.noResults");empty.hidden=true;for(const group of FIELD_GUIDE_GROUPS){const section=document.createElement("section"),heading=document.createElement("h3"),entries=document.createElement("div");section.className="fieldGuideGroup";heading.textContent=group.title;entries.className="fieldGuideEntries";for(const key of group.keys){const rawField=fieldMap.get(key);if(!rawField)continue;const field=appI18n?.localizeField(rawField)||rawField,article=document.createElement("article"),title=document.createElement("h4");article.className="fieldGuideEntry";article.dataset.search=[field.label,field.key,field.plainDefinition,field.howToRecord,field.important,...Object.entries(field.optionHelp||{}).flat()].filter(Boolean).join(" ").toLowerCase();title.textContent=field.label||field.key;appendFieldGuidance(article,rawField);article.prepend(title);entries.append(article);}section.append(heading,entries);groups.append(section);}appHelpBodyEl.replaceChildren(toolbar,warning,mapContext,groups,empty);const filter=()=>{const term=search.value.trim().toLowerCase();groups.querySelectorAll(".fieldGuideEntry").forEach((entry)=>entry.hidden=!!term&&!entry.dataset.search.includes(term));groups.querySelectorAll(".fieldGuideGroup").forEach((group)=>group.hidden=![...group.querySelectorAll(".fieldGuideEntry")].some((entry)=>!entry.hidden));empty.hidden=[...groups.querySelectorAll(".fieldGuideEntry")].some((entry)=>!entry.hidden);};search.addEventListener("input",filter);filter();requestAnimationFrame(()=>{appHelpBodyEl.scrollTop=scrollTop;search.focus();});}
     catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the field guide: ${escapeHtml(error.message)}</div>`;}
   };
 
   const onboardingFeatureCards=(role)=>{const items=[{title:"Data and progress",text:"Use Data table to browse records and Progress to continue from the first unfinished photograph for an individual."},{title:"Survey results",text:"View aggregated anonymous ratings without exposing individual respondents."}];if(["coordinator","admin"].includes(role))items.push({title:"Coordination",text:"Review contributor records, verification requests and category proposals; create surveys and export research data."});if(role==="admin")items.push({title:"Administration",text:"Manage users and contributor settings, import project data and inspect private contribution statistics."});return items;};
   const createOnboardingSteps=async()=>{const schema=await getAnnotationSchema(),fieldMap=fieldMapFromSchema(schema),role=authState.user?.role||"annotator",bestAvailable=authState.contribution?.bestPicturesUnlocked??!authState.user?.restrictedContributor,steps=[
     {title:"Welcome to the White Stork photo archive",lead:"This application connects tracking locations, photographs and standardized scientific annotations.",items:[{title:"Photo and location together",text:"View each photograph with its corresponding map position and movement context."},{title:"Describe evidence",text:"Record what is visible or otherwise justified by the photograph and associated telemetry—not assumptions about the wider site."}]},
-    {title:"Map & Photos",lead:"The map and photograph are synchronized so you can examine the same observation from two perspectives.",items:[{title:"Choose an individual",text:"Select a bird to load its photographs and route."},{title:"Move through photographs",text:"Use the navigation controls or swipe left/right on a touch device."},{title:"Use the map",text:"The marker follows the current photograph. Basemap and layer controls change only your local map view."}]},
-    {title:"Photo annotation",lead:"Each photograph is described with standardized scientific variables. Apply fields only when their context is relevant—for example flight, foraging, roosting or night records.",warning:generalScientificWarning(),fieldKeys:["Quality_selected","Fly_ground","Env_desc_en","Water_presence_class"],items:[{title:"Blank is not absence",text:"A blank or not-applicable field differs from recording that an ecological feature is absent."},{title:"Use the frame",text:"Photograph-based variables describe detectable content in this frame; telemetry may support location and height fields."}]},
+    {title:"Map & Photos",lead:"The map and photograph are synchronized so you can examine the same observation from two perspectives.",items:[{title:"Choose an individual",text:"Select a bird to load its photographs and route."},{title:"Move through photographs",text:"Use the navigation controls or swipe left/right on a touch device."},{title:"Use the map",text:"The marker follows the current photograph. Basemap and layer controls change only your local map view."},{title:"Broader map context",text:"Street View and satellite imagery can help interpret the broader spatial context of the location beyond what is directly visible in the camera frame."}]},
+    {title:"How to analyse photographs",lead:"The photograph is the primary source of information, but it should not be interpreted in isolation from the other available data.",warning:generalScientificWarning(),items:[{title:"Spatial and temporal context",text:"During annotation, also use the map, preceding and subsequent telemetry locations, time of day, and the sequence of neighbouring photographs. These sources can help interpret the situation represented by a single camera frame."},{title:"Interpreting behaviour",text:"For example, the trajectory and neighbouring photographs may indicate whether the bird has just arrived at a foraging area, is remaining within a longer-term residence area, is resting, continuing its flight, or approaching a roosting site."},{title:"Mapped context",text:"Mapped stopover areas, telemetry data and map layers can therefore enrich the interpretation of what is visible in the photograph."},{title:"Frame-specific fields and Remarks",text:"Fields describing the photograph itself should still be based on features that can be identified in the camera frame. However, when the map, telemetry or neighbouring photographs provide important contextual information that does not belong in a frame-specific field, this information may be recorded in Remarks."},{title:"Aim of the analysis",text:"The aim is therefore to combine visual information from the photograph with the spatial and temporal context of the bird's behaviour."}]},
     {title:"Saving your work",lead:"Choose the status that honestly reflects how far the record has been assessed.",fieldKeys:["Quality_selected"],items:[{title:"Save draft",text:"Keeps an incomplete record so it can be finished later. Only one active draft is allowed under the current workflow."},{title:"Complete / Analysed",text:"Use only when all applicable required fields have been reviewed."},{title:"Reject unusable photographs",text:"Quality selected = no allows an unusable image to be rejected without completing the remaining scientific fields."}]}
   ];if(bestAvailable)steps.push({title:"Photo Safe, ratings and sharing",lead:"Save selected photographs in your private Photo Safe and explore project ratings.",items:[{title:"Private Photo Safe",text:"Your server-side selection supports the synchronized photo-and-map slideshow."},{title:"Ratings",text:"Rate photographs where ratings are available and review Top rated collections."},{title:"Sharing",text:"Share your Photo Safe read-only with another user or through a controlled public link."}]});steps.push({title:"Other modules available to you",lead:"The side menu keeps the application compact while giving quick access to your role's tools.",items:onboardingFeatureCards(role)});steps.push({title:"You are ready",lead:"Start with Photo editor for annotation work. Help / Guide in the side menu and ? Field guide in the editor can reopen this introduction or any field explanation at any time.",items:[{title:"Scientific habit",text:"When uncertain, avoid guessing: save a draft or request verification where available."},{title:"Need a reminder?",text:"Every scientific field has an ⓘ button with the same guidance used in the full field guide."}]});return {steps,fieldMap};};
   let onboardingFieldMap=new Map();
-  const renderOnboardingStep=()=>{const step=onboardingSteps[onboardingIndex];if(!step)return;appHelpEyebrowEl.textContent=`Introduction • ${onboardingIndex+1} of ${onboardingSteps.length}`;appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width=`${((onboardingIndex+1)/onboardingSteps.length)*100}%`;const heading=document.createElement("h1"),lead=document.createElement("p"),grid=document.createElement("div");heading.textContent=step.title;lead.className="appHelpLead";lead.textContent=step.lead;grid.className="appHelpGrid";for(const item of step.items||[]){const article=document.createElement("article"),title=document.createElement("h3"),textEl=document.createElement("p");article.className="appHelpItem";title.textContent=item.title;textEl.textContent=item.text;article.append(title,textEl);grid.append(article);}for(const key of step.fieldKeys||[]){const rawField=onboardingFieldMap.get(key);if(!rawField)continue;const field=appI18n?.localizeField(rawField)||rawField,article=document.createElement("article"),title=document.createElement("h3");article.className="appHelpItem";title.textContent=field.label||field.key;article.append(title);appendFieldGuidance(article,rawField);grid.append(article);}appHelpBodyEl.replaceChildren(heading,lead,grid);if(step.warning){const warning=document.createElement("div");warning.className="scientificWarning";warning.textContent=generalScientificWarning();appHelpBodyEl.append(warning);}appHelpBodyEl.scrollTop=0;const left=helpButton("Close for now","secondary",closeHelpWorkspace),group=document.createElement("div");group.className="appHelpActionGroup";if(onboardingIndex>0)group.append(helpButton("← Back","secondary",()=>{onboardingIndex--;renderOnboardingStep();}));if(onboardingIndex<onboardingSteps.length-1)group.append(helpButton("Next →","primarySave",()=>{onboardingIndex++;renderOnboardingStep();}));else group.append(helpButton("Finish","primarySave",()=>{try{localStorage.setItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`,"complete");}catch(_error){}closeHelpWorkspace();openAppNavigation();}));appHelpActionsEl.replaceChildren(left,group);appI18n?.apply(appHelpWorkspaceEl);};
+  const renderOnboardingStep=()=>{const step=onboardingSteps[onboardingIndex];if(!step)return;appHelpEyebrowEl.textContent=`Introduction • ${onboardingIndex+1} of ${onboardingSteps.length}`;appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width=`${((onboardingIndex+1)/onboardingSteps.length)*100}%`;const heading=document.createElement("h1"),lead=document.createElement("p"),grid=document.createElement("div");heading.textContent=step.title;lead.className="appHelpLead";lead.textContent=step.lead;grid.className="appHelpGrid";for(const item of step.items||[]){const article=document.createElement("article"),title=document.createElement("h3"),textEl=document.createElement("p");article.className="appHelpItem";title.textContent=item.title;textEl.textContent=item.text;article.append(title,textEl);grid.append(article);}for(const key of step.fieldKeys||[]){const rawField=onboardingFieldMap.get(key);if(!rawField)continue;const field=appI18n?.localizeField(rawField)||rawField,article=document.createElement("article"),title=document.createElement("h3");article.className="appHelpItem";title.textContent=field.label||field.key;article.append(title);appendFieldGuidance(article,rawField);grid.append(article);}appHelpBodyEl.replaceChildren(heading,lead,grid);if(step.warning){const warning=document.createElement("div");warning.className="scientificWarning";warning.textContent=generalScientificWarning();appHelpBodyEl.append(warning);}appHelpBodyEl.scrollTop=0;const left=helpButton("Close for now","secondary",closeHelpWorkspace),group=document.createElement("div");group.className="appHelpActionGroup";if(onboardingIndex>0)group.append(helpButton("← Back","secondary",()=>{onboardingIndex--;renderOnboardingStep();}));if(onboardingIndex<onboardingSteps.length-1)group.append(helpButton("Next →","primarySave",()=>{onboardingIndex++;renderOnboardingStep();}));else group.append(helpButton("Finish","primarySave",()=>{try{localStorage.setItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`,"complete");}catch(_error){}closeHelpWorkspace();void startInterfaceCoach();}));appHelpActionsEl.replaceChildren(left,group);appI18n?.apply(appHelpWorkspaceEl);};
   const openOnboarding=async({force=false}={})=>{if(!authState.user||authState.user.mustChangePassword)return;const key=`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`;if(!force){try{if(localStorage.getItem(key)==="complete")return;}catch(_error){}}helpWorkspaceMode="onboarding";openHelpWorkspace();appHelpEyebrowEl.textContent="Introduction";appHelpTitleEl.textContent="Stork Photo Editor";appHelpProgressEl.hidden=false;appHelpProgressValueEl.style.width="8%";appHelpBodyEl.innerHTML='<p class="appHelpLead">Preparing your introduction…</p>';appHelpActionsEl.replaceChildren(helpButton("Close for now","secondary",closeHelpWorkspace));try{const result=await createOnboardingSteps();onboardingSteps=result.steps;onboardingFieldMap=result.fieldMap;onboardingIndex=0;renderOnboardingStep();}catch(error){appHelpBodyEl.innerHTML=`<div class="editorStatus error">Could not load the introduction: ${escapeHtml(error.message)}</div>`;}};
-  const maybeShowOnboarding=()=>void openOnboarding();
+  const maybeShowOnboarding=()=>{if(!authState.user||authState.user.mustChangePassword)return;let completed=false;try{completed=localStorage.getItem(`${ONBOARDING_STORAGE_PREFIX}${authState.user.id}`)==="complete";}catch(_error){}if(completed){void startInterfaceCoach();return;}void openOnboarding();};
   closeAppHelpBtn.addEventListener("click",closeHelpWorkspace);openFieldGuideBtn.addEventListener("click",openFieldGuide);
-  appI18n?.onChange(async()=>{if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();});
-  document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
+  appI18n?.onChange(async()=>{updateEditorProductivityLanguage();updateStreetViewControl();renderPhotoAnnotationStatus();renderPhotoDownload();if(activeFieldHelp?.anchor?.isConnected)showFieldHelp(activeFieldHelp.field,activeFieldHelp.anchor);if(helpWorkspaceMode==="onboarding")renderOnboardingStep();else if(helpWorkspaceMode==="guide"){const search=appHelpBodyEl.querySelector(".fieldGuideToolbar input");await openFieldGuide({query:search?.value||"",scrollTop:appHelpBodyEl.scrollTop});}else if(helpWorkspaceMode==="hub")renderHelpHub();if(interfaceCoachActive)await renderInterfaceCoachStep({direction:1,scroll:false});});
+  document.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(interfaceCoachActive){void completeInterfaceCoach({markComplete:true});return;}if(fieldHelpPopoverEl.classList.contains("open")){closeFieldHelp();return;}if(!appHelpWorkspaceEl.hidden)closeHelpWorkspace();});
 
   const loadEditorHelp = async () => {
     try {
@@ -5008,7 +5254,8 @@ loopCurrentEl.checked = false;
     } catch(error) { console.warn("Field help could not be loaded", error); }
   };
 
-  const populateEditorForm = (record = {}) => {
+  const populateEditorForm = (record = {}, {status="unstarted",applyDefaults=true} = {}) => {
+    closeEditorEnvAutocomplete();
     editorFormEl.reset();
     clearEditorInvalid();
 
@@ -5030,12 +5277,14 @@ loopCurrentEl.checked = false;
     // Use that as a convenience default only when this row is still blank.
     if (!record.Quality_selected) editorQualityEl.value = "yes";
     if(!record.Water_presence_class)editorWaterEl.value="no_water_visible";
+    const savedFeatherOccurrence=record.Feather_occ;
+    if(applyDefaults&&status==="unstarted"&&(savedFeatherOccurrence===null||savedFeatherOccurrence===undefined||String(savedFeatherOccurrence).trim()===""))editorFeatherOccEl.value="yes";
 
     editorLoadedRecord = { ...record };editorHeightClassManual=record.Height_class_100m!==null&&record.Height_class_100m!==undefined&&record.Height_class_100m!=="";
     editorApplyConditionalRules();
     editorUpdateDerived({forceClass:!editorHeightClassManual});
     updateEditorCompletionHints();
-    editorDirty = false;
+    editorDirty = false;editorOnlyPinnedChanges=false;
   };
 
   const editorNormalizeValues = () => {
@@ -5158,15 +5407,16 @@ loopCurrentEl.checked = false;
     return errors;
   };
 
-  const editorLoadPhoto = async (index,{syncViewer=true}={}) => {
+  const editorLoadPhoto = async (index,{syncViewer=true,pinnedValues=null}={}) => {
     const sequence=activeEditorSequence();if (!sequence.length) return;
     const token = ++editorLoadToken;
-    const previousEditorPhotoIndex=editorPhotoIndex;
+    const previousEditorPhotoIndex=editorPhotoIndex,previousEditorPhotoId=editorCurrentPhotoId;
     editorPhotoIndex = Math.max(0, Math.min(index, sequence.length - 1));
     const point = sequence[editorPhotoIndex],pointBird=point.bird||birdId;
     const filename = editorLookupFilename(point);
 
-    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus("Browsing limit reached. Use Start annotating to open a photo available for your work.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
+    if(editorHasConnection()&&point.photoId)try{if(!await grantTrackPhotoAccess(point,"annotation")){editorPhotoIndex=previousEditorPhotoIndex;editorCurrentPhotoId=previousEditorPhotoId;editorSetStatus("Browsing limit reached. Use Start annotating to open a photo available for your work.","error");return;}}catch(error){editorPhotoIndex=previousEditorPhotoIndex;editorCurrentPhotoId=previousEditorPhotoId;editorSetStatus(`Photo access failed: ${error.message}`,"error");return;}
+    editorCurrentPhotoId=point.photoId||null;
     if(syncViewer){if(pointBird&&(birdId!==pointBird||!track.some((candidate)=>candidate.photoId===point.photoId))){setBirdSelection(pointBird);await loadTrackFor(pointBird,{autoplay:false,deferInitialAccess:true,preservePlayback:!!editorContributorReview&&playing,lazyMedia:!!editorContributorReview});}const viewerIndex=track.findIndex((candidate)=>candidate.photoId===point.photoId);if(viewerIndex>=0){track[viewerIndex].url=point.url;track[viewerIndex].previewUrl=point.previewUrl;track[viewerIndex].accessGranted=true;await showPhotoAtIndex(viewerIndex,{purpose:"annotation",skipAccess:true,preservePlayback:!!editorContributorReview&&playing});}else loadPhotoSocial(point.photoId);}else loadPhotoSocial(point.photoId);
     editorPhotoEl.src = point.url || "";
     editorBirdBadgeEl.textContent = "Bird: " + (pointBird || "—")+(editorContributorReview?` • ${editorContributorReview.userName}`:"");
@@ -5178,7 +5428,7 @@ loopCurrentEl.checked = false;
     editorRecordLineEl.textContent = filename || "No filename";
     editorLoadedRecord = { FileName:filename, Bird:pointBird, Altitude_m:point.altitudeM ?? null, Elevation_m:point.elevationM ?? null, GPS_time:point.gpsTime ?? null, Latitude:point.lat, Longitude:point.lon };
     editorLoadedVersion = null;
-    populateEditorForm(editorLoadedRecord);
+    populateEditorForm(editorLoadedRecord,{status:point.status||"unstarted"});
     editorSetEditable(false);
     editorSetBusy(false);
 
@@ -5196,7 +5446,7 @@ loopCurrentEl.checked = false;
       const result = await editorApiGet({ photoId: point.photoId });
       if (token !== editorLoadToken) return;
       if (!result || result.ok === false) throw new Error((result && result.error) || "Photo row not found.");
-      populateEditorForm(result.data || {});
+      populateEditorForm(result.data || {},{status:result.status||"unstarted"});
       editorLoadedVersion = result.version ?? 0;
       editorSetEditable(result.canEdit);
       const analysed = String(result.data && result.data.Analysed || "").toLowerCase() === "yes";
@@ -5208,6 +5458,7 @@ loopCurrentEl.checked = false;
     } finally {
       if (token === editorLoadToken) editorSetBusy(false);
     }
+    if(token===editorLoadToken&&pinnedValues)editorApplyPinnedValues(pinnedValues);
     if(editorContributorReview&&!playing){playBtn.disabled=sequence.length<2;pauseBtn.disabled=true;sliderOverlay.style.display=sequence.length<2?"none":"block";syncSliderPlayPause();}
   };
 
@@ -5237,6 +5488,7 @@ loopCurrentEl.checked = false;
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
     if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    closeEditorEnvAutocomplete();
     if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
     editorWorkspaceEl.appendChild(editorPanelEl);
@@ -5244,11 +5496,12 @@ loopCurrentEl.checked = false;
     editorVisualEl.appendChild(editorVisualNavEl);
     editorModeEl.setAttribute("aria-hidden", "true");
     document.body.classList.remove("editorOpen");
+    editorCurrentPhotoId=null;
     wrapEl.insertBefore(editorMapDividerEl, sideEl);
     wrapEl.insertBefore(editorPhotoDividerEl, sideEl);
     applyLayoutSplit({persist:false});
     delete document.body.dataset.editorTab;
-    editorDirty = false;
+    editorDirty = false;editorOnlyPinnedChanges=false;
     editorLoadToken++;
     refreshMapSizes();
     if(returnMode)setTimeout(()=>openDataWorkspace(returnMode),0);
@@ -5257,11 +5510,12 @@ loopCurrentEl.checked = false;
 
   const moveEditorPhoto = async (delta, { force = false } = {}) => {
     if (editorSaving) return false;
+    const pinnedValues=delta>0?editorCapturePinnedValues():null;
     if(editorContributorReview&&playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();}
     if(!force&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved)return false;}
     const nextIndex = Math.max(0, Math.min(editorPhotoIndex + delta, activeEditorSequence().length - 1));
     if (nextIndex === editorPhotoIndex) return false;
-    await editorLoadPhoto(nextIndex);
+    await editorLoadPhoto(nextIndex,{pinnedValues});
     return true;
   };
 
@@ -5277,7 +5531,7 @@ loopCurrentEl.checked = false;
       return false;
     }
 
-    const sequence=activeEditorSequence(),point = sequence[editorPhotoIndex];
+    const sequence=activeEditorSequence(),point = sequence[editorPhotoIndex],pinnedValues=advance?editorCapturePinnedValues():null;
     const filename = editorLookupFilename(point);
     const values = editorNormalizeValues();
     const existingAnalysed = String(editorLoadedRecord && editorLoadedRecord.Analysed || "").toLowerCase() === "yes";
@@ -5299,12 +5553,14 @@ loopCurrentEl.checked = false;
       if (!result || result.ok === false) throw new Error((result && result.error) || "Server rejected the save.");
       editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
       editorLoadedVersion = result.version ?? editorLoadedVersion;
-      editorDirty = false;
+      editorStoreLastAnnotation(values);
+      editorDirty = false;editorOnlyPinnedChanges=false;
+      const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint){savedTrackPoint.status=targetStatus;savedTrackPoint.hasAnnotation=true;}const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
       editorRecordLineEl.textContent = filename;
       editorSetStatus(values.Analysed === "yes" ? "Saved and marked as analysed." : "Draft saved.", "ok");
       if (advance) {
-        if(editorContributorReview){if(editorPhotoIndex<sequence.length-1)await editorLoadPhoto(editorPhotoIndex+1);else editorSetStatus("Saved. This was the last photo for the selected contributor.","ok");}
-        else{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex);else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}
+        if(editorContributorReview){if(editorPhotoIndex<sequence.length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("Saved. This was the last photo for the selected contributor.","ok");}
+        else{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex,{pinnedValues});else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}
       }
       return true;
     } catch(error) {
@@ -5334,14 +5590,28 @@ loopCurrentEl.checked = false;
       editorMarkDirty();
     });
   }
+  editorEnvDescEl.addEventListener("focus",()=>{if(editorCanEdit)renderEditorEnvAutocomplete();});
+  editorEnvDescEl.addEventListener("input",()=>{if(editorCanEdit)renderEditorEnvAutocomplete();});
+  editorEnvDescEl.addEventListener("keydown",(event)=>{
+    if(event.key==="Escape"&&!editorEnvAutocompleteEl.hidden){event.preventDefault();event.stopPropagation();closeEditorEnvAutocomplete();return;}
+    if(!["ArrowDown","ArrowUp","Enter"].includes(event.key))return;
+    if(editorEnvAutocompleteEl.hidden&&event.key!=="Enter")renderEditorEnvAutocomplete();
+    if(event.key==="ArrowDown"||event.key==="ArrowUp"){event.preventDefault();if(editorEnvVisibleSuggestions.length){const next=editorEnvActiveIndex<0?(event.key==="ArrowDown"?0:editorEnvVisibleSuggestions.length-1):editorEnvActiveIndex+(event.key==="ArrowDown"?1:-1);setEditorEnvActive(next);}return;}
+    if(event.key==="Enter"&&editorEnvActiveIndex>=0&&editorEnvVisibleSuggestions[editorEnvActiveIndex]!==undefined){event.preventDefault();chooseEditorEnvSuggestion(editorEnvVisibleSuggestions[editorEnvActiveIndex]);}
+  });
+  editorEnvToggleBtn.addEventListener("click",()=>{if(editorEnvToggleBtn.disabled)return;if(editorEnvAutocompleteEl.hidden){editorEnvDescEl.focus();renderEditorEnvAutocomplete({showAll:true});}else closeEditorEnvAutocomplete();});
+  document.addEventListener("pointerdown",(event)=>{if(editorEnvAutocompleteEl.hidden||editorEnvComboboxEl.contains(event.target)||editorEnvAutocompleteEl.contains(event.target))return;closeEditorEnvAutocomplete();});
+  window.addEventListener("resize",positionEditorEnvAutocomplete);
+  window.addEventListener("scroll",positionEditorEnvAutocomplete,true);
+  for(const button of editorPinButtons)button.addEventListener("click",(event)=>{event.preventDefault();event.stopPropagation();const key=button.dataset.pinField;if(!editorCanEdit||(key==="Artificial_lights"&&editorPeriodDayEl.value!=="night"))return;if(editorPinnedFields.has(key))editorPinnedFields.delete(key);else editorPinnedFields.add(key);editorUpdatePinButtons();});
 
   editorModeBtn.addEventListener("click",()=>{editorReturnDataMode=null;openEditorMode();});
   toggleEditorHeaderBtn.addEventListener("click",()=>{const compact=editorPanelHeaderEl.classList.toggle("compact");toggleEditorHeaderBtn.textContent=compact?"Details":"Hide";toggleEditorHeaderBtn.setAttribute("aria-expanded",String(!compact));});
   closeEditorModeBtn.addEventListener("click", () => closeEditorMode());
   editorPrevPhotoBtn.addEventListener("click", () => moveEditorPhoto(-1));
   editorNextPhotoBtn.addEventListener("click", () => moveEditorPhoto(1));
-  editorCopyPreviousBtn.addEventListener("click",async()=>{if(editorPhotoIndex<=0||editorSaving)return;try{const previous=await editorApiGet({photoId:activeEditorSequence()[editorPhotoIndex-1].photoId}),currentRecord={...(editorLoadedRecord||{})},currentVersion=editorLoadedVersion,excluded=new Set(["Elevation_m","Above_ground","Height_class_100m","Analysed"]),copied={};for(const field of editorFieldEls){const key=field.dataset.field;if(!excluded.has(key))copied[key]=previous.data?.[key]??null;}populateEditorForm({...currentRecord,...copied,Analysed:currentRecord.Analysed});editorLoadedRecord=currentRecord;editorLoadedVersion=currentVersion;editorMarkDirty();editorSetStatus("Values copied from the previous photo. Review them before saving.","busy");}catch(error){editorSetStatus(`Could not copy previous values: ${error.message}`,"error");}});
-  editorNextUnannotatedBtn.addEventListener("click",async()=>{if(editorDirty&&!await saveEditorRecord({markAnalysed:false,advance:false,automatic:true}))return;if(editorContributorReview){if(editorPhotoIndex<activeEditorSequence().length-1)await editorLoadPhoto(editorPhotoIndex+1);else editorSetStatus("This was the last photo for the selected contributor.","ok");return;}try{const current=track[editorPhotoIndex],result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(current.photoId)}`);if(!result.photo){editorSetStatus("No more unannotated photos for this individual.","ok");return;}const index=track.findIndex((point)=>point.photoId===result.photo.id);if(index>=0)await editorLoadPhoto(index);}catch(error){editorSetStatus(`Could not find next unannotated photo: ${error.message}`,"error");}});
+  editorCopyPreviousBtn.addEventListener("click",pasteEditorLastAnnotation);
+  editorNextUnannotatedBtn.addEventListener("click",async()=>{const pinnedValues=editorCapturePinnedValues();if(editorDirty&&!await saveEditorRecord({markAnalysed:false,advance:false,automatic:true}))return;if(editorContributorReview){if(editorPhotoIndex<activeEditorSequence().length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("This was the last photo for the selected contributor.","ok");return;}try{const current=track[editorPhotoIndex],result=await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(current.photoId)}`);if(!result.photo){editorSetStatus("No more unannotated photos for this individual.","ok");return;}const index=track.findIndex((point)=>point.photoId===result.photo.id);if(index>=0)await editorLoadPhoto(index,{pinnedValues});}catch(error){editorSetStatus(`Could not find next unannotated photo: ${error.message}`,"error");}});
   editorRequestReviewBtn.addEventListener("click",async()=>{const point=activeEditorSequence()[editorPhotoIndex];if(!point?.photoId){editorSetStatus("Could not identify the current photo.","error");return;}const fieldKey=window.prompt("Field to verify (for example Spec1_name), or leave empty for the whole record:","");if(fieldKey===null)return;const reason=window.prompt("Why should the coordinator or administrator verify this?","")?.replaceAll("\0","").trim();if(!reason)return;try{await apiFetch(`/api/photos/${encodeURIComponent(point.photoId)}/review-requests`,{method:"POST",body:JSON.stringify({fieldKey:fieldKey.trim()||null,reason})});editorSetStatus("Verification request sent to the coordinator/administrator.","ok");}catch(error){editorSetStatus(`Could not submit verification: ${error.message}`,"error");}});
   editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
   editorSaveAnalysedBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: false }));
@@ -5361,6 +5631,10 @@ loopCurrentEl.checked = false;
 
   window.addEventListener("keydown", (event) => {
     if (!document.body.classList.contains("editorOpen")) return;
+    const blockingDialog=()=>interfaceCoachActive||!appHelpWorkspaceEl.hidden||fieldHelpPopoverEl.classList.contains("open")||Array.from(document.querySelectorAll('dialog[open],[role="dialog"][aria-modal="true"]')).some((node)=>node.getClientRects().length>0);
+    if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){
+      if(event.repeat||editorSaving||editorSaveNextBtn.disabled||blockingDialog())return;event.preventDefault();editorSaveNextBtn.click();return;
+    }
     if (event.key === "Escape") {
       event.preventDefault();
       closeEditorMode();
@@ -5381,6 +5655,7 @@ loopCurrentEl.checked = false;
     event.preventDefault();void navigatePhotoSequenceBy(event.key==="ArrowLeft"?-1:1);
   });
 
+  updateEditorProductivityLanguage();
   editorSetBusy(false);
 
   let photoNavHideTimer = null;
@@ -5562,6 +5837,7 @@ loopCurrentEl.checked = false;
 
     cleanupObjectURLs();
     track = [];
+    loadPhotoSocial(null);
     updatePhotoNavButtons(-1);
     birdId = null;
     segIndex = 0; segT = 0;
@@ -5640,7 +5916,7 @@ loopCurrentEl.checked = false;
 
   const loadGithubFiles = async () => {
     if(!editorHasConnection()){
-      stopAnim();groupedFiles.clear();trackCache.clear();track=[];updateBirdSelectors([]);setStatus("Log in to view protected photographs and scientific records.");return;
+      stopAnim();groupedFiles.clear();trackCache.clear();track=[];loadPhotoSocial(null);updateBirdSelectors([]);setStatus("Log in to view protected photographs and scientific records.");return;
     }
     viewerReturnBarEl.hidden=true;
     groupedFiles.clear();
@@ -5649,6 +5925,7 @@ loopCurrentEl.checked = false;
 
     cleanupObjectURLs();
     track = [];
+    loadPhotoSocial(null);
     updatePhotoNavButtons(-1);
     birdId = null;
     segIndex = 0; segT = 0;
@@ -5762,6 +6039,7 @@ loopCurrentEl.checked = false;
     cleanupObjectURLs();
     track = points.map(p => ({...p, url: (p.file instanceof File ? URL.createObjectURL(p.file) : p.file)}));
     applyAdaptiveTrackStyle(track.length);
+    updateStreetViewControl();
   };
 
   const updateSliderMax = () => {
@@ -5797,7 +6075,7 @@ loopCurrentEl.checked = false;
         files = (response.photos || []).map((photo) => ({
           file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
           lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,
-          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
+          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, status:photo.status, hasAnnotation:photo.hasAnnotation, accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
         }));
         groupedFiles.set(id, files);
         if(lazyMedia)contributorReviewLazyBirds.add(id);
@@ -5857,6 +6135,7 @@ loopCurrentEl.checked = false;
     renderBackgroundLayers(id);
 
     if (track.length < 1) {
+      loadPhotoSocial(null);
       playBtn.disabled = true;
       pauseBtn.disabled = true;
       resetBtn.disabled = false;
