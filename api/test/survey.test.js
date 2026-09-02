@@ -180,7 +180,7 @@ test("survey UI is bilingual, responsive and service worker cache is bumped",()=
   assert.match(ui,/body\.surveyMode \.photoNav \{[^}]*opacity:\.86!important;[^}]*pointer-events:auto!important/);
   assert.match(ui,/body\.surveyMode \.photoNav:disabled \{[^}]*opacity:\.28!important/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(refreshMapSizes\)\)/);
-  assert.match(worker,/stork-edit2-shell-v2026-09-02-54/);
+  assert.match(worker,/BUILD_VERSION="2026-09-02-55"/);
 });
 
 test("mobile Survey keeps a compact rating row between photo and map",()=>{
@@ -195,8 +195,8 @@ test("mobile Survey keeps a compact rating row between photo and map",()=>{
 });
 
 test("Survey campaign UI supports persisted link QR PDFs and demographic bulk selection",()=>{
-  assert.match(ui,/src="vendor\/qrcode\.min\.js"/);
-  assert.match(ui,/src="vendor\/jspdf\.umd\.min\.js"/);
+  assert.match(ui,/src="vendor\/qrcode\.min\.js\?v=2026-09-02-55"/);
+  assert.match(ui,/src="vendor\/jspdf\.umd\.min\.js\?v=2026-09-02-55"/);
   assert.match(ui,/generateSurveyQrPdf/);
   assert.match(ui,/Single-use survey code/);
   assert.match(ui,/Jednorazowy kod do ankiety/);

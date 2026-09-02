@@ -8,7 +8,7 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-55" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -2470,14 +2470,17 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js"></script>
-<script src="vendor/jspdf.umd.min.js"></script>
-<script src="app-i18n.js"></script>
-<script src="config.js"></script>
-<script src="viewer-interactions.js"></script>
+<script src="vendor/qrcode.min.js?v=2026-09-02-55"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-09-02-55"></script>
+<script src="app-i18n.js?v=2026-09-02-55"></script>
+<script src="config.js?v=2026-09-02-55"></script>
+<script src="viewer-interactions.js?v=2026-09-02-55"></script>
+<script src="sw-registration.js?v=2026-09-02-55"></script>
 
 <script>
 (() => {
+  const appLifecycleLog=window.CiconiaServiceWorker?.lifecycleLog||((event,detail)=>detail===undefined?console.info(`[Ciconia lifecycle] ${event}`):console.info(`[Ciconia lifecycle] ${event}`,detail));
+  appLifecycleLog("PAGE SCRIPT START");
   const el = (id) => document.getElementById(id);
   const appI18n=window.StorkAppI18n;
   const appT=(key,vars)=>appI18n?.t(key,vars)||key;
@@ -2857,21 +2860,11 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const isStandaloneApp=()=>window.matchMedia?.("(display-mode: standalone)")?.matches||window.navigator.standalone===true;
   function updateInstallStatus(message=""){installStatusEl.textContent=message||(isStandaloneApp()?"The application is already installed and running in standalone mode.":deferredInstallPrompt?"This device is ready to install the application.":"If the automatic installer is unavailable, use the browser menu or the manual instructions below.");installAppBtn.disabled=isStandaloneApp();}
   installAppBtn.addEventListener("click",async()=>{if(isStandaloneApp())return updateInstallStatus("The application is already installed.");if(deferredInstallPrompt){const promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;promptEvent.prompt();const choice=await promptEvent.userChoice;updateInstallStatus(choice?.outcome==="accepted"?"Installation was started. On Windows you can also enable a desktop shortcut in the installed app settings.":"Installation was cancelled. You can try again from the browser menu.");return;}const manual=isMobile()?"Android: Chrome/Brave menu ⋮ → Install application or Add to Home screen. iPhone: Safari Share → Add to Home Screen.":"Windows: open this page in Chrome or Edge, use the installation icon in the address bar, choose Install, then enable Create desktop shortcut if offered.";updateInstallStatus(manual);window.alert(manual);});
-  checkAppUpdateBtn.addEventListener("click",async()=>{if(!("serviceWorker" in navigator))return updateInstallStatus("This browser does not support application updates.");const registration=await navigator.serviceWorker.getRegistration();if(!registration)return updateInstallStatus("The application worker is not installed yet. Reload the page and try again.");await registration.update();updateInstallStatus(registration.waiting||registration.installing?"A new application version is available. Use Refresh application version.":"The application is up to date.");});
-  refreshAppVersionBtn.addEventListener("click",async()=>{refreshAppVersionBtn.disabled=true;try{if("serviceWorker" in navigator){const registration=await navigator.serviceWorker.getRegistration();await registration?.update();registration?.waiting?.postMessage({type:"SKIP_WAITING"});}if("caches" in window){const keys=await caches.keys();await Promise.all(keys.filter((key)=>key.startsWith("stork-edit2-")).map((key)=>caches.delete(key)));}window.location.reload();}finally{refreshAppVersionBtn.disabled=false;}});
+  checkAppUpdateBtn.addEventListener("click",async()=>{if(!("serviceWorker" in navigator))return updateInstallStatus("This browser does not support application updates.");const registration=await navigator.serviceWorker.getRegistration();if(!registration)return updateInstallStatus("The application worker is not installed yet. Reload the page and try again.");appLifecycleLog("SW UPDATE CHECK","manual check");await registration.update();updateInstallStatus(registration.waiting||registration.installing?"A new application version is available. Use Refresh application version.":"The application is up to date.");});
+  refreshAppVersionBtn.addEventListener("click",async()=>{refreshAppVersionBtn.disabled=true;try{if(!("serviceWorker" in navigator))return window.location.reload();const registration=await navigator.serviceWorker.getRegistration();if(!registration)return window.location.reload();appLifecycleLog("SW UPDATE CHECK","manual refresh");await registration.update();if(registration.waiting){registration.waiting.postMessage({type:"SKIP_WAITING"});updateInstallStatus("Activating the new application version…");return;}if(registration.installing){updateInstallStatus("Installing the new application version…");return;}window.location.reload();}finally{refreshAppVersionBtn.disabled=false;}});
   window.addEventListener("beforeinstallprompt",(event)=>{event.preventDefault();deferredInstallPrompt=event;updateInstallStatus("The application can be installed on this device. Click Install application.");});
   window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;updateInstallStatus("The application was installed successfully.");});
-  if("serviceWorker" in navigator){
-    let serviceWorkerHadController=!!navigator.serviceWorker.controller,serviceWorkerReloading=false;
-    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(serviceWorkerHadController&&!serviceWorkerReloading){serviceWorkerReloading=true;setTimeout(()=>window.location.reload(),350);return;}serviceWorkerHadController=true;});
-    window.addEventListener("load",async()=>{try{
-      const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
-      const activateInstalledWorker=(worker)=>{if(worker?.state==="installed"&&navigator.serviceWorker.controller)worker.postMessage({type:"SKIP_WAITING"});};
-      if(registration.waiting)registration.waiting.postMessage({type:"SKIP_WAITING"});
-      registration.addEventListener("updatefound",()=>{const worker=registration.installing;if(worker)worker.addEventListener("statechange",()=>activateInstalledWorker(worker));});
-      await registration.update();
-    }catch(error){console.warn("Application installation worker failed",error);}});
-  }
+  window.CiconiaServiceWorker?.start();
 
   // Remember settings panel state when toggling the photo modal
   let prevSettingsCollapsed = false;
@@ -6001,23 +5994,28 @@ loopCurrentEl.checked = false;
 
   // Automatically load the lightweight individual list on page load.
   window.addEventListener("load", async () => {
-    updateAuthUi();
-    const publicParams=new URLSearchParams(window.location.search),surveyToken=publicParams.get("survey"),publicSafeToken=publicParams.get("photo_safe");
-    if(surveyToken){closeAccountWorkspace();loadEditorHelp();await loadPublicSurvey(surveyToken);return;}
-    if(publicSafeToken){
-      document.body.classList.add("publicSharedSafeMode");
-      closeAccountWorkspace();loadEditorHelp();
-      await openPhotoCollection("favorites",null,{mode:"PUBLIC_READONLY",publicToken:publicSafeToken});
-      return;
+    appLifecycleLog("APP INIT START");
+    try{
+      updateAuthUi();
+      const publicParams=new URLSearchParams(window.location.search),surveyToken=publicParams.get("survey"),publicSafeToken=publicParams.get("photo_safe");
+      if(surveyToken){closeAccountWorkspace();loadEditorHelp();await loadPublicSurvey(surveyToken);return;}
+      if(publicSafeToken){
+        document.body.classList.add("publicSharedSafeMode");
+        closeAccountWorkspace();loadEditorHelp();
+        await openPhotoCollection("favorites",null,{mode:"PUBLIC_READONLY",publicToken:publicSafeToken});
+        return;
+      }
+      if (authState.token) {
+        try { const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || [];authState.contribution=me.contribution||null; saveAuth(); updateAuthUi();await loadContributionDashboard(); }
+        catch(error) { clearAuth(); }
+      }
+      if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
+      loadEditorHelp();
+      if(editorHasConnection())await loadGithubFiles();
+      maybeShowOnboarding();
+    }finally{
+      appLifecycleLog("APP INIT COMPLETE");
     }
-    if (authState.token) {
-      try { const me = await apiFetch("/api/me"); authState.user = me.user; authState.individualIds = me.individualIds || [];authState.contribution=me.contribution||null; saveAuth(); updateAuthUi();await loadContributionDashboard(); }
-      catch(error) { clearAuth(); }
-    }
-    if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
-    loadEditorHelp();
-    if(editorHasConnection())await loadGithubFiles();
-    maybeShowOnboarding();
   });
 
   const handleBirdSelectionChange = async (sourceSelect) => {

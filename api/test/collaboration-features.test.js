@@ -7,6 +7,7 @@ const server=await readFile(new URL("../src/server.js",import.meta.url),"utf8");
 const ui=await readFile(new URL("../../index.html",import.meta.url),"utf8");
 const manifest=JSON.parse(await readFile(new URL("../../manifest.webmanifest",import.meta.url),"utf8"));
 const serviceWorker=await readFile(new URL("../../sw.js",import.meta.url),"utf8");
+const serviceWorkerRegistration=await readFile(new URL("../../sw-registration.js",import.meta.url),"utf8");
 const invitationTemplate=await readFile(new URL("../src/invitation-template.js",import.meta.url),"utf8");
 
 test("user photo collections are server-side and cascade with photos",()=>{
@@ -42,8 +43,8 @@ test("the GitHub Pages application is installable as a PWA",()=>{
   assert.equal(manifest.display,"standalone");
   assert.equal(manifest.name,"Ciconia Flight Photo Viewer");
   assert.equal(manifest.short_name,"Ciconia Flight Photo Viewer");
-  assert.match(ui,/rel="manifest" href="manifest\.webmanifest"/);
-  assert.match(ui,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
+  assert.match(ui,/rel="manifest" href="manifest\.webmanifest\?v=2026-09-02-55"/);
+  assert.match(serviceWorkerRegistration,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
   assert.match(serviceWorker,/APP_SHELL/);
   assert.match(serviceWorker,/\.\/app-i18n\.js/);
 });
