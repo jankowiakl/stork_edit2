@@ -44,7 +44,7 @@ test("the shared photo-stage swipe also serves the mobile editor without blockin
   const begin=ui.slice(ui.indexOf("const beginPhotoSwipe="),ui.indexOf("const movePhotoSwipe="));
   assert.doesNotMatch(begin,/editorOpen/);
   assert.match(ui,/\.photoStage \{ touch-action:pan-y pinch-zoom; \}/);
-  assert.match(ui,/document\.body\.classList\.contains\("editorOpen"\)\)\{const next=editorPhotoIndex\+direction,total=activeEditorSequence\(\)\.length;return\{allowed:next>=0&&next<total/);
+  assert.match(ui,/document\.body\.classList\.contains\("editorOpen"\)\)\{const next=editorPhotoIndex\+direction,total=activeEditorSequence\(\)\.length,more=direction>0&&activeBirdHasMorePhotos\(\);return\{allowed:next>=0&&\(next<total\|\|more\)/);
   assert.match(ui,/document\.body\.classList\.contains\("editorOpen"\)\)return!!\(await moveEditorPhoto\(direction\)\)/);
   assert.match(ui,/Saving draft before changing photo/);
 });
@@ -65,4 +65,28 @@ test("Survey runtime viewport assertion requires every stage to fill the viewpor
   assert.match(ui,/assertSurveyMobileViewportWidth/);
   assert.match(ui,/visualViewport\?\.width\|\|window\.innerWidth/);
   assert.match(ui,/requestAnimationFrame\(\(\)=>requestAnimationFrame\(/);
+});
+
+test("individual photo pages merge without duplicates and preload only near the boundary",()=>{
+  const all=Array.from({length:1100},(_,index)=>({photoId:`photo-${index+1}`}));
+  let loaded=interactions.mergePhotoPage([],all.slice(0,200)).items;
+  assert.equal(loaded.length,200);
+  assert.equal(interactions.shouldPrefetchPhotoPage({index:178,loadedCount:loaded.length,hasMore:true,threshold:20}),false);
+  assert.equal(interactions.shouldPrefetchPhotoPage({index:179,loadedCount:loaded.length,hasMore:true,threshold:20}),true);
+  const current=loaded[179];
+  loaded=interactions.mergePhotoPage(loaded,[...all.slice(199,400)]).items;
+  assert.equal(loaded.length,400);
+  assert.equal(new Set(loaded.map((photo)=>photo.photoId)).size,400);
+  assert.equal(loaded[179],current);
+  assert.equal(interactions.shouldPrefetchPhotoPage({index:100,loadedCount:loaded.length,hasMore:true}),false);
+  assert.equal(interactions.shouldPrefetchPhotoPage({index:150,loadedCount:180,hasMore:false}),false);
+});
+
+test("main viewer requests 200-photo pages and keeps navigation and autoplay progressive",()=>{
+  assert.doesNotMatch(ui,/individuals\/\$\{encodeURIComponent\(id\)\}\/photos\?limit=10000/);
+  assert.match(ui,/photos\?page=\$\{page\}&pageSize=\$\{pageSize\}/);
+  assert.match(ui,/threshold:20/);
+  assert.match(ui,/individualPhotoPageRequests\.has\(id\)/);
+  assert.match(ui,/ensureIndividualPhotosNear\(index,\{force:index>=track\.length-1\}\)/);
+  assert.match(ui,/ensureIndividualPhotosNear\(segIndex,\{force:true\}\)/);
 });

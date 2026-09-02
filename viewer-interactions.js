@@ -46,5 +46,26 @@
     });
   }
 
-  return { swipeDecision, chooseInitialBird, surveyViewportWidthsMatch };
+  function mergePhotoPage(existing, incoming) {
+    const items = Array.from(existing || []);
+    const seen = new Set(items.map((item) => String(item?.photoId ?? item?.id ?? "")).filter(Boolean));
+    const added = [];
+    for (const item of incoming || []) {
+      const id = String(item?.photoId ?? item?.id ?? "");
+      if (id && seen.has(id)) continue;
+      if (id) seen.add(id);
+      items.push(item);
+      added.push(item);
+    }
+    return { items, added };
+  }
+
+  function shouldPrefetchPhotoPage({ index = -1, loadedCount = 0, hasMore = false, threshold = 20 } = {}) {
+    const loaded = Math.max(0, Number(loadedCount) || 0);
+    const current = Number(index);
+    if (!hasMore || loaded < 1 || !Number.isFinite(current) || current < 0) return false;
+    return loaded - 1 - current <= Math.max(0, Number(threshold) || 0);
+  }
+
+  return { swipeDecision, chooseInitialBird, surveyViewportWidthsMatch, mergePhotoPage, shouldPrefetchPhotoPage };
 });

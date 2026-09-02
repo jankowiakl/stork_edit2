@@ -18,7 +18,7 @@ const loadWorker=()=>{
     skipWaiting:async()=>{skipped++;},
     addEventListener:(type,handler)=>{handlers[type]=handler;}
   };
-  const caches={open:async()=>cache,keys:async()=>["stork-edit2-shell-v-old","stork-edit2-shell-v2026-09-02-56","unrelated-user-cache"],delete:async(key)=>{deleted.push(key);return true;}};
+  const caches={open:async()=>cache,keys:async()=>["stork-edit2-shell-v-old","stork-edit2-shell-v2026-09-02-57","unrelated-user-cache"],delete:async(key)=>{deleted.push(key);return true;}};
   vm.runInNewContext(source,{self,caches,Request,Response,URL,Set,fetch:async()=>new Response("network"),console},{filename:"sw.js"});
   return {handlers,deleted,precache,cachedResponses,counts:()=>({claimed,skipped})};
 };
@@ -55,7 +55,7 @@ test("navigation and API requests are never intercepted",()=>{
 
 test("versioned APP_SHELL resources retain cache-first behaviour",async()=>{
   const worker=loadWorker();
-  const shellRequest=new Request("https://example.test/stork_edit2/app-i18n.js?v=2026-09-02-56");
+  const shellRequest=new Request("https://example.test/stork_edit2/app-i18n.js?v=2026-09-02-57");
   worker.cachedResponses.set(shellRequest.url,new Response("cached i18n"));
   let pending;
   worker.handlers.fetch({request:shellRequest,respondWith:(promise)=>{pending=promise;}});
@@ -64,7 +64,7 @@ test("versioned APP_SHELL resources retain cache-first behaviour",async()=>{
 
 test("HTML references the same build version and registration has no reload lifecycle",()=>{
   for(const asset of ["app-i18n.js","config.js","viewer-interactions.js","vendor/qrcode.min.js","vendor/jspdf.umd.min.js","manifest.webmanifest"]){
-    assert.match(indexSource,new RegExp(`${asset.replaceAll(".","\\.")}\\?v=2026-09-02-56`));
+    assert.match(indexSource,new RegExp(`${asset.replaceAll(".","\\.")}\\?v=2026-09-02-57`));
   }
   assert.match(indexSource,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
   assert.doesNotMatch(indexSource,/controllerchange|ciconiaSwReloadedVersion|CiconiaServiceWorker/);

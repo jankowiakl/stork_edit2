@@ -8,7 +8,7 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-56" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-57" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
@@ -2470,11 +2470,11 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js?v=2026-09-02-56"></script>
-<script src="vendor/jspdf.umd.min.js?v=2026-09-02-56"></script>
-<script src="app-i18n.js?v=2026-09-02-56"></script>
-<script src="config.js?v=2026-09-02-56"></script>
-<script src="viewer-interactions.js?v=2026-09-02-56"></script>
+<script src="vendor/qrcode.min.js?v=2026-09-02-57"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-09-02-57"></script>
+<script src="app-i18n.js?v=2026-09-02-57"></script>
+<script src="config.js?v=2026-09-02-57"></script>
+<script src="viewer-interactions.js?v=2026-09-02-57"></script>
 
 <script>
 (() => {
@@ -3449,6 +3449,7 @@ loopCurrentEl.checked = false;
   const groupedFiles = new Map();
   const trackCache = new Map();
   const gpsTracksByBird = new Map();
+  const individualPhotoPageRequests = new Map();
 
   // Public viewer data, photographs and GPS routes come from the server API.
   // Only lightweight metadata is loaded initially; image files remain lazy.
@@ -3463,7 +3464,11 @@ loopCurrentEl.checked = false;
 
   let track = [];
   let birdId = null;
+  let activeTrackPaginationBird = null;
   let photoSafeViewerContext=null;
+
+  const activeBirdPhotoFiles=()=>activeTrackPaginationBird&&activeTrackPaginationBird===birdId?groupedFiles.get(birdId):null;
+  const activeBirdHasMorePhotos=()=>!!activeBirdPhotoFiles()?.serverPhotoHasMore;
 
   let playing = false;
   let rafId = null;
@@ -4348,7 +4353,7 @@ loopCurrentEl.checked = false;
     }
     const hasPhotos = track.length > 0 && index >= 0;
     prevPhotoBtn.disabled = !hasPhotos || index <= 0;
-    nextPhotoBtn.disabled = !hasPhotos || index >= track.length - 1;
+    nextPhotoBtn.disabled = !hasPhotos || (index >= track.length - 1 && !activeBirdHasMorePhotos());
     editorModeBtn.disabled = !hasPhotos || !track[index]?.photoId || !editorHasConnection();
     tableModeBtn.disabled = !editorHasConnection();
     progressModeBtn.disabled = !editorHasConnection();
@@ -4696,6 +4701,7 @@ loopCurrentEl.checked = false;
     updateCurrentGpsSegment(segmentIndex);
     updatePhotoNavButtons(index);
     loadPhotoSocial(point.photoId);
+    void ensureIndividualPhotosNear(index).catch(()=>{});
 
     syncModalPhotos();
     return true;
@@ -4712,11 +4718,16 @@ loopCurrentEl.checked = false;
       }
       return{allowed:true,reason:null,direction};
     }
-    if(document.body.classList.contains("editorOpen")){const next=editorPhotoIndex+direction,total=activeEditorSequence().length;return{allowed:next>=0&&next<total,reason:"boundary",direction};}
+    if(document.body.classList.contains("editorOpen")){const next=editorPhotoIndex+direction,total=activeEditorSequence().length,more=direction>0&&activeBirdHasMorePhotos();return{allowed:next>=0&&(next<total||more),reason:"boundary",direction};}
     const index=currentPhotoIndex(),next=index+direction;
-    return{allowed:index>=0&&next>=0&&next<track.length,reason:"boundary",direction};
+    return{allowed:index>=0&&next>=0&&(next<track.length||(direction>0&&activeBirdHasMorePhotos())),reason:"boundary",direction};
   };
   const navigatePhotoSequenceBy=async(delta,{source="button"}={})=>{
+    const requestedDirection=delta<0?-1:1;
+    if(requestedDirection>0&&!document.body.classList.contains("collectionMode")){
+      const index=document.body.classList.contains("editorOpen")?editorPhotoIndex:currentPhotoIndex();
+      try{await ensureIndividualPhotosNear(index,{force:index>=track.length-1});}catch(error){setStatus(`Could not load more photos: ${error.message}`);return false;}
+    }
     const access=photoNavigationAccess(delta),direction=access.direction;
     if(!access.allowed){
       if(access.reason==="survey_unrated")surveyRatingStatusEl.textContent=source==="swipe"?surveyText("Najpierw oceń to zdjęcie.","Please rate this photo first."):surveyText("Oceń bieżące zdjęcie, zanim przejdziesz dalej.","Rate the current photo before continuing.");
@@ -4975,9 +4986,9 @@ loopCurrentEl.checked = false;
     editorSaving = busy;
     editorSaveDraftBtn.disabled = busy || !editorHasConnection() || !editorCanEdit;
     editorSaveAnalysedBtn.disabled = busy || !editorHasConnection() || !editorCanEdit;
-    editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || editorPhotoIndex >= activeEditorSequence().length - 1;
+    editorSaveNextBtn.disabled = busy || !editorHasConnection() || !editorCanEdit || (editorPhotoIndex >= activeEditorSequence().length - 1 && !activeBirdHasMorePhotos());
     editorPrevPhotoBtn.disabled = busy || editorPhotoIndex <= 0;
-    editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || editorPhotoIndex >= track.length - 1;
+    editorNextPhotoBtn.disabled = busy || editorPhotoIndex < 0 || (editorPhotoIndex >= track.length - 1 && !activeBirdHasMorePhotos());
     editorCopyPreviousBtn.disabled=busy||!editorCanEdit||!editorCurrentPhotoId||!editorHasLastAnnotation();
     editorNextUnannotatedBtn.disabled=busy||!editorHasConnection();
     editorRequestReviewBtn.disabled=busy||!editorHasConnection();
@@ -5521,6 +5532,7 @@ loopCurrentEl.checked = false;
     const pinnedValues=delta>0?editorCapturePinnedValues():null;
     if(editorContributorReview&&playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();}
     if(!force&&editorDirty){const saved=await saveEditorRecord({markAnalysed:false,advance:false,automatic:true});if(!saved)return false;}
+    if(delta>0)try{await ensureIndividualPhotosNear(editorPhotoIndex,{force:editorPhotoIndex>=activeEditorSequence().length-1});}catch(error){editorSetStatus(`Could not load more photos: ${error.message}`,"error");return false;}
     const nextIndex = Math.max(0, Math.min(editorPhotoIndex + delta, activeEditorSequence().length - 1));
     if (nextIndex === editorPhotoIndex) return false;
     await editorLoadPhoto(nextIndex,{pinnedValues});
@@ -5775,7 +5787,7 @@ loopCurrentEl.checked = false;
   const idsSorted = () => Array.from(groupedFiles.keys()).sort();
   const birdPhotoCount = (id) => {
     const files=groupedFiles.get(id);if(!files)return 0;
-    return files.serverPlaceholder?Number(files.serverPhotoCount||0):files.length;
+    return files.serverPlaceholder||files.serverPhotoPaginated?Number(files.serverPhotoTotal??files.serverPhotoCount??files.length):files.length;
   };
 
   const updateBirdSelectors = (ids = idsSorted()) => {
@@ -5922,6 +5934,53 @@ loopCurrentEl.checked = false;
     return { points, skipped };
   };
 
+  const individualPhotoEntry=(photo,contribution)=>({
+    file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),
+    lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,
+    altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,status:photo.status,
+    hasAnnotation:photo.hasAnnotation,accessGranted:!!photo.mediaGranted||!contribution?.restricted
+  });
+  const loadNextIndividualPhotoPage=async(id,{lazyMedia=false}={})=>{
+    const current=groupedFiles.get(id);
+    if(!current||(!current.serverPlaceholder&&!current.serverPhotoPaginated)||current.serverPhotoHasMore===false)return{addedPhotos:0,addedPoints:0};
+    if(individualPhotoPageRequests.has(id))return individualPhotoPageRequests.get(id);
+    const page=current.serverPlaceholder?1:Number(current.serverPhotoPage||0)+1,pageSize=200;
+    const request=(async()=>{
+      const response=await apiFetch(`/api/individuals/${encodeURIComponent(id)}/photos?page=${page}&pageSize=${pageSize}${lazyMedia?"&media=lazy":""}`);
+      if(groupedFiles.get(id)!==current)return{addedPhotos:0,addedPoints:0,stale:true};
+      if(response.contribution){authState.contribution=response.contribution;saveAuth();updateAppNavigation();}
+      const latest=groupedFiles.get(id)||[],entries=(response.photos||[]).map((photo)=>individualPhotoEntry(photo,response.contribution)),merged=window.StorkViewerInteractions.mergePhotoPage(latest.serverPlaceholder?[]:latest,entries),files=merged.items;
+      files.serverPlaceholder=false;files.serverPhotoPaginated=true;files.serverPhotoPage=Number(response.page||page);files.serverPhotoPageSize=Number(response.pageSize||pageSize);files.serverPhotoTotal=Number(response.total??latest.serverPhotoCount??files.length);files.serverPhotoCount=files.serverPhotoTotal;files.serverPhotoHasMore=!!response.hasMore;files.serverLazyMedia=!!lazyMedia;
+      groupedFiles.set(id,files);
+      if(lazyMedia)contributorReviewLazyBirds.add(id);
+      let addedPoints=0;
+      if(trackCache.has(id)&&merged.added.length){
+        const cached=trackCache.get(id),known=new Set(cached.map((point)=>String(point.photoId||""))),newPoints=buildRemotePhotoTrack(merged.added).points.filter((point)=>!known.has(String(point.photoId||"")));
+        if(newPoints.length){cached.push(...newPoints);addedPoints=newPoints.length;}
+        if(activeTrackPaginationBird===id&&birdId===id&&newPoints.length){
+          const activeIds=new Set(track.map((point)=>String(point.photoId||"")));
+          track.push(...newPoints.filter((point)=>!activeIds.has(String(point.photoId||""))).map((point)=>({...point,url:point.file instanceof File?URL.createObjectURL(point.file):point.file})));
+          overviewLine.setLatLngs(track.map((point)=>[point.lat,point.lon]));applyAdaptiveTrackStyle(track.length);updateSliderMax();updatePhotoNavButtons();editorSetBusy?.(editorSaving);playBtn.disabled=playing||track.length<2;syncSliderPlayPause();
+        }
+      }
+      if(activeTrackPaginationBird===id&&birdId===id)metaInfo.textContent=`Photos loaded: ${files.length} / ${files.serverPhotoTotal}`;
+      return{addedPhotos:merged.added.length,addedPoints};
+    })().finally(()=>individualPhotoPageRequests.delete(id));
+    individualPhotoPageRequests.set(id,request);return request;
+  };
+  const ensureIndividualPhotosNear=async(index,{force=false}={})=>{
+    if(!activeTrackPaginationBird||activeTrackPaginationBird!==birdId||document.body.classList.contains("collectionMode")||editorContributorReview)return false;
+    let files=activeBirdPhotoFiles();
+    if(!files?.serverPhotoHasMore)return false;
+    if(!force&&!window.StorkViewerInteractions.shouldPrefetchPhotoPage({index,loadedCount:track.length,hasMore:true,threshold:20}))return false;
+    const before=track.length;
+    do{
+      await loadNextIndividualPhotoPage(birdId,{lazyMedia:!!files.serverLazyMedia});
+      files=activeBirdPhotoFiles();
+    }while(force&&files?.serverPhotoHasMore&&track.length===before);
+    return track.length>before;
+  };
+
   const loadGithubFiles = async () => {
     if(!editorHasConnection()){
       stopAnim();groupedFiles.clear();trackCache.clear();track=[];loadPhotoSocial(null);updateBirdSelectors([]);setStatus("Log in to view protected photographs and scientific records.");return;
@@ -6047,9 +6106,10 @@ loopCurrentEl.checked = false;
     syncSliderPlayPause();
   };
 
-  const activateTrack = (points) => {
+  const activateTrack = (points,{paginationBird=null}={}) => {
     cleanupObjectURLs();
     track = points.map(p => ({...p, url: (p.file instanceof File ? URL.createObjectURL(p.file) : p.file)}));
+    activeTrackPaginationBird=paginationBird;
     applyAdaptiveTrackStyle(track.length);
     updateStreetViewControl();
   };
@@ -6082,15 +6142,8 @@ loopCurrentEl.checked = false;
     let files = groupedFiles.get(id);
     if (files.serverPlaceholder) {
       try {
-        const response = await apiFetch(`/api/individuals/${encodeURIComponent(id)}/photos?limit=10000${lazyMedia?"&media=lazy":""}`);
-        if(response.contribution){authState.contribution=response.contribution;saveAuth();updateAppNavigation();}
-        files = (response.photos || []).map((photo) => ({
-          file:photo.imageUrl, name:photo.filename, dt:photo.captureTime ? new Date(photo.captureTime) : parseDatetimeFromFilename(photo.filename),
-          lat:photo.lat == null ? null : Number(photo.lat), lon:photo.lon == null ? null : Number(photo.lon), photoId:photo.id, previewUrl:photo.previewUrl,
-          altitudeM:photo.altitudeM, elevationM:photo.elevationM, gpsTime:photo.gpsTime, locationSource:photo.locationSource, status:photo.status, hasAnnotation:photo.hasAnnotation, accessGranted:!!photo.mediaGranted||!response.contribution?.restricted
-        }));
-        groupedFiles.set(id, files);
-        if(lazyMedia)contributorReviewLazyBirds.add(id);
+        await loadNextIndividualPhotoPage(id,{lazyMedia});
+        files=groupedFiles.get(id);
       } catch(error) {
         setStatus(`Failed to load photos for ${id}: ${error.message}`); setLoadingUI(false); return;
       }
@@ -6100,11 +6153,11 @@ loopCurrentEl.checked = false;
 
     if (trackCache.has(id)) {
       const cached = trackCache.get(id);
-      activateTrack(cached);
-      metaInfo.textContent = `Photos used: ${track.length}`;
+      activateTrack(cached,{paginationBird:files.serverPhotoPaginated?id:null});
+      metaInfo.textContent = files.serverPhotoPaginated?`Photos loaded: ${files.length} / ${files.serverPhotoTotal}`:`Photos used: ${track.length}`;
       setStatus(
         remoteFiles
-          ? `Loaded bird ${id} from cache.\nPhotos indexed: ${track.length}.\nImage downloads: current photo + one-photo buffer.`
+          ? `Loaded bird ${id} from cache.\nPhotos loaded: ${files.length} / ${files.serverPhotoTotal||files.length}.\nUsable geotagged photos: ${track.length}.\nImage downloads: current photo + one-photo buffer.`
           : `Loaded local bird ${id} from cache.\nUsable geotagged photos: ${track.length}`
       );
     } else {
@@ -6117,7 +6170,8 @@ loopCurrentEl.checked = false;
         tmp = matched.points;
         loadMessage =
           `Loaded bird ${id}.\n` +
-          `Photos indexed: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no usable location)` : ""}.\n` +
+          `Photos loaded: ${files.length} / ${files.serverPhotoTotal||files.length}.\n` +
+          `Usable geotagged photos: ${tmp.length}${matched.skipped ? ` (${matched.skipped} skipped: no usable location)` : ""}.\n` +
           `Image downloads: current photo + one-photo buffer.`;
       } else {
         setStatus(`Reading EXIF GPS for ${id}… (0 / ${files.length})`);
@@ -6135,9 +6189,9 @@ loopCurrentEl.checked = false;
       }
 
       trackCache.set(id, tmp);
-      activateTrack(tmp);
+      activateTrack(tmp,{paginationBird:files.serverPhotoPaginated?id:null});
 
-      metaInfo.textContent = `Photos used: ${track.length}`;
+      metaInfo.textContent = files.serverPhotoPaginated?`Photos loaded: ${files.length} / ${files.serverPhotoTotal}`:`Photos used: ${track.length}`;
       setStatus(loadMessage);
     }
 
@@ -6145,6 +6199,10 @@ loopCurrentEl.checked = false;
 
     segIndex = 0;
     renderBackgroundLayers(id);
+
+    if(remoteFiles&&track.length<1&&activeBirdHasMorePhotos()){
+      try{await ensureIndividualPhotosNear(0,{force:true});files=groupedFiles.get(id);}catch(error){setStatus(`Could not load more photos for ${id}: ${error.message}`);}
+    }
 
     if (track.length < 1) {
       loadPhotoSocial(null);
@@ -6197,6 +6255,7 @@ loopCurrentEl.checked = false;
     }
 
     if(!authState.contribution?.restricted)loadPhotoSocial(track[0].photoId);
+    void ensureIndividualPhotosNear(0).catch(()=>{});
     revealTouchPhotoControls();
     refreshMapSizes();
 
@@ -6233,6 +6292,7 @@ loopCurrentEl.checked = false;
     if (!track || track.length < 2) return;
     if(document.body.classList.contains("editorOpen")&&editorDirty){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();editorSetStatus("Save or finish the current changes before starting playback.","error");return;}
     if(authState.contribution?.restricted){const currentIndex=Math.max(0,Math.min(segIndex,track.length-1)),nextIndex=Math.min(track.length-1,currentIndex+1);if(!await grantTrackPhotoAccess(track[currentIndex])||!await grantTrackPhotoAccess(track[nextIndex]))return;imgA.src=track[currentIndex].url;imgB.src=track[nextIndex].url;}
+    void ensureIndividualPhotosNear(currentPhotoIndex()).catch(()=>{});
     playing = true;
     playBtn.disabled = true;
     pauseBtn.disabled = false;
@@ -6338,8 +6398,23 @@ loopCurrentEl.checked = false;
     await loadTrackFor(nextId, {autoplay:true});
   };
 
+  const finishTrackPlaybackAtEnd=()=>{
+    if(loopAllEl.checked){stopAnim();playBtn.disabled=true;pauseBtn.disabled=true;syncSliderPlayPause();void advanceToNextBirdAndPlay();return;}
+    if(loopCurrentEl.checked){setStatus(`Looping ${birdId}…`);restartCurrentBird();rafId=requestAnimationFrame(tick);return;}
+    stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus(`Finished animation for ${birdId}.`);
+  };
+  const resumeTrackPlaybackAtBoundary=()=>{
+    if(!playing||segIndex>=track.length-1)return false;
+    updateCurrentGpsSegment(segIndex);
+    const resume=()=>{if(!playing)return;imgA.src=track[segIndex].url;imgB.src=track[segIndex+1].url;imgA.style.opacity=1;imgB.style.opacity=0;rafId=requestAnimationFrame(tick);};
+    if(authState.contribution?.restricted&&!track[segIndex+1].accessGranted){void grantTrackPhotoAccess(track[segIndex+1]).then((allowed)=>{if(allowed)resume();}).catch((error)=>{stopAnim();setStatus(`Playback stopped: ${error.message}`);});return true;}
+    resume();return true;
+  };
+
   const tick = (ts) => {
     if (!playing) return;
+
+    void ensureIndividualPhotosNear(Math.min(track.length-1,segIndex+1)).catch(()=>{});
 
     if (lastTs == null) lastTs = ts;
     const dtMs = ts - lastTs;
@@ -6377,26 +6452,12 @@ loopCurrentEl.checked = false;
       updatePhotoNavButtons(Math.min(segIndex, track.length - 1));
 
       if (segIndex >= track.length - 1) {
-        if (loopAllEl.checked) {
-          stopAnim();
-          playBtn.disabled = true;
-          pauseBtn.disabled = true;
-          syncSliderPlayPause();
-          advanceToNextBirdAndPlay();
+        if(activeBirdHasMorePhotos()){
+          const pagingBird=birdId;
+          void ensureIndividualPhotosNear(segIndex,{force:true}).then(()=>{if(!playing||birdId!==pagingBird)return;if(!resumeTrackPlaybackAtBoundary())finishTrackPlaybackAtEnd();}).catch((error)=>{stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus(`Playback stopped while loading more photos: ${error.message}`);});
           return;
         }
-        if (loopCurrentEl.checked) {
-          setStatus(`Looping ${birdId}…`);
-          restartCurrentBird();
-          rafId = requestAnimationFrame(tick);
-          return;
-        }
-
-        stopAnim();
-        playBtn.disabled = false;
-        pauseBtn.disabled = true;
-        syncSliderPlayPause();
-        setStatus(`Finished animation for ${birdId}.`);
+        finishTrackPlaybackAtEnd();
         return;
       }
 
