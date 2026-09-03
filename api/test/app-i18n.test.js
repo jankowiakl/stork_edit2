@@ -21,12 +21,12 @@ test("main application language detection and persistence are independent",()=>{
   const polish=loadI18n({languages:["de-DE","pl-PL"]});
   assert.equal(polish.i18n.language,"pl");
   assert.equal(polish.document.documentElement.lang,"pl");
-  assert.equal(polish.document.title,"Bocian biały – zdjęcia i trasa lotu");
+  assert.equal(polish.document.title,"Ciconia Flight Photo Viewer");
   assert.equal(polish.i18n.translateText("Log in"),"Zaloguj się");
   assert.equal(polish.i18n.translateText("Photo editor"),"Arkusz opisu zdjęcia");
   polish.i18n.setLanguage("en");
   assert.equal(polish.storage.get("storkAppLanguageV1"),"en");
-  assert.equal(polish.document.title,"White Stork Photo Flight Viewer");
+  assert.equal(polish.document.title,"Ciconia Flight Photo Viewer");
   assert.equal(loadI18n({stored:"pl",languages:["en-US"]}).i18n.language,"pl");
   for(const language of ["en-US","de-DE","fr-FR"])assert.equal(loadI18n({languages:[language]}).i18n.language,"en");
 });
@@ -77,6 +77,26 @@ test("the protected public Survey keeps its existing language subsystem",()=>{
   assert.doesNotMatch(source,/storkSurveyLanguageV1|surveyPublicState\.language|const surveyText/);
   const survey=loadI18n({stored:"pl",search:"?survey=token"});
   assert.equal(survey.i18n.isPublicSurvey,true);
-  assert.match(workerSource,/stork-edit2-shell-v2026-09-01-53/);
+  assert.match(workerSource,/BUILD_VERSION="2026-09-02-57"/);
   assert.match(workerSource,/\.\/app-i18n\.js/);
+});
+
+test("service worker updates bypass stale HTTP caches and take control without clearing user data",()=>{
+  assert.match(indexSource,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
+  assert.doesNotMatch(indexSource,/serviceWorker\.addEventListener\("controllerchange"/);
+  assert.match(workerSource,/new Request\(shellUrl\(path\),\{cache:"reload"\}\)/);
+  assert.match(workerSource,/if\(event\.request\.mode==="navigate"\)return/);
+  assert.match(workerSource,/self\.skipWaiting\(\)/);
+  assert.match(workerSource,/self\.clients\.claim\(\)/);
+  assert.doesNotMatch(workerSource,/client\.navigate|\.navigate\(client\.url\)/);
+  assert.match(workerSource,/key\.startsWith\(CACHE_PREFIX\)&&key!==CACHE_NAME/);
+  assert.doesNotMatch(`${indexSource}\n${workerSource}`,/indexedDB\.deleteDatabase|localStorage\.clear\(\)/);
+});
+
+test("application product name is Ciconia Flight Photo Viewer",()=>{
+  const english=loadI18n({stored:"en"}),polish=loadI18n({stored:"pl"});
+  assert.equal(english.document.title,"Ciconia Flight Photo Viewer");
+  assert.equal(polish.document.title,"Ciconia Flight Photo Viewer");
+  assert.match(indexSource,/<title>Ciconia Flight Photo Viewer<\/title>/);
+  assert.match(indexSource,/<h1>Ciconia Flight Photo Viewer<\/h1>/);
 });

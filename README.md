@@ -1,4 +1,4 @@
-# Stork Photo Journey and Editor
+# Ciconia Flight Photo Viewer
 
 Public White Stork photo/GPS viewer with a protected scientific annotation workspace. The frontend is hosted by GitHub Pages; photographs, GPS data, users and descriptions live on the owner’s server.
 

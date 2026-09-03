@@ -4,11 +4,11 @@ export const INVITATION_PLACEHOLDERS=Object.freeze([
   "name","email","role","appUrl","temporaryPassword","permissions","accessDescription"
 ]);
 
-export const DEFAULT_INVITATION_SUBJECT="Zaproszenie do Stork Photo Editor";
+export const DEFAULT_INVITATION_SUBJECT="Zaproszenie do Ciconia Flight Photo Viewer";
 export const DEFAULT_INVITATION_BODY=[
   "Witaj {{name}},",
   "",
-  "Masz konto w aplikacji Stork Photo Editor.",
+  "Masz konto w aplikacji Ciconia Flight Photo Viewer.",
   "",
   "Aplikacja: {{appUrl}}",
   "Email: {{email}}",
@@ -25,7 +25,7 @@ export const DEFAULT_INVITATION_BODY=[
   "3. Ustaw własne hasło.",
   "4. Rozpocznij pracę z przydzielonymi zdjęciami.",
   "",
-  "Stork Photo Editor"
+  "Ciconia Flight Photo Viewer"
 ].join("\n");
 
 const placeholderPattern=/{{\s*([A-Za-z][A-Za-z0-9]*)\s*}}/g;

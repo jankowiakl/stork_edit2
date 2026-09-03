@@ -48,7 +48,7 @@ export function contributionLevel(completed,settings){
   if(count>=settings.acknowledgementThreshold)return{key:"acknowledgedContributor",name:names.acknowledgedContributor,index:3,threshold:settings.acknowledgementThreshold,next:settings.scientificThreshold,description:"Your work qualifies you to be acknowledged in publications using this dataset."};
   if(count>=settings.fullAccessThreshold)return{key:"fullContributor",name:names.fullContributor,index:2,threshold:settings.fullAccessThreshold,next:settings.acknowledgementThreshold,description:"You unlocked full access to the complete photo collection."};
   if(count>=settings.bestPicturesThreshold)return{key:"fieldHelper",name:names.fieldHelper,index:1,threshold:settings.bestPicturesThreshold,next:settings.fullAccessThreshold,description:"You are now an active contributor and can save your favourite images."};
-  return{key:"nestling",name:names.nestling,index:0,threshold:0,next:settings.bestPicturesThreshold,description:"You are just starting your contribution to the White Stork photo archive."};
+  return{key:"nestling",name:names.nestling,index:0,threshold:0,next:settings.bestPicturesThreshold,description:"You are just starting your contribution in Ciconia Flight Photo Viewer."};
 }
 
 export function contributionProfile({user,completed=0,verified=0,browsed=0,browseCycleNo=1,browseCycleStartedAt=null,settings}){

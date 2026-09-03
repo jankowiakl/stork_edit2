@@ -40,8 +40,10 @@ test("the private photo safe and top rated reuse the main viewer and offer a tab
 
 test("the GitHub Pages application is installable as a PWA",()=>{
   assert.equal(manifest.display,"standalone");
-  assert.match(ui,/rel="manifest" href="manifest\.webmanifest"/);
-  assert.match(ui,/serviceWorker\.register\("\.\/sw\.js"\)/);
+  assert.equal(manifest.name,"Ciconia Flight Photo Viewer");
+  assert.equal(manifest.short_name,"Ciconia Flight Photo Viewer");
+  assert.match(ui,/rel="manifest" href="manifest\.webmanifest\?v=2026-09-02-57"/);
+  assert.match(ui,/serviceWorker\.register\("\.\/sw\.js",\{updateViaCache:"none"\}\)/);
   assert.match(serviceWorker,/APP_SHELL/);
   assert.match(serviceWorker,/\.\/app-i18n\.js/);
 });

@@ -66,3 +66,9 @@ test("mobile invitation fallback prefers mailto while desktop retains Gmail comp
   assert.match(ui,/if\(mobile&&invite\?\.mailtoUrl\)\{window\.location\.assign\(invite\.mailtoUrl\);return;\}/);
   assert.match(ui,/if\(gmail\)\{const opened=window\.open\(invite\.gmailUrl/);
 });
+
+test("default invitation uses the current application name",()=>{
+  assert.match(DEFAULT_INVITATION_SUBJECT,/Ciconia Flight Photo Viewer/);
+  assert.match(DEFAULT_INVITATION_BODY,/Ciconia Flight Photo Viewer/);
+  assert.match(schema,/ON CONFLICT\(id\) DO UPDATE SET[\s\S]*?WHERE email_invitation_settings\.updated_by IS NULL/);
+});
