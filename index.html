@@ -8,13 +8,14 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-09-02-57" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-10-17-59" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
+  <link rel="stylesheet" href="atlas.css?v=2026-10-17-59">
   <style>
     :root {
       --text: #e8eefc;
@@ -292,6 +293,12 @@
       line-height: 1.45;
       white-space: pre-wrap;
     }
+    .offlineStatus { position:fixed; z-index:10050; top:max(10px,env(safe-area-inset-top)); left:50%; transform:translateX(-50%); width:min(680px,calc(100vw - 28px)); box-sizing:border-box; padding:8px 12px; border:1px solid rgba(119,209,255,.42); border-radius:12px; background:rgba(7,16,29,.92); box-shadow:0 10px 32px rgba(0,0,0,.38); color:#dcecff; font-size:var(--ui-font-small); line-height:1.35; text-align:center; backdrop-filter:blur(12px); }
+    .offlineStatus[hidden] { display:none!important; }
+    .offlineStatus.warning { border-color:rgba(255,193,92,.58); color:#ffe0a6; }
+    .offlineStatus.error { border-color:rgba(255,107,107,.58); color:#ffc0c0; }
+    .offlineStatus.success { border-color:rgba(57,217,138,.5); color:#a9f4cf; }
+    body.surveyMode .offlineStatus,body.surveyRewardMode .offlineStatus,body.publicSharedSafeMode .offlineStatus { display:none!important; }
 
     .settingsBody { display: block; }
     .settingsCollapsed .settingsBody { display: none; }
@@ -1750,6 +1757,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
     <button class="appNavTile" type="button" data-app-nav="account"><span class="appNavIcon">◎</span><strong id="appNavAccountLabel">Log in</strong><small>Account, password and access</small></button>
     <button class="appNavTile" type="button" data-app-nav="favorites"><span class="appNavIcon">🔐</span><strong>My photo safe</strong><small>Your private server-side selection</small></button>
     <button class="appNavTile" type="button" data-app-nav="rated"><span class="appNavIcon">☆</span><strong>Top rated</strong><small>Ranking table ordered by average rating</small></button>
+    <button class="appNavTile" type="button" data-app-nav="atlas" data-role="annotator,coordinator,admin"><span class="appNavIcon">◈</span><strong>Atlas</strong><small data-i18n="atlas.nav">Survey-rated photographs, maps and exports</small></button>
     <button class="appNavTile" type="button" data-app-nav="settings"><span class="appNavIcon">⚙</span><strong>Application options</strong><small>Playback, layout and music</small></button>
     <button class="appNavTile" type="button" data-app-nav="help"><span class="appNavIcon">?</span><strong>Help / Guide</strong><small>Introduction and scientific field guide</small></button>
     <button class="appNavTile" type="button" data-app-nav="install"><span class="appNavIcon">⇩</span><strong>Install application</strong><small>Add Ciconia Flight Photo Viewer to the phone home screen</small></button>
@@ -1769,6 +1777,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 </nav>
 <button class="appNavHandle" id="appNavHandle" type="button" aria-label="Open application menu" aria-expanded="false"><span class="appNavHandleArrow">›</span><span class="appNavHandleLabel">Menu</span></button>
 <button class="quickLogin secondary" id="quickLogin" type="button">Log in</button>
+<div class="offlineStatus" id="offlineStatus" role="status" aria-live="polite" hidden></div>
 <section class="interfaceCoach" id="interfaceCoach" hidden aria-hidden="true" aria-live="polite"><div class="interfaceCoachHighlight" id="interfaceCoachHighlight"></div><div class="interfaceCoachPointer" id="interfaceCoachPointer"></div><article class="interfaceCoachCard" id="interfaceCoachCard" role="dialog" aria-modal="true" aria-labelledby="interfaceCoachProgress"><p class="interfaceCoachProgress" id="interfaceCoachProgress"></p><p class="interfaceCoachText" id="interfaceCoachText"></p><div class="interfaceCoachActions"><button class="secondary tiny" id="interfaceCoachSkip" type="button"></button><div><button class="secondary tiny" id="interfaceCoachBack" type="button"></button><button class="primarySave tiny" id="interfaceCoachNext" type="button"></button></div></div></article></section>
 <section class="surveyWorkspace" id="surveyWorkspace" aria-hidden="true"><div class="surveyCard"><div class="surveyLanguage"><button class="secondary tiny" data-survey-lang="pl" type="button">PL</button><button class="secondary tiny" data-survey-lang="en" type="button">EN</button></div><div id="surveyWorkspaceBody"></div></div></section><aside class="surveyTutorial" id="surveyTutorial" hidden aria-live="polite"></aside><section class="surveyCompletionPrompt" id="surveyCompletionPrompt" hidden aria-modal="true" role="dialog"><div class="surveyCompletionCard" id="surveyCompletionCard"></div></section>
 <section class="appHelpWorkspace" id="appHelpWorkspace" hidden aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="appHelpTitle">
@@ -1786,6 +1795,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   <div class="card mapStack">
     <div class="timeBadge" id="mapTimeBadge">—</div>
     <div id="mapFollow"></div>
+    <div class="atlasMissingLocation" id="atlasMissingLocation" hidden data-i18n="atlas.noLocation">No photo location available</div>
 
     <div class="collectionModeBar" id="collectionModeBar" hidden>
       <strong class="collectionModeLabel" id="collectionModeLabel" aria-label="Photo collection position">🔐 0 / 0</strong>
@@ -1799,7 +1809,8 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
           <label class="collectionOption">Interval <span class="collectionIntervalControl"><input id="collectionInterval" type="number" min="1" max="120" step="0.5" value="5" aria-label="Seconds per photo"> s</span></label>
           <label class="collectionOption" id="collectionOrderWrap">Order <select id="collectionOrder" aria-label="Photo safe presentation order"><option value="bird_time">Bird, then time</option><option value="custom">My order</option><option value="date_asc">Date and time</option></select></label>
         </div>
-        <div class="collectionDetailsActions"><button class="secondary tiny" id="collectionViewerMode" type="button">Map viewer</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="collectionShare" type="button">Share</button></div>
+        <input class="atlasSeek" id="atlasSeek" type="range" min="0" value="0" step="1" hidden aria-label="Photo in Atlas">
+        <div class="collectionDetailsActions"><button class="secondary tiny" id="atlasDownloadMap" type="button" data-i18n="atlas.mapSingle">Download map (PNG)</button><button class="secondary tiny" id="atlasSelection" type="button" hidden data-i18n="atlas.back">Back to selection</button><button class="secondary tiny" id="collectionViewerMode" type="button">Map viewer</button><button class="secondary tiny" id="collectionTableMode" type="button">Table</button><button class="secondary tiny" id="collectionShare" type="button">Share</button></div>
       </section>
     </div>
 
@@ -2470,11 +2481,15 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js?v=2026-09-02-57"></script>
-<script src="vendor/jspdf.umd.min.js?v=2026-09-02-57"></script>
-<script src="app-i18n.js?v=2026-09-02-57"></script>
-<script src="config.js?v=2026-09-02-57"></script>
-<script src="viewer-interactions.js?v=2026-09-02-57"></script>
+<script src="vendor/qrcode.min.js?v=2026-10-17-59"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-10-17-59"></script>
+<script src="app-i18n.js?v=2026-10-17-59"></script>
+<script src="config.js?v=2026-10-17-59"></script>
+<script src="viewer-interactions.js?v=2026-10-17-59"></script>
+<script src="offline-store.js?v=2026-10-17-59"></script>
+<script src="vendor/fflate.min.js?v=2026-10-17-59"></script>
+<script src="atlas.js?v=2026-10-17-59"></script>
+<script src="atlas-map.js?v=2026-10-17-59"></script>
 
 <script>
 (() => {
@@ -2573,6 +2588,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const bgAudio       = el("bgAudio");
 
   const statusEl = el("status");
+  const offlineStatusEl = el("offlineStatus");
 
   const imgA = el("imgA");
   const imgB = el("imgB");
@@ -2795,14 +2811,19 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   const INTERFACE_COACH_STORAGE_PREFIX = "storkInterfaceCoachV1:";
   let interfaceCoachActive=false,interfaceCoachIndex=0,interfaceCoachRenderToken=0,interfaceCoachSnapshot=null;
   let authState = { token: "", user: null, individualIds: [], contribution:null };
+  const offlineStore=window.StorkOfflineStore?.create();
+  let apiConnectivity=navigator.onLine===false?"offline":"unknown",apiNetworkFailureHandler=()=>{},apiResponseHandler=()=>{};
   try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
   const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
-  const clearAuth = () => { authState = { token:"", user:null, individualIds:[],contribution:null }; try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch(e) {} updateAuthUi(); };
+  const clearAuth = () => { window.storkAtlasInstance?.reset(); authState = { token:"", user:null, individualIds:[],contribution:null }; try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch(e) {} updateAuthUi(); };
   const apiFetch = async (apiPath, options = {}, { auth = true, raw = false } = {}) => {
     const headers = new Headers(options.headers || {});
     if (auth && authState.token) headers.set("Authorization", `Bearer ${authState.token}`);
     if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-    const response = await fetch(`${API_BASE}${apiPath}`, { ...options, headers });
+    let response;
+    try{response=await fetch(`${API_BASE}${apiPath}`, { ...options, headers });}
+    catch(cause){const error=new Error(cause?.message||"Network request failed.");error.name="NetworkError";error.isNetworkError=true;error.cause=cause;apiNetworkFailureHandler(error);throw error;}
+    apiResponseHandler(response);
     if (raw) {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response;
@@ -2835,7 +2856,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   for(const workspace of [accountWorkspaceEl,exportWorkspaceEl,installWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;if(workspace===accountWorkspaceEl)closeAccountWorkspace();else if(workspace===exportWorkspaceEl)closeExportWorkspace();else closeInstallWorkspace();});
   window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(installWorkspaceEl.classList.contains("open")){closeInstallWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
 
-  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public",profile=authState.contribution,bestUnlocked=profile?.bestPicturesUnlocked??!user?.restrictedContributor;appNavUserEl.textContent=user?`${user.name} • ${profile?.level?.name||role}${user.mustChangePassword?" • password change required":""}`:"Project information • not logged in";appNavAccessEl.textContent=ready?(profile?.restricted?`Cycle ${profile.browseCycleNo||1}: ${profile.browseRemaining} of ${profile.browseAllowance} new-photo slots remain`:["admin","coordinator"].includes(role)?"Full scientific access":`Full browsing • edit own and ${authState.individualIds.length} assigned bird(s)`):"Login required for photographs";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"]').forEach((item)=>item.hidden=!ready||!bestUnlocked);accountCollectionsEl.hidden=!ready||!bestUnlocked;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${profile?.level?.name||role}${user.restrictedContributor?" • restricted contributor":""}${user.mustChangePassword?" • change password now":""}`:"Protected scientific archive";accountEmailEl.textContent=user?user.email:"Log in to view photos and scientific records.";};
+  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public",profile=authState.contribution,bestUnlocked=profile?.bestPicturesUnlocked??!user?.restrictedContributor;appNavUserEl.textContent=user?`${user.name} • ${profile?.level?.name||role}${user.mustChangePassword?" • password change required":""}`:"Project information • not logged in";appNavAccessEl.textContent=ready?(profile?.restricted?`Cycle ${profile.browseCycleNo||1}: ${profile.browseRemaining} of ${profile.browseAllowance} new-photo slots remain`:["admin","coordinator"].includes(role)?"Full scientific access":`Full browsing • edit own and ${authState.individualIds.length} assigned bird(s)`):"Login required for photographs";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"],[data-app-nav="atlas"]').forEach((item)=>item.hidden=!ready||!bestUnlocked);window.storkAtlasInstance?.enforceAccess();accountCollectionsEl.hidden=!ready||!bestUnlocked;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${profile?.level?.name||role}${user.restrictedContributor?" • restricted contributor":""}${user.mustChangePassword?" • change password now":""}`:"Protected scientific archive";accountEmailEl.textContent=user?user.email:"Log in to view photos and scientific records.";};
 
   const storkBadgeSvg=(index)=>`<svg viewBox="0 0 32 32" width="50" height="50" aria-hidden="true" style="image-rendering:pixelated"><g fill="none" stroke="none"><path fill="#f7fbff" d="M11 9h9v3h3v5h-3v4h-9v-3H8v-6h3z"/><path fill="#d9e7ef" d="M11 18h9v3h-9z"/><path fill="#e44d45" d="M23 13h6v2h-6zM14 21h2v7h-2zM19 21h2v7h-2z"/><path fill="#102337" d="M19 11h2v2h-2z"/>${index>=1?'<path fill="#e0ba5b" d="M4 6h5v2H4z"/>':""}${index>=2?'<path fill="#f7fbff" d="M3 12h8v3H3zM20 9h8v3h-8z"/>':""}${index>=3?'<path fill="#d9ad3f" d="M7 4h2v5H7zM23 4h2v5h-2zM9 3h14v2H9z"/>':""}${index>=4?'<path fill="#d9ad3f" d="M3 2h26v2H3zM2 4h2v24H2zM28 4h2v24h-2zM3 28h26v2H3z"/>':""}</g></svg>`;
   const renderContributionDashboard=(profile,requests=[],tasks=[])=>{
@@ -3897,7 +3918,7 @@ loopCurrentEl.checked = false;
 
   tableModeBtn.addEventListener("click",()=>openDataWorkspace("table")); progressModeBtn.addEventListener("click",()=>openDataWorkspace("progress"));
   dataTableTabBtn.addEventListener("click",loadDataTable); dataProgressTabBtn.addEventListener("click",loadProgressPanel); dataUsersTabBtn.addEventListener("click",loadUsersPanel); dataImportsTabBtn.addEventListener("click",loadImportsPanel); closeDataWorkspaceBtn.addEventListener("click",closeDataWorkspace);returnToMainBtn.addEventListener("click",closeDataWorkspace);
-  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="help"){renderHelpHub();return;}if(action==="user-photos"){await openContributorReviewMode();return;}if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"){await openBestPictures();return;}if(action==="rated"){await openRatedPictures();return;}if(action==="export"){openExportWorkspace();return;}if(action==="install"){openInstallWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(collectionBrowseState)await leaveCollectionMode();if(document.body.classList.contains("editorOpen"))closeEditorMode({returnPrevious:false});return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}editorContributorReview=null;editorReturnDataMode=null;await openEditorMode();return;}if(["table","progress","users","contributors","imports","reviews","categories","survey-create","survey-results"].includes(action))await openDataWorkspace(action);}));
+  document.querySelectorAll("[data-app-nav]").forEach((button)=>button.addEventListener("click",async()=>{const action=button.dataset.appNav;closeAppNavigation();if(action==="atlas"){atlas.open();return;}if(action==="help"){renderHelpHub();return;}if(action==="user-photos"){await openContributorReviewMode();return;}if(action==="account"){openAccountWorkspace();return;}if(action==="favorites"){await openBestPictures();return;}if(action==="rated"){await openRatedPictures();return;}if(action==="export"){openExportWorkspace();return;}if(action==="install"){openInstallWorkspace();return;}if(action==="browse"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(collectionBrowseState)await leaveCollectionMode();if(document.body.classList.contains("editorOpen"))closeEditorMode({returnPrevious:false});return;}if(action==="settings"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;setSettingsCollapsed(false);settingsBodyEl.scrollTop=0;if(isMobile())openMobilePanel();else refreshMapSizes();return;}if(action==="edit"){closeDataWorkspace();closeAccountWorkspace();closeExportWorkspace();closeInstallWorkspace();if(!editorHasConnection()){openAccountWorkspace();return;}if(!track.length){setStatus("Select an individual with photos before opening Photo editor.");return;}editorContributorReview=null;editorReturnDataMode=null;await openEditorMode();return;}if(["table","progress","users","contributors","imports","reviews","categories","survey-create","survey-results"].includes(action))await openDataWorkspace(action);}));
   document.querySelectorAll(".exportBtn").forEach((button)=>button.addEventListener("click",async()=>{try{const response=await apiFetch(`/api/export?format=${encodeURIComponent(button.dataset.format)}`,{}, {raw:true});const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename=\"?([^\";]+)/)?.[1]||`stork-export.${button.dataset.format}`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(error){setStatus(`Export failed: ${error.message}`);}}));
 
   const splitTsvLine = (line) => {
@@ -4398,8 +4419,8 @@ loopCurrentEl.checked = false;
 
   let collectionBrowseState=null,collectionSequence=[],collectionSequenceIndex=0,collectionPlayTimer=null,collectionPlaying=false,collectionOrderPreference="bird_time",topPicturesOrderPreference="rating_desc",collectionDisplayedPoint=null,collectionTransitionRaf=null,collectionTransitionResolve=null,collectionNavigationToken=0,collectionToolbarIdleTimer=null;
   try{const savedOrder=localStorage.getItem("storkPhotoSafeOrderV1");if(["bird_time","custom","date_asc"].includes(savedOrder))collectionOrderPreference=savedOrder;const savedTopOrder=localStorage.getItem("storkTopPicturesOrderV1");if(["rating_desc","bird_time","date_asc"].includes(savedTopOrder))topPicturesOrderPreference=savedTopOrder;const savedInterval=Number(localStorage.getItem("storkCollectionIntervalV1"));if(Number.isFinite(savedInterval)&&savedInterval>=1&&savedInterval<=120)collectionIntervalEl.value=String(savedInterval);}catch(error){}
-  const activeCollectionOrder=()=>activeCollectionType==="rated"?topPicturesOrderPreference:collectionOrderPreference;
-  const configureCollectionOrder=()=>{const topPictures=activeCollectionType==="rated",options=topPictures?[["rating_desc","Rating"],["bird_time","Bird, then time"],["date_asc","Date and time"]]:[["bird_time","Bird, then time"],["custom","My order"],["date_asc","Date and time"]];collectionOrderEl.replaceChildren(...options.map(([value,label])=>new Option(label,value)));collectionOrderEl.value=activeCollectionOrder();collectionOrderEl.setAttribute("aria-label",topPictures?"Top pictures presentation order":"Photo safe presentation order");collectionOrderWrapEl.hidden=false;};
+  const activeCollectionOrder=()=>activeCollectionType==="atlas"?(atlas.snapshot?.criteria.order||"north"):activeCollectionType==="rated"?topPicturesOrderPreference:collectionOrderPreference;
+  const configureCollectionOrder=()=>{if(activeCollectionType==="atlas"){collectionOrderEl.replaceChildren(...StorkAtlas.ORDERS.map(key=>new Option(appT(`atlas.${key}`),key)));collectionOrderEl.value=activeCollectionOrder();collectionOrderWrapEl.hidden=false;return;}const topPictures=activeCollectionType==="rated",options=topPictures?[["rating_desc","Rating"],["bird_time","Bird, then time"],["date_asc","Date and time"]]:[["bird_time","Bird, then time"],["custom","My order"],["date_asc","Date and time"]];collectionOrderEl.replaceChildren(...options.map(([value,label])=>new Option(label,value)));collectionOrderEl.value=activeCollectionOrder();collectionOrderEl.setAttribute("aria-label",topPictures?"Top pictures presentation order":"Photo safe presentation order");collectionOrderWrapEl.hidden=false;};
   collectionOrderEl.value=collectionOrderPreference;
   const clearCollectionToolbarIdle=()=>{if(collectionToolbarIdleTimer)clearTimeout(collectionToolbarIdleTimer);collectionToolbarIdleTimer=null;};
   const updateCollectionPlayLabel=()=>{collectionPlayBtn.textContent=collectionModeBarEl.classList.contains("collectionToolbarCollapsed")?(collectionPlaying?"❚❚":"▶"):(collectionPlaying?"Pause":"Play");};
@@ -4417,16 +4438,27 @@ loopCurrentEl.checked = false;
   window.addEventListener("keydown",(event)=>{if(event.key==="Escape"&&!collectionDetailsEl.hidden)setCollectionDetailsOpen(false);});
   const collectionPhotoEntry=(photo)=>({file:photo.imageUrl,name:photo.filename,dt:photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename),lat:photo.lat==null?null:Number(photo.lat),lon:photo.lon==null?null:Number(photo.lon),photoId:photo.id,previewUrl:photo.previewUrl,altitudeM:photo.altitudeM,elevationM:photo.elevationM,gpsTime:photo.gpsTime,locationSource:photo.locationSource,bird:photo.bird,accessGranted:!!photo.mediaGranted||!authState.contribution?.restricted});
   const collectionPhotoTime=(photo)=>{const value=photo.captureTime?new Date(photo.captureTime):parseDatetimeFromFilename(photo.filename);return value&&!Number.isNaN(value.getTime())?value.getTime():Number.MAX_SAFE_INTEGER;};
-  const orderCollectionSequence=(photos,order=activeCollectionOrder())=>photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="rating_desc"){const aRating=Number(a.social?.averageRating),bRating=Number(b.social?.averageRating),ratingDifference=(Number.isFinite(bRating)?bRating:-1)-(Number.isFinite(aRating)?aRating:-1);return ratingDifference||Number(b.social?.ratingCount||0)-Number(a.social?.ratingCount||0)||collectionPhotoTime(b)-collectionPhotoTime(a)||left.index-right.index;}if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
+  const orderCollectionSequence=(photos,order=activeCollectionOrder())=>activeCollectionType==="atlas"?StorkAtlas.order(photos,order):photos.map((photo,index)=>({photo,index})).sort((left,right)=>{const a=left.photo,b=right.photo;if(order==="custom")return(Number(a.favoriteOrder)||Number.MAX_SAFE_INTEGER)-(Number(b.favoriteOrder)||Number.MAX_SAFE_INTEGER)||left.index-right.index;if(order==="rating_desc"){const aRating=Number(a.social?.averageRating),bRating=Number(b.social?.averageRating),ratingDifference=(Number.isFinite(bRating)?bRating:-1)-(Number.isFinite(aRating)?aRating:-1);return ratingDifference||Number(b.social?.ratingCount||0)-Number(a.social?.ratingCount||0)||collectionPhotoTime(b)-collectionPhotoTime(a)||left.index-right.index;}if(order==="date_asc")return collectionPhotoTime(a)-collectionPhotoTime(b)||String(a.bird||"").localeCompare(String(b.bird||""))||left.index-right.index;return String(a.bird||"").localeCompare(String(b.bird||""),undefined,{numeric:true})||collectionPhotoTime(a)-collectionPhotoTime(b)||left.index-right.index;}).map((entry)=>entry.photo);
   const cancelCollectionTransition=()=>{if(collectionTransitionRaf)cancelAnimationFrame(collectionTransitionRaf);collectionTransitionRaf=null;if(collectionTransitionResolve){const resolve=collectionTransitionResolve;collectionTransitionResolve=null;resolve(false);}};
   const collectionTransitionDuration=()=>{if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return 0;const speed=Math.max(.1,Number(speedEl.value)||1),legMs=Math.max(.3,Number(legSecondsEl.value)||3)*1000/speed,intervalMs=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5))*1000;return Math.max(260,Math.min(1500,legMs,intervalMs*.65));};
   const animateCollectionTransition=(fromPoint,toPoint)=>new Promise((resolve)=>{cancelCollectionTransition();const duration=collectionTransitionDuration();if(!duration){renderPhotoTransitionFrame(fromPoint,toPoint,1,performance.now(),{trail:null,moveMap:false});resolve(true);return;}const started=performance.now();collectionTransitionResolve=resolve;const step=(ts)=>{const t=Math.min(1,(ts-started)/duration);renderPhotoTransitionFrame(fromPoint,toPoint,t,ts,{trail:null,moveMap:false});if(t<1){collectionTransitionRaf=requestAnimationFrame(step);return;}collectionTransitionRaf=null;collectionTransitionResolve=null;resolve(true);};collectionTransitionRaf=requestAnimationFrame(step);});
   const stopCollectionPlayback=()=>{collectionPlaying=false;if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;updateCollectionPlayLabel();revealCollectionToolbar();};
   const showCollectionSequencePhoto=async(index)=>{
+    if(activeCollectionType==="atlas"&&!StorkAtlas.canUseAtlas(authState.user,authState.contribution)){setStatus(appT("atlas.locked"));return false;}
     if(!collectionSequence.length)return false;
     const navigationToken=++collectionNavigationToken,previousPoint=collectionDisplayedPoint?{...collectionDisplayedPoint}:null;
     collectionSequenceIndex=photoSafeViewerContext?.mode==="SURVEY"?Math.max(0,Math.min(collectionSequence.length-1,index)):(index+collectionSequence.length)%collectionSequence.length;
     const selected=collectionSequence[collectionSequenceIndex];
+    if(activeCollectionType==="atlas"&&!StorkAtlas.located(selected)){
+      const point={...collectionPhotoEntry(selected),url:selected.imageUrl};
+      if(!await grantTrackPhotoAccess(point))return false;
+      if(navigationToken!==collectionNavigationToken)return false;
+      cancelCollectionTransition();stopAnim();collectionDisplayedPoint=null;
+      imgA.src=point.url;imgA.style.opacity=1;imgB.removeAttribute("src");imgB.style.opacity=0;
+      el("atlasMissingLocation").hidden=false;setBirdSelection(selected.bird);metaBird.textContent=selected.bird;metaTime.textContent=selected.captureTime||"—";metaCoords.textContent=appT("atlas.noLocation");
+      loadPhotoSocial(selected.id);syncModalPhotos();updatePhotoNavButtons();renderAtlasPosition();return true;
+    }
+    el("atlasMissingLocation").hidden=true;
     if(birdId!==selected.bird||!track.some((point)=>point.photoId===selected.id)){setBirdSelection(selected.bird);await loadTrackFor(selected.bird,{autoplay:false,deferInitialAccess:true,preserveVisualState:!!previousPoint});}
     if(navigationToken!==collectionNavigationToken)return false;
     const trackIndex=track.findIndex((point)=>point.photoId===selected.id);
@@ -4442,6 +4474,7 @@ loopCurrentEl.checked = false;
     collectionModeLabelEl.textContent=`${survey?"✦":safe?"🔐":"☆"} ${position}`;
     collectionModeLabelEl.title=label;
     collectionModeLabelEl.setAttribute("aria-label",`${label}: photo ${position}`);
+    if(activeCollectionType==="atlas")renderAtlasPosition();
     if(survey)renderSurveyRatingDock();
     updatePhotoNavButtons(trackIndex);
     return true;
@@ -4454,17 +4487,18 @@ loopCurrentEl.checked = false;
   const stopSharedSafeRefresh=()=>{if(sharedSafeRefreshTimer)clearTimeout(sharedSafeRefreshTimer);sharedSafeRefreshTimer=null;};
   const scheduleSharedSafeRefresh=()=>{stopSharedSafeRefresh();if(!photoSafeViewerContext?.readOnly)return;sharedSafeRefreshTimer=setTimeout(async()=>{const context={...photoSafeViewerContext},survey=["SURVEY","SURVEY_REWARD"].includes(context.mode);try{const result=await loadPhotoSafeViewerSource({mode:context.mode,shareId:context.shareId,publicToken:context.publicToken,respondentToken:context.respondentToken}),currentId=collectionSequence[collectionSequenceIndex]?.id,fresh=(result.photos||[]).filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));if(!photoSafeViewerContext||photoSafeViewerContext.mode!==context.mode||(survey?photoSafeViewerContext.responseId!==context.responseId:photoSafeViewerContext.shareId!==context.shareId))return;photoSafeViewerContext={...photoSafeViewerContext,viewerToken:result.viewerToken,contact:result.contact||result.campaign?.contact||photoSafeViewerContext.contact};collectionSequence=survey?fresh:orderCollectionSequence(fresh,collectionOrderPreference);groupedFiles.clear();trackCache.clear();for(const photo of collectionSequence){if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});}for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));const freshById=new Map(collectionSequence.map((photo)=>[photo.id,photo]));for(const point of track){const photo=freshById.get(point.photoId);if(photo){point.url=photo.imageUrl;point.previewUrl=photo.previewUrl;}}collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));scheduleSharedSafeRefresh();}catch(error){stopCollectionPlayback();stopSharedSafeRefresh();setStatus(survey?surveyText("Sesja ankiety nie może zostać odświeżona.","The survey session could not be refreshed."):error.status===403?"This Photo Safe is no longer shared or the public link has expired.":`Could not refresh shared Photo Safe: ${error.message}`);}},4*60*1000);};
   const openPhotoCollection=async(collection="favorites",targetPhotoId=null,options={})=>{
-    const requestedMode=options.mode||photoSafeViewerContext?.mode;
+    if(collection==="atlas"&&!StorkAtlas.canUseAtlas(authState.user,authState.contribution)){setStatus(appT("atlas.locked"));return;}
+    const requestedMode=collection==="atlas"?"ATLAS":options.mode||photoSafeViewerContext?.mode;
     const surveyMode=["SURVEY","SURVEY_REWARD"].includes(requestedMode),readOnly=["SHARED_READONLY","PUBLIC_READONLY","SURVEY","SURVEY_REWARD"].includes(requestedMode);
     if(!readOnly&&!editorHasConnection()){openAccountWorkspace();return;}
     activeCollectionType=collection;
     stopCollectionPlayback();closeMapControlPanels();closeAccountWorkspace();closeDataWorkspace();closeAppNavigation();
     document.body.classList.remove("sharedSafeTableMode");
-    const label=surveyMode?(requestedMode==="SURVEY"?"Photo survey":"Global survey Top 10"):readOnly?"Shared Photo Safe":collection==="favorites"?"My photo safe":"Top rated";
+    const label=collection==="atlas"?"Atlas":surveyMode?(requestedMode==="SURVEY"?"Photo survey":"Global survey Top 10"):readOnly?"Shared Photo Safe":collection==="favorites"?"My photo safe":"Top rated";
     setStatus(`Loading ${label}…`);
     try{
       const sourceOptions=readOnly?{...options,mode:requestedMode}:options;
-      const result=readOnly?await loadPhotoSafeViewerSource(sourceOptions):await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${encodeURIComponent(activeCollectionOrder())}`);
+      const result=collection==="atlas"?options.payload:readOnly?await loadPhotoSafeViewerSource(sourceOptions):await apiFetch(`/api/me/photo-collection?collection=${collection}&sort=${encodeURIComponent(activeCollectionOrder())}`);
       const photos=result.photos||[];
       if(!photos.length){setStatus(`${label} is empty.`);return;}
       photoSafeViewerContext=surveyMode?{mode:requestedMode,readOnly:true,responseId:result.response.id,viewerToken:result.viewerToken,campaign:result.campaign,contact:result.campaign.contact||{},publicToken:surveyPublicState.token,respondentToken:surveyPublicState.respondentToken}:readOnly?{
@@ -4488,17 +4522,19 @@ loopCurrentEl.checked = false;
       leaveCollectionModeBtn.hidden=["PUBLIC_READONLY","SURVEY","SURVEY_REWARD"].includes(photoSafeViewerContext?.mode);
       if(!collectionBrowseState)collectionBrowseState={groups:new Map(groupedFiles),cache:new Map(trackCache),birdId,photoId:track[currentPhotoIndex()]?.photoId||null};
       stopAnim();cancelCollectionTransition();collectionDisplayedPoint=null;collectionNavigationToken+=1;groupedFiles.clear();trackCache.clear();gpsTracksByBird.clear();gpsDatasetPromises.clear();stopoverFeatures=[];
-      const usable=photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));
-      collectionSequence=surveyMode?usable:orderCollectionSequence(usable,activeCollectionOrder());
+      const usable=collection==="atlas"?photos:photos.filter((photo)=>Number.isFinite(photo.lat)&&Number.isFinite(photo.lon));
+      collectionSequence=surveyMode||collection==="atlas"?[...usable]:orderCollectionSequence(usable,activeCollectionOrder());
       for(const photo of collectionSequence){
         if(!groupedFiles.has(photo.bird))groupedFiles.set(photo.bird,[]);
         groupedFiles.get(photo.bird).push({...collectionPhotoEntry(photo),social:photo.social});
       }
       for(const files of groupedFiles.values())files.sort((a,b)=>(a.dt?.getTime()||0)-(b.dt?.getTime()||0)||a.name.localeCompare(b.name));
+      if(collection==="atlas")for(const [id,files] of groupedFiles)trackCache.set(id,files.filter(StorkAtlas.located));
       if(!collectionSequence.length){setStatus(`${label} contains no photos with a usable map position.`);return;}
       if(!surveyMode)configureCollectionOrder();
       updateBirdSelectors(idsSorted());
       document.body.classList.add("collectionMode");collectionModeBarEl.hidden=false;setCollectionToolbarCollapsed(false);revealCollectionToolbar();
+      document.body.classList.toggle("atlasMode",collection==="atlas");el("atlasSelection").hidden=collection!=="atlas";el("atlasSeek").hidden=collection!=="atlas";el("atlasMissingLocation").hidden=true;
       setCollectionDetailsOpen(false);
       settleResponsiveViewerLayout();
       collectionSequenceIndex=Math.max(0,targetPhotoId?collectionSequence.findIndex((photo)=>photo.id===targetPhotoId):0);
@@ -4511,10 +4547,28 @@ loopCurrentEl.checked = false;
   };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();cancelCollectionTransition();collectionNavigationToken+=1;collectionDisplayedPoint=null;stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode","collectionDetailsOpen","surveyMode","surveyRewardMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");refreshResponsiveViewerLayout();clearCollectionToolbarIdle();setCollectionToolbarCollapsed(false);collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
+  const atlas=window.storkAtlasInstance=StorkAtlas.create({
+    api:apiFetch,userId:()=>editorHasConnection()?authState.user?.id:null,requestLogin:openAccountWorkspace,
+    canAccess:()=>StorkAtlas.canUseAtlas(authState.user,authState.contribution),
+    onLocked:()=>{if(document.body.classList.contains("atlasMode")){stopCollectionPlayback();void leaveCollectionMode();}},
+    mapSettings:()=>({basemap:basemapSelect.value,zoom:followMap.getZoom(),viewportWidth:followMap.getSize().x,routeStyle:{color:gpsFullFollowLine.options.color,opacity:gpsFullFollowLine.options.opacity,weight:gpsFullFollowLine.options.weight,dashArray:gpsFullFollowLine.options.dashArray}}),
+    renderMap:options=>StorkAtlasMap.render({...options,createBaseLayer}),
+    onAccess:result=>{if(result.contribution){authState.contribution=result.contribution;saveAuth();updateAppNavigation();}},
+    onReset:()=>{document.body.classList.remove("atlasMode");el("atlasMissingLocation").hidden=true;el("atlasSeek").hidden=true;el("atlasSelection").hidden=true;},
+    beforeOpen:()=>{closeAppNavigation();stopCollectionPlayback();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return false;return true;},
+    selectionChanged:async()=>{if(document.body.classList.contains("atlasMode")){if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))throw Error(appT("editor.cancel"));await leaveCollectionMode();}},
+    openCollection:async(snapshot)=>{if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;await openPhotoCollection("atlas",null,{payload:{photos:snapshot.photos}});}
+  });
+  const renderAtlasPosition=()=>{const text=atlas.label(collectionSequenceIndex);collectionModeLabelEl.textContent=text;collectionModeLabelEl.title=text;collectionModeLabelEl.setAttribute("aria-label",text);const slider=el("atlasSeek");slider.max=Math.max(0,collectionSequence.length-1);slider.value=collectionSequenceIndex;slider.setAttribute("aria-label",appT("atlas.seek"));};
+  el("atlasSelection").addEventListener("click",()=>{stopCollectionPlayback();atlas.open();});
+  el("atlasDownloadMap").addEventListener("click",()=>{stopCollectionPlayback();atlas.openMaps(collectionSequenceIndex);});
+  el("atlasSeek").addEventListener("input",()=>{stopCollectionPlayback();void showCollectionSequencePhoto(Number(el("atlasSeek").value));});
+  appI18n?.onChange(()=>{if(activeCollectionType==="atlas"&&document.body.classList.contains("collectionMode")){configureCollectionOrder();renderAtlasPosition();}});
+  window.addEventListener("hashchange",()=>{if(!new URLSearchParams(location.search).has("survey")&&!new URLSearchParams(location.search).has("photo_safe"))void atlas.consumeLink();});
+  const leaveCollectionMode=async()=>{if(!collectionBrowseState)return;if(photoSafeViewerContext?.mode==="PUBLIC_READONLY")return;if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;document.body.classList.remove("atlasMode");el("atlasMissingLocation").hidden=true;el("atlasSeek").hidden=true;el("atlasSelection").hidden=true;const returnToAccount=photoSafeViewerContext?.mode==="SHARED_READONLY";setCollectionDetailsOpen(false);stopCollectionPlayback();cancelCollectionTransition();collectionNavigationToken+=1;collectionDisplayedPoint=null;stopSharedSafeRefresh();collectionSequence=[];const previous=collectionBrowseState;collectionBrowseState=null;photoSafeViewerContext=null;document.body.classList.remove("sharedPhotoSafeReadOnly","publicSharedSafeMode","collectionDetailsOpen","surveyMode","surveyRewardMode");collectionSharedByEl.hidden=true;leaveCollectionModeBtn.hidden=false;stopAnim();groupedFiles.clear();for(const [id,files] of previous.groups)groupedFiles.set(id,files);trackCache.clear();for(const [id,points] of previous.cache)trackCache.set(id,points);document.body.classList.remove("collectionMode");refreshResponsiveViewerLayout();clearCollectionToolbarIdle();setCollectionToolbarCollapsed(false);collectionModeBarEl.hidden=true;updateBirdSelectors();const target=previous.birdId&&groupedFiles.has(previous.birdId)?previous.birdId:idsSorted()[0];if(target){setBirdSelection(target);await loadTrackFor(target,{autoplay:false,deferInitialAccess:!!previous.photoId});const index=previous.photoId?track.findIndex((point)=>point.photoId===previous.photoId):-1;if(index>=0)showPhotoAtIndex(index);}if(returnToAccount)openAccountWorkspace();};
   leaveCollectionModeBtn.addEventListener("click",leaveCollectionMode);
   collectionIntervalEl.addEventListener("change",()=>{const seconds=Math.max(1,Math.min(120,Number(collectionIntervalEl.value)||5));collectionIntervalEl.value=String(seconds);try{localStorage.setItem("storkCollectionIntervalV1",String(seconds));}catch(error){}if(collectionPlaying){if(collectionPlayTimer)clearTimeout(collectionPlayTimer);collectionPlayTimer=null;scheduleCollectionPlayback();}});
-  collectionOrderEl.addEventListener("change",async()=>{if(!collectionSequence.length)return;const order=collectionOrderEl.value;if(activeCollectionType==="rated"){if(!["rating_desc","bird_time","date_asc"].includes(order))return;topPicturesOrderPreference=order;try{localStorage.setItem("storkTopPicturesOrderV1",order);}catch(error){}}else{if(!["bird_time","custom","date_asc"].includes(order))return;collectionOrderPreference=order;try{localStorage.setItem("storkPhotoSafeOrderV1",order);}catch(error){}}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderCollectionSequence(collectionSequence,order);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
+  collectionOrderEl.addEventListener("change",async()=>{if(!collectionSequence.length)return;const order=collectionOrderEl.value;if(activeCollectionType==="atlas"){const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();atlas.setOrder(order);collectionSequence=[...atlas.snapshot.photos];await showCollectionSequencePhoto(Math.max(0,collectionSequence.findIndex(p=>p.id===currentId)));return;}if(activeCollectionType==="rated"){if(!["rating_desc","bird_time","date_asc"].includes(order))return;topPicturesOrderPreference=order;try{localStorage.setItem("storkTopPicturesOrderV1",order);}catch(error){}}else{if(!["bird_time","custom","date_asc"].includes(order))return;collectionOrderPreference=order;try{localStorage.setItem("storkPhotoSafeOrderV1",order);}catch(error){}}const currentId=collectionSequence[collectionSequenceIndex]?.id;stopCollectionPlayback();collectionSequence=orderCollectionSequence(collectionSequence,order);collectionSequenceIndex=Math.max(0,collectionSequence.findIndex((photo)=>photo.id===currentId));await showCollectionSequencePhoto(collectionSequenceIndex);});
   continuePublicSlideshowBtn.addEventListener("click",()=>{sessionStorage.setItem(publicSafeIntroKey(),"1");publicProjectIntroEl.classList.remove("open");publicProjectIntroEl.setAttribute("aria-hidden","true");void toggleCollectionPlayback();});
 
   const surveyText=(pl,en)=>surveyPublicState.language==="pl"?pl:en;
@@ -4882,6 +4936,7 @@ loopCurrentEl.checked = false;
         closeAccountWorkspace();
         await loadContributionDashboard();
         await loadGithubFiles();
+        if(await atlas.consumeLink())return;
         if(track.length&&!authState.contribution?.browseLimitReached)await openEditorMode();
         setTimeout(maybeShowOnboarding,250);
       }
@@ -4957,6 +5012,23 @@ loopCurrentEl.checked = false;
   const editorReadLastAnnotation=()=>{const key=editorLastAnnotationStorageKey();if(!key)return null;try{const snapshot=JSON.parse(localStorage.getItem(key)||"null");return snapshot?.values&&typeof snapshot.values==="object"?snapshot.values:null;}catch(_error){return null;}};
   const editorHasLastAnnotation=()=>!!editorReadLastAnnotation();
   const editorStoreLastAnnotation=(values)=>{const key=editorLastAnnotationStorageKey();if(!key)return false;try{localStorage.setItem(key,JSON.stringify({savedAt:new Date().toISOString(),values:editorReusableAnnotationValues(values)}));return true;}catch(_error){return false;}};
+  const offlineUserId=()=>authState.user?.id?String(authState.user.id):"";
+  let offlineSyncRunning=false,offlineSyncTimer=null,offlineBannerTimer=null,editorWorkingCopyTimer=null;
+  const showOfflineBanner=(key,{vars,type="",hideAfter=0}={})=>{if(!offlineStatusEl)return;clearTimeout(offlineBannerTimer);offlineStatusEl.textContent=appT(key,vars);offlineStatusEl.className=`offlineStatus${type?` ${type}`:""}`;offlineStatusEl.hidden=false;if(hideAfter)offlineBannerTimer=setTimeout(()=>{offlineStatusEl.hidden=true;},hideAfter);};
+  const offlineRecords=async()=>{const userId=offlineUserId();if(!offlineStore||!userId)return[];return offlineStore.listPending(userId);};
+  const refreshOfflineBanner=async({success=false}={})=>{try{const items=await offlineRecords(),attention=items.some((item)=>item.syncState&&item.syncState!=="pending");if(attention){showOfflineBanner("offline.conflict",{type:"warning"});return;}if(apiConnectivity==="offline"){showOfflineBanner(items.length?"offline.pending":"offline.offline",{vars:{count:items.length},type:"warning"});return;}if(success)showOfflineBanner("offline.success",{type:"success",hideAfter:4500});else if(!offlineSyncRunning&&!items.length)offlineStatusEl.hidden=true;}catch(_error){if(apiConnectivity==="offline")showOfflineBanner("offline.storageError",{type:"error"});}};
+  const updateSyncedPhotoState=(item,result)=>{const status=result.status||item.status,point=track.find((candidate)=>candidate.photoId===item.photoId);if(point){point.status=status;point.hasAnnotation=true;}const collectionPhoto=collectionSequence.find((candidate)=>candidate.id===item.photoId);if(collectionPhoto)collectionPhoto.status=status;if(editorCurrentPhotoId===item.photoId&&!editorDirty){editorLoadedVersion=result.version??editorLoadedVersion;editorLoadedRecord={...(editorLoadedRecord||{}),...(result.values||item.values)};}if(socialPhotoId===item.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:item.photoId,status,annotation:{...(currentPhotoDetails?.annotation||{}),...(result.values||item.values)}};renderPhotoAnnotationStatus();}};
+  const syncPendingAnnotations=async()=>{const userId=offlineUserId();if(!offlineStore||!userId||offlineSyncRunning||apiConnectivity==="offline"||navigator.onLine===false)return false;offlineSyncRunning=true;showOfflineBanner("offline.restored");let synchronized=0;try{const items=await offlineStore.listPending(userId);for(const item of items){if(item.syncState!=="pending")continue;try{const result=await apiFetch(`/api/photos/${encodeURIComponent(item.photoId)}/annotation`,{method:"PATCH",body:JSON.stringify({values:item.values,expectedVersion:item.expectedVersion,status:item.status})});await offlineStore.removePending(userId,item.photoId);const working=await offlineStore.getWorkingCopy(userId,item.photoId);if(working&&Number(working.savedAt||0)<=Number(item.savedAt||0))await offlineStore.removeWorkingCopy(userId,item.photoId);updateSyncedPhotoState(item,result);synchronized++;}catch(error){if(error.isNetworkError){apiConnectivity="offline";break;}const syncState=error.status===409?"conflict":"attention";await offlineStore.updatePending(userId,item.photoId,{syncState,lastError:error.data?.error||error.message,lastAttemptAt:Date.now()});}}}catch(error){console.warn("Offline annotation synchronization failed",error);}finally{offlineSyncRunning=false;await refreshOfflineBanner({success:synchronized>0});}return synchronized>0;};
+  const scheduleOfflineSync=(delay=350)=>{if(offlineSyncTimer||offlineSyncRunning||!offlineUserId())return;offlineSyncTimer=setTimeout(()=>{offlineSyncTimer=null;void syncPendingAnnotations();},delay);};
+  apiNetworkFailureHandler=()=>{apiConnectivity="offline";void refreshOfflineBanner();};
+  apiResponseHandler=()=>{const restored=apiConnectivity==="offline";apiConnectivity="online";if(restored)showOfflineBanner("offline.restored");scheduleOfflineSync(restored?50:500);};
+  window.addEventListener("offline",()=>{apiConnectivity="offline";void refreshOfflineBanner();});
+  window.addEventListener("online",()=>{apiConnectivity="online";showOfflineBanner("offline.restored");scheduleOfflineSync(50);});
+  const applyEditorLocalValues=(values={})=>{const currentDerived={Elevation_m:editorElevationEl.value,Above_ground:editorAboveGroundEl.value,Height_class_100m:editorHeightClassEl.value},heightClassManual=editorHeightClassManual;clearEditorInvalid();for(const field of editorFieldEls){const key=field.dataset.field;if(!key||EDITOR_LOCAL_BUFFER_EXCLUDED_FIELDS.has(key)||!Object.prototype.hasOwnProperty.call(values,key))continue;const value=values[key];if(field.type==="checkbox")field.checked=String(value||"").toLowerCase()==="yes";else if(field.tagName==="SELECT")editorSelectValue(field,value);else field.value=value===null||value===undefined?"":value;}editorApplyConditionalRules();editorElevationEl.value=currentDerived.Elevation_m;editorAboveGroundEl.value=currentDerived.Above_ground;editorHeightClassEl.value=currentDerived.Height_class_100m;editorHeightClassManual=heightClassManual;updateEditorCompletionHints();};
+  const restoreEditorLocalState=async(point,{serverVersion=null,canEdit=false}={})=>{const userId=offlineUserId();if(!offlineStore||!userId||!point?.photoId)return false;try{const [pending,working]=await Promise.all([offlineStore.getPending(userId,point.photoId),offlineStore.getWorkingCopy(userId,point.photoId)]),snapshot=Number(working?.savedAt||0)>Number(pending?.savedAt||0)?working:(pending||working);if(!snapshot?.values)return false;applyEditorLocalValues(snapshot.values);const baseVersion=snapshot.expectedVersion??snapshot.baseVersion??0,mismatch=serverVersion!==null&&Number(baseVersion)!==Number(serverVersion);editorLoadedVersion=baseVersion;editorLoadedRecord={...(editorLoadedRecord||{}),...snapshot.values};editorSetEditable(!!canEdit||snapshot.canEdit===true);editorDirty=snapshot===working;editorOnlyPinnedChanges=false;editorSetStatus(mismatch?appT("offline.workingConflict"):snapshot===working?appT("offline.workingRestored"):appT("offline.localSaved"),mismatch?"error":"busy");if(mismatch)showOfflineBanner("offline.conflict",{type:"warning"});return true;}catch(error){console.warn("Could not restore local editor work",error);return false;}};
+  const saveEditorWorkingCopy=async()=>{const userId=offlineUserId(),photoId=editorCurrentPhotoId;if(!offlineStore||!userId||!photoId||!editorDirty||!editorCanEdit)return false;try{await offlineStore.saveWorkingCopy({userId,photoId,birdId,values:editorReusableAnnotationValues(editorNormalizeValues()),baseVersion:editorLoadedVersion??0,canEdit:true,savedAt:Date.now()});return true;}catch(error){showOfflineBanner("offline.storageError",{type:"error"});editorSetStatus(appT("offline.storageError"),"error");return false;}};
+  const scheduleEditorWorkingCopy=()=>{clearTimeout(editorWorkingCopyTimer);editorWorkingCopyTimer=setTimeout(()=>{editorWorkingCopyTimer=null;void saveEditorWorkingCopy();},700);};
+  const queueOfflineAnnotation=async({point,values,status,expectedVersion})=>{const userId=offlineUserId();if(!offlineStore||!userId||!point?.photoId)return false;try{await offlineStore.putPending({userId,photoId:point.photoId,birdId:point.bird||birdId,values:editorReusableAnnotationValues(values),status,expectedVersion,savedAt:Date.now()});await offlineStore.removeWorkingCopy(userId,point.photoId);editorStoreLastAnnotation(values);await refreshOfflineBanner();return true;}catch(error){showOfflineBanner("offline.storageError",{type:"error"});editorSetStatus(appT("offline.storageError"),"error");return false;}};
   let editorEnvActiveIndex=-1,editorEnvVisibleSuggestions=[];
   const closeEditorEnvAutocomplete=()=>{editorEnvAutocompleteEl.hidden=true;editorEnvActiveIndex=-1;editorEnvDescEl.setAttribute("aria-expanded","false");editorEnvDescEl.removeAttribute("aria-activedescendant");editorEnvToggleBtn.setAttribute("aria-expanded","false");};
   const positionEditorEnvAutocomplete=()=>{
@@ -5014,6 +5086,7 @@ loopCurrentEl.checked = false;
     if (editorSaving||!editorCanEdit) return;
     if(playing){stopAnim();playBtn.disabled=false;pauseBtn.disabled=true;syncSliderPlayPause();setStatus("Playback stopped while you edit this record.");}
     editorDirty = true;editorOnlyPinnedChanges=false;
+    scheduleEditorWorkingCopy();
     if (!editorStatusEl.classList.contains("error")) {
       editorSetStatus("Unsaved changes.", "busy");
     }
@@ -5506,7 +5579,7 @@ loopCurrentEl.checked = false;
   };
 
   const closeEditorMode = ({ force = false, returnPrevious = true } = {}) => {
-    if (!force && editorDirty && !window.confirm("Discard unsaved editor changes?")) return false;
+    if (!force && editorDirty){if(!window.confirm("Discard unsaved editor changes?"))return false;const userId=offlineUserId(),photoId=editorCurrentPhotoId;if(offlineStore&&userId&&photoId)void offlineStore.removeWorkingCopy(userId,photoId).catch(()=>{});}
     closeEditorEnvAutocomplete();
     if(editorContributorReview)stopAnim();
     const returnMode=returnPrevious?editorReturnDataMode:null;editorReturnDataMode=null;editorContributorReview=null;resetContributorReviewUi();
@@ -5574,16 +5647,18 @@ loopCurrentEl.checked = false;
       editorLoadedRecord = { ...(result.data || editorLoadedRecord || {}), ...values, FileName: filename };
       editorLoadedVersion = result.version ?? editorLoadedVersion;
       editorStoreLastAnnotation(values);
+      {const userId=offlineUserId();if(offlineStore&&userId)void Promise.all([offlineStore.removePending(userId,point.photoId),offlineStore.removeWorkingCopy(userId,point.photoId)]).then(()=>refreshOfflineBanner()).catch(()=>{});}
       editorDirty = false;editorOnlyPinnedChanges=false;
       const savedTrackPoint=track.find((candidate)=>candidate.photoId===point.photoId);if(savedTrackPoint){savedTrackPoint.status=targetStatus;savedTrackPoint.hasAnnotation=true;}const savedCollectionPhoto=collectionSequence.find((candidate)=>candidate.id===point.photoId);if(savedCollectionPhoto)savedCollectionPhoto.status=targetStatus;if(socialPhotoId===point.photoId){currentPhotoDetails={...(currentPhotoDetails||{}),id:point.photoId,status:targetStatus,annotation:{...(currentPhotoDetails?.annotation||{}),...values}};renderPhotoAnnotationStatus();}
       editorRecordLineEl.textContent = filename;
       editorSetStatus(values.Analysed === "yes" ? "Saved and marked as analysed." : "Draft saved.", "ok");
       if (advance) {
         if(editorContributorReview){if(editorPhotoIndex<sequence.length-1)await editorLoadPhoto(editorPhotoIndex+1,{pinnedValues});else editorSetStatus("Saved. This was the last photo for the selected contributor.","ok");}
-        else{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`);const nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex,{pinnedValues});else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}
+        else{try{const next = await apiFetch(`/api/next-unfinished?individualId=${encodeURIComponent(birdId)}&after=${encodeURIComponent(point.photoId)}`),nextIndex = next.photo ? track.findIndex((candidate)=>candidate.photoId===next.photo.id) : -1;if (nextIndex >= 0) await editorLoadPhoto(nextIndex,{pinnedValues});else editorSetStatus("Saved. No more unfinished records for this bird.", "ok");}catch(error){if(!error.isNetworkError)throw error;editorSetBusy(false);await moveEditorPhoto(1,{force:true});}}
       }
       return true;
     } catch(error) {
+      if(error.isNetworkError){const queued=await queueOfflineAnnotation({point,values,status:targetStatus,expectedVersion:editorLoadedVersion??0});if(!queued)return false;editorLoadedRecord={...(editorLoadedRecord||{}),...values,FileName:filename};editorDirty=false;editorOnlyPinnedChanges=false;updateSyncedPhotoState({photoId:point.photoId,status:targetStatus,values},{status:targetStatus,values});editorSetStatus(appT("offline.localSaved"),"busy");editorSetBusy(false);if(advance)await moveEditorPhoto(1,{force:true});return true;}
       if(error.status===409&&error.data?.error==="active_draft_exists"){editorSetStatus(`You already have one unfinished draft: ${error.data.activeDraft?.filename||"another photo"}. Finish it before starting a new draft.`,"error");await returnToActiveDraft(error.data.activeDraft);return false;}
       editorSetStatus("Save failed: " + error.message, "error");
       return false;
@@ -6073,7 +6148,7 @@ loopCurrentEl.checked = false;
       }
       if(!authState.token||authState.user?.mustChangePassword)openAccountWorkspace();
       loadEditorHelp();
-      if(editorHasConnection())await loadGithubFiles();
+      if(editorHasConnection()){await loadGithubFiles();await atlas.consumeLink();}
     }finally{
       appLifecycleLog("APP INIT COMPLETE");
     }
