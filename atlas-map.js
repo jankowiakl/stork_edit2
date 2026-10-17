@@ -85,15 +85,15 @@
         }
         // renderBackgroundLayers always keeps the complete GPS path on overviewMap.
         if(overview||settings.route!==false)line(points,overview?"gpsOverview":"gpsFollow");
-        if(settings.segment&&settings.segmentStart&&settings.segmentEnd){
+        if(!overview&&settings.segment&&settings.segmentStart&&settings.segmentEnd){
           const a=Date.parse(settings.segmentStart),b=Date.parse(settings.segmentEnd),lo=Math.min(a,b),hi=Math.max(a,b);
           const segment=points.filter(p=>{const stamp=Date.parse(p.time);return stamp>=lo&&stamp<=hi;})
             .filter((p,i,arr)=>!i||Number(p.lat)!==Number(arr[i-1].lat)||Number(p.lon)!==Number(arr[i-1].lon));
-          line(segment,overview?"segmentOverview":"segmentFollow");
+          line(segment,"segmentFollow");
         }
         // showCollectionSequencePhoto resets followLine to the current point.
-        // overviewLine retains all photo locations for the selected individual.
-        line(overview?photoTrack:[photo],overview?"overview":"follow");
+        // Export overview shows only the complete dashed GPS route, not photo links.
+        if(!overview)line([photo],"follow");
         const marker=xy(photo),markerStyle=styleFor(overview?"markerOverview":"markerFollow");
         ctx.beginPath();ctx.arc(marker.x,marker.y,markerStyle.radius*scale,0,Math.PI*2);paint(markerStyle);
         // Collect every provider, but label the whole composition once, never the inset.

@@ -45,7 +45,7 @@ async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}=
     assert.equal(rects[0][2],Math.round(width*.32));assert.equal(rects[0][3],Math.round(Math.round(width*.32)/(280/170)));
     const overviewGPS=strokes.find(s=>s.color==='test-gpsOverview');assert.deepEqual(overviewGPS.path,[[50,100],[190,510],[200,520],[300,600]],'full GPS survives hidden main route and segment filter');
     assert.equal(strokes.some(s=>s.color==='test-gpsFollow'),!hideMainRoute);
-    for(const key of [...(!hideMainRoute?['gpsFollow']:[]),'gpsOverview','segmentFollow','segmentOverview','overview','stopFollow','stopOverview','markerFollow','markerOverview']){
+    for(const key of [...(!hideMainRoute?['gpsFollow']:[]),'gpsOverview','segmentFollow','stopFollow','stopOverview','markerFollow','markerOverview']){
       const pos=strokes.findIndex(s=>s.color===styles[key].color),stroke=strokes[pos];assert.ok(stroke,key);
       if(key.startsWith('marker')){assert.equal(stroke.opacity,styles[key].opacity);assert.equal(stroke.weight,styles[key].weight*width/800);assert.notEqual(strokes[pos-1].color,'#14202B');continue;}
       const stop=key.startsWith('stop'),gps=key==='gpsFollow',weight=Math.min(stop?3:gps?4:5,Math.max(stop?2.5:gps?3.25:4,styles[key].weight*1.5));
@@ -53,8 +53,9 @@ async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}=
       const casing=strokes[pos-1];assert.equal(casing.color,'#14202B');assert.equal(casing.opacity,.92);assert.equal(casing.weight,(weight+(stop?1.5:3))*width/1200);assert.deepEqual(casing.path,stroke.path);assert.deepEqual(casing.dash,stroke.dash);
     }
     assert.deepEqual(overviewGPS.dash,[12*width/1200,10*width/1200]);assert.ok(overviewGPS.dash[1]>overviewGPS.weight+3*width/1200,'round casing caps leave a visible gap');
-    assert.deepEqual(strokes.find(s=>s.color==='test-segmentOverview').path,[[190,510],[200,520]]);
-    assert.deepEqual(strokes.filter(s=>s.color?.startsWith('test-')).map(s=>s.color),['test-stopFollow',...(!hideMainRoute?['test-gpsFollow']:[]),'test-segmentFollow','test-markerFollow','test-stopOverview','test-gpsOverview','test-segmentOverview','test-overview','test-markerOverview']);
+    assert.deepEqual(strokes.find(s=>s.color==='test-segmentFollow').path,[[190,510],[200,520]],'main map segment is unchanged');
+    assert.equal(strokes.some(s=>s.color==='test-segmentOverview'||s.color==='test-overview'),false,'overview has no segment or photo-connecting lines');
+    assert.deepEqual(strokes.filter(s=>s.color?.startsWith('test-')).map(s=>s.color),['test-stopFollow',...(!hideMainRoute?['test-gpsFollow']:[]),'test-segmentFollow','test-markerFollow','test-stopOverview','test-gpsOverview','test-markerOverview']);
     assert.ok(fills.some(f=>f.color==='fill-stopFollow'&&f.opacity===.16));
     assert.ok(texts.every(s=>s.includes('provider')),'only provider credit, no photo/overview labels');
     assert.equal(texts.length,1,'one combined provider credit, none in inset');assert.ok(textPositions.every(p=>p.draws===3&&p.y>width*.7));
