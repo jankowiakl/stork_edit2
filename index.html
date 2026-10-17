@@ -8,14 +8,14 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-10-17-59" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-10-17-60" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-  <link rel="stylesheet" href="atlas.css?v=2026-10-17-59">
+  <link rel="stylesheet" href="atlas.css?v=2026-10-17-60">
   <style>
     :root {
       --text: #e8eefc;
@@ -2481,15 +2481,15 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js?v=2026-10-17-59"></script>
-<script src="vendor/jspdf.umd.min.js?v=2026-10-17-59"></script>
-<script src="app-i18n.js?v=2026-10-17-59"></script>
-<script src="config.js?v=2026-10-17-59"></script>
-<script src="viewer-interactions.js?v=2026-10-17-59"></script>
-<script src="offline-store.js?v=2026-10-17-59"></script>
-<script src="vendor/fflate.min.js?v=2026-10-17-59"></script>
-<script src="atlas.js?v=2026-10-17-59"></script>
-<script src="atlas-map.js?v=2026-10-17-59"></script>
+<script src="vendor/qrcode.min.js?v=2026-10-17-60"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-10-17-60"></script>
+<script src="app-i18n.js?v=2026-10-17-60"></script>
+<script src="config.js?v=2026-10-17-60"></script>
+<script src="viewer-interactions.js?v=2026-10-17-60"></script>
+<script src="offline-store.js?v=2026-10-17-60"></script>
+<script src="vendor/fflate.min.js?v=2026-10-17-60"></script>
+<script src="atlas.js?v=2026-10-17-60"></script>
+<script src="atlas-map.js?v=2026-10-17-60"></script>
 
 <script>
 (() => {
@@ -4551,7 +4551,8 @@ loopCurrentEl.checked = false;
     api:apiFetch,userId:()=>editorHasConnection()?authState.user?.id:null,requestLogin:openAccountWorkspace,
     canAccess:()=>StorkAtlas.canUseAtlas(authState.user,authState.contribution),
     onLocked:()=>{if(document.body.classList.contains("atlasMode")){stopCollectionPlayback();void leaveCollectionMode();}},
-    mapSettings:()=>({basemap:basemapSelect.value,zoom:followMap.getZoom(),viewportWidth:followMap.getSize().x,routeStyle:{color:gpsFullFollowLine.options.color,opacity:gpsFullFollowLine.options.opacity,weight:gpsFullFollowLine.options.weight,dashArray:gpsFullFollowLine.options.dashArray}}),
+    basemapOptions:()=>Object.entries(baseDefs).map(([value,definition])=>({value,label:definition.label})),
+    mapSettings:()=>({basemap:basemapSelect.value,zoom:followMap.getZoom(),viewportWidth:followMap.getSize().x,route:showGpsTrackEl.checked,stopovers:showStopoversEl.checked,segment:showPhotoGpsSegmentEl.checked,routeStyle:{color:gpsFullFollowLine.options.color,opacity:gpsFullFollowLine.options.opacity,weight:gpsFullFollowLine.options.weight,dashArray:gpsFullFollowLine.options.dashArray},overviewRouteStyle:{color:gpsFullOverviewLine.options.color,opacity:gpsFullOverviewLine.options.opacity,weight:gpsFullOverviewLine.options.weight,dashArray:gpsFullOverviewLine.options.dashArray}}),
     renderMap:options=>StorkAtlasMap.render({...options,createBaseLayer}),
     onAccess:result=>{if(result.contribution){authState.contribution=result.contribution;saveAuth();updateAppNavigation();}},
     onReset:()=>{document.body.classList.remove("atlasMode");el("atlasMissingLocation").hidden=true;el("atlasSeek").hidden=true;el("atlasSelection").hidden=true;},
