@@ -157,7 +157,7 @@
       const blob=await adapter.renderMap({photo,route,stopovers:stops.get(photo.bird),settings,signal:controller.signal,t});check();
       const warning=!route.points?.length?t("noRoute"):route.simplified?t("simplified"):"";
       if(warning)context.warnings.push(`${photo.filename}: ${warning}`);
-      const source=t("mapSource")+": "+adapter.basemapOptions().filter(o=>[settings.detailBasemap,settings.overviewBasemap].includes(o.value)).map(o=>o.label).join(" / ")+(warning?` • ${warning}`:"");
+      const source=t("mapSource")+": "+(window.StorkAtlasMap.sourceFor(blob)||adapter.basemapOptions().filter(o=>[settings.detailBasemap,settings.overviewBasemap].includes(o.value)).map(o=>o.label).join(" / "))+(warning?` • ${warning}`:"");
       return{photo,blob,source,width:settings.width,height:settings.width*3/4};
     }
     function mapSettingsPanel(){

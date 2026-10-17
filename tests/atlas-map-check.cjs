@@ -13,8 +13,8 @@ function readMetadata(bytes){
 }
 async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}={}){
   let removed=0,hostsRemoved=0,draws=0,polygons=0,arcs=0,crossOrigin,requestedPhoto,bounds;
-  const texts=[],sizes=[],bases=[],insets=[],rects=[],strokes=[],fills=[];let path=[],dash=[];
-  const context={fillRect(){throw Error('No footer/background rectangles');},fillText(text){texts.push(text);},strokeText(){},measureText:text=>({width:text.length*10}),save(){},restore(){},clip(){},roundRect(...args){rects.push(args);},beginPath(){path=[];},moveTo(x,y){path.push([x,y]);},lineTo(x,y){path.push([x,y]);},closePath(){polygons++;},fill(){fills.push({color:this.fillStyle,opacity:this.globalAlpha});},stroke(){strokes.push({color:this.strokeStyle,opacity:this.globalAlpha,weight:this.lineWidth,dash:[...dash],path:[...path]});},setLineDash(value){dash=value;},arc(){arcs++;},drawImage(image,...args){draws++;if(image.getContext)insets.push(args);}};
+  const texts=[],textPositions=[],sizes=[],bases=[],insets=[],rects=[],strokes=[],fills=[];let path=[],dash=[];
+  const context={fillRect(){throw Error('No footer/background rectangles');},fillText(text,x,y){texts.push(text);textPositions.push({x,y,draws});},strokeText(){},measureText:text=>({width:text.length*10}),save(){},restore(){},clip(){},roundRect(...args){rects.push(args);},beginPath(){path=[];},moveTo(x,y){path.push([x,y]);},lineTo(x,y){path.push([x,y]);},closePath(){polygons++;},fill(){fills.push({color:this.fillStyle,opacity:this.globalAlpha});},stroke(){strokes.push({color:this.strokeStyle,opacity:this.globalAlpha,weight:this.lineWidth,dash:[...dash],path:[...path]});},setLineDash(value){dash=value;},arc(){arcs++;},drawImage(image,...args){draws++;if(image.getContext)insets.push(args);}};
   const document={body:{append(){}},createElement(tag){
     if(tag==='canvas')return{width:0,height:0,getContext:()=>context,toBlob(cb){sizes.push([this.width,this.height]);cb(new Blob([png],{type:'image/png'}));}};
     if(tag==='div')return{style:{},setAttribute(){},getBoundingClientRect:()=>({left:-20000,top:0}),remove(){hostsRemoved++;}};
@@ -45,12 +45,20 @@ async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}=
     assert.equal(rects[0][2],Math.round(width*.32));assert.equal(rects[0][3],Math.round(Math.round(width*.32)/(280/170)));
     const overviewGPS=strokes.find(s=>s.color==='test-gpsOverview');assert.deepEqual(overviewGPS.path,[[50,100],[190,510],[200,520],[300,600]],'full GPS survives hidden main route and segment filter');
     assert.equal(strokes.some(s=>s.color==='test-gpsFollow'),!hideMainRoute);
-    for(const key of ['gpsOverview','segmentFollow','segmentOverview','overview','stopFollow','stopOverview','markerFollow','markerOverview']){const stroke=strokes.find(s=>s.color===styles[key].color);assert.ok(stroke,key);assert.equal(stroke.opacity,styles[key].opacity);assert.equal(stroke.weight,styles[key].weight*width/800);}
-    assert.deepEqual(overviewGPS.dash,[4*width/800,5*width/800]);
+    for(const key of [...(!hideMainRoute?['gpsFollow']:[]),'gpsOverview','segmentFollow','segmentOverview','overview','stopFollow','stopOverview','markerFollow','markerOverview']){
+      const pos=strokes.findIndex(s=>s.color===styles[key].color),stroke=strokes[pos];assert.ok(stroke,key);
+      if(key.startsWith('marker')){assert.equal(stroke.opacity,styles[key].opacity);assert.equal(stroke.weight,styles[key].weight*width/800);assert.notEqual(strokes[pos-1].color,'#14202B');continue;}
+      const stop=key.startsWith('stop'),gps=key==='gpsFollow',weight=Math.min(stop?3:gps?4:5,Math.max(stop?2.5:gps?3.25:4,styles[key].weight*1.5));
+      assert.equal(stroke.opacity,Math.max(styles[key].opacity,stop||gps ? .85 : .9));assert.equal(stroke.weight,weight*width/1200);
+      const casing=strokes[pos-1];assert.equal(casing.color,'#14202B');assert.equal(casing.opacity,.92);assert.equal(casing.weight,(weight+(stop?1.5:3))*width/1200);assert.deepEqual(casing.path,stroke.path);assert.deepEqual(casing.dash,stroke.dash);
+    }
+    assert.deepEqual(overviewGPS.dash,[12*width/1200,10*width/1200]);assert.ok(overviewGPS.dash[1]>overviewGPS.weight+3*width/1200,'round casing caps leave a visible gap');
     assert.deepEqual(strokes.find(s=>s.color==='test-segmentOverview').path,[[190,510],[200,520]]);
     assert.deepEqual(strokes.filter(s=>s.color?.startsWith('test-')).map(s=>s.color),['test-stopFollow',...(!hideMainRoute?['test-gpsFollow']:[]),'test-segmentFollow','test-markerFollow','test-stopOverview','test-gpsOverview','test-segmentOverview','test-overview','test-markerOverview']);
     assert.ok(fills.some(f=>f.color==='fill-stopFollow'&&f.opacity===.16));
     assert.ok(texts.every(s=>s.includes('provider')),'only provider credit, no photo/overview labels');
+    assert.equal(texts.length,1,'one combined provider credit, none in inset');assert.ok(textPositions.every(p=>p.draws===3&&p.y>width*.7));
+    assert.equal(sandbox.StorkAtlasMap.sourceFor(blob),'satellite provider • osm provider','full provider attribution is available for Word caption');
     const metadata=readMetadata(bytes);assert.equal(metadata.SourcePhoto,'żółć.jpg');assert.equal(metadata.Latitude,'52');assert.equal(metadata.Longitude,'20');assert.equal(metadata.CRS,'WGS84 / EPSG:4326');assert.equal(metadata.DetailBasemap,'satellite');assert.equal(metadata.OverviewBasemap,'osm');assert.ok(metadata.MapSource.includes('osm provider'));
     const mapImage={width,height:width*.75,type:'image/png',bytes};
     const parts=atlas.docxParts([{heading:'Atlas',map:mapImage,photo:{width:1,height:1,bytes:new Uint8Array([255,216,255,217])},lines:[],source:'Providers'}],{cover:false});
@@ -59,4 +67,4 @@ async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}=
   }
   assert.equal(crossOrigin,'anonymous');assert.equal(removed,fail||abort?1:2);assert.equal(hostsRemoved,removed);
 }
-(async()=>{await scenario();await scenario({width:1200,hideMainRoute:true});await scenario({fail:true});await scenario({abort:true});console.log('PASS: narrower inset, full overview GPS independent of main visibility, live vector styles and pane order, both segments, PNG metadata and unchanged PNG in DOCX, abort/cleanup (mocked Leaflet/canvas).');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await scenario();await scenario({width:1200,hideMainRoute:true});await scenario({fail:true});await scenario({abort:true});console.log('PASS: export casing/opacity/width, matching dash geometry with gaps, unchanged polygon fill/markers, full overview route, single combined credit, PNG metadata and exact PNG bytes in DOCX, abort/cleanup (mocked Leaflet/canvas).');})().catch(error=>{console.error(error);process.exitCode=1;});
