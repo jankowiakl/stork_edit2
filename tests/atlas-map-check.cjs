@@ -11,10 +11,10 @@ function readMetadata(bytes){
     }cursor+=size+12;
   }return result;
 }
-async function scenario({fail=false,width=2400,abort=false}={}){
+async function scenario({fail=false,width=2400,abort=false,hideMainRoute=false}={}){
   let removed=0,hostsRemoved=0,draws=0,polygons=0,arcs=0,crossOrigin,requestedPhoto,bounds;
-  const texts=[],sizes=[],bases=[],insets=[],rects=[];
-  const context={fillRect(){throw Error('No footer/background rectangles');},fillText(text){texts.push(text);},strokeText(){},measureText:text=>({width:text.length*10}),save(){},restore(){},clip(){},roundRect(...args){rects.push(args);},beginPath(){},moveTo(){},lineTo(){},closePath(){polygons++;},fill(){},stroke(){},setLineDash(){},arc(){arcs++;},drawImage(image,...args){draws++;if(image.getContext)insets.push(args);}};
+  const texts=[],sizes=[],bases=[],insets=[],rects=[],strokes=[],fills=[];let path=[],dash=[];
+  const context={fillRect(){throw Error('No footer/background rectangles');},fillText(text){texts.push(text);},strokeText(){},measureText:text=>({width:text.length*10}),save(){},restore(){},clip(){},roundRect(...args){rects.push(args);},beginPath(){path=[];},moveTo(x,y){path.push([x,y]);},lineTo(x,y){path.push([x,y]);},closePath(){polygons++;},fill(){fills.push({color:this.fillStyle,opacity:this.globalAlpha});},stroke(){strokes.push({color:this.strokeStyle,opacity:this.globalAlpha,weight:this.lineWidth,dash:[...dash],path:[...path]});},setLineDash(value){dash=value;},arc(){arcs++;},drawImage(image,...args){draws++;if(image.getContext)insets.push(args);}};
   const document={body:{append(){}},createElement(tag){
     if(tag==='canvas')return{width:0,height:0,getContext:()=>context,toBlob(cb){sizes.push([this.width,this.height]);cb(new Blob([png],{type:'image/png'}));}};
     if(tag==='div')return{style:{},setAttribute(){},getBoundingClientRect:()=>({left:-20000,top:0}),remove(){hostsRemoved++;}};
@@ -31,14 +31,25 @@ async function scenario({fail=false,width=2400,abort=false}={}){
   const sandbox={document,Blob,TextEncoder,DOMException,AbortController,setTimeout,clearTimeout,StorkAtlas:atlas,L:{TileLayer,map:()=>map,latLngBounds:x=>x}};sandbox.globalThis=sandbox;
   vm.runInNewContext(fs.readFileSync(require.resolve('../atlas-map.js'),'utf8'),sandbox);
   const controller=new AbortController();
-  const options={photo:{filename:'żółć.jpg',bird:'A',captureTime:'2026-01-01T12:00:00Z',lat:52,lon:20},route:{points:[{lat:51,lon:19},{lat:52,lon:20}]},stopovers:{features:[{geometry:{type:'Polygon',coordinates:[[[19,51],[20,51],[20,52],[19,51]]]}}]},settings:{width,extent:'photo',detailBasemap:'satellite',overviewBasemap:'osm',zoom:8,viewportWidth:800},createBaseLayer:key=>{bases.push(key);return new TileLayer(key);},signal:controller.signal,t:key=>key};
+  const baseStyle={stroke:true,weight:2,opacity:.58,lineCap:'round',lineJoin:'round',fill:false},styles={};
+  for(const [i,key] of ['follow','overview','gpsFollow','gpsOverview','segmentFollow','segmentOverview','markerFollow','markerOverview','stopFollow','stopOverview'].entries())styles[key]={...baseStyle,color:`test-${key}`,weight:i+1,opacity:(i+1)/10};
+  for(const key of ['markerFollow','markerOverview','stopFollow','stopOverview'])Object.assign(styles[key],{fill:true,fillColor:`fill-${key}`,fillOpacity:.16,radius:7});
+  styles.gpsFollow.dashArray='5 6';styles.gpsOverview.dashArray='4 5';
+  const options={photo:{filename:'żółć.jpg',bird:'A',captureTime:'2026-01-01T12:00:00Z',lat:52,lon:20},route:{points:[{lat:10,lon:5,time:'2025-01-01'},{lat:51,lon:19,time:'2026-01-01'},{lat:52,lon:20,time:'2026-01-02'},{lat:60,lon:30,time:'2026-04-01'}]},stopovers:{features:[{geometry:{type:'Polygon',coordinates:[[[19,51],[20,51],[20,52],[19,51]]]}}]},settings:{width,extent:'photo',detailBasemap:'satellite',overviewBasemap:'osm',zoom:8,viewportWidth:800,styles,inset:{aspect:280/170,margin:12,radius:14},route:!hideMainRoute,segment:true,segmentStart:'2026-01-01',segmentEnd:'2026-01-02',photoTrack:[{lat:51,lon:19},{lat:52,lon:20}]},createBaseLayer:key=>{bases.push(key);return new TileLayer(key);},signal:controller.signal,t:key=>key};
   if(fail||abort){await assert.rejects(sandbox.StorkAtlasMap.render(options),fail?/mapTileError/:{name:'AbortError'});assert.equal(draws,0);}
   else{
     const blob=await sandbox.StorkAtlasMap.render(options),bytes=new Uint8Array(await blob.arrayBuffer());
-    assert.equal(blob.type,'image/png');assert.deepEqual(sizes,[[width,width*3/4]]);assert.deepEqual(Array.from(requestedPhoto),[52,20]);assert.equal(bounds.length,3);
+    assert.equal(blob.type,'image/png');assert.deepEqual(sizes,[[width,width*3/4]]);assert.deepEqual(Array.from(requestedPhoto),[52,20]);assert.equal(bounds.length,7);
     assert.deepEqual(bases,['satellite','osm']);assert.equal(draws,3);assert.equal(arcs,2);assert.equal(polygons,2);
-    assert.equal(insets.length,1);assert.equal(insets[0][0],width-Math.round(width*.45)-16*width/1200);assert.equal(insets[0][1],16*width/1200);
-    assert.equal(rects[0][2],Math.round(width*.45));assert.equal(rects[0][3],Math.round(width*.75*.24));
+    assert.equal(insets.length,1);assert.equal(insets[0][0],width-Math.round(width*.32)-12*width/800);assert.equal(insets[0][1],12*width/800);
+    assert.equal(rects[0][2],Math.round(width*.32));assert.equal(rects[0][3],Math.round(Math.round(width*.32)/(280/170)));
+    const overviewGPS=strokes.find(s=>s.color==='test-gpsOverview');assert.deepEqual(overviewGPS.path,[[50,100],[190,510],[200,520],[300,600]],'full GPS survives hidden main route and segment filter');
+    assert.equal(strokes.some(s=>s.color==='test-gpsFollow'),!hideMainRoute);
+    for(const key of ['gpsOverview','segmentFollow','segmentOverview','overview','stopFollow','stopOverview','markerFollow','markerOverview']){const stroke=strokes.find(s=>s.color===styles[key].color);assert.ok(stroke,key);assert.equal(stroke.opacity,styles[key].opacity);assert.equal(stroke.weight,styles[key].weight*width/800);}
+    assert.deepEqual(overviewGPS.dash,[4*width/800,5*width/800]);
+    assert.deepEqual(strokes.find(s=>s.color==='test-segmentOverview').path,[[190,510],[200,520]]);
+    assert.deepEqual(strokes.filter(s=>s.color?.startsWith('test-')).map(s=>s.color),['test-stopFollow',...(!hideMainRoute?['test-gpsFollow']:[]),'test-segmentFollow','test-markerFollow','test-stopOverview','test-gpsOverview','test-segmentOverview','test-overview','test-markerOverview']);
+    assert.ok(fills.some(f=>f.color==='fill-stopFollow'&&f.opacity===.16));
     assert.ok(texts.every(s=>s.includes('provider')),'only provider credit, no photo/overview labels');
     const metadata=readMetadata(bytes);assert.equal(metadata.SourcePhoto,'żółć.jpg');assert.equal(metadata.Latitude,'52');assert.equal(metadata.Longitude,'20');assert.equal(metadata.CRS,'WGS84 / EPSG:4326');assert.equal(metadata.DetailBasemap,'satellite');assert.equal(metadata.OverviewBasemap,'osm');assert.ok(metadata.MapSource.includes('osm provider'));
     const mapImage={width,height:width*.75,type:'image/png',bytes};
@@ -48,4 +59,4 @@ async function scenario({fail=false,width=2400,abort=false}={}){
   }
   assert.equal(crossOrigin,'anonymous');assert.equal(removed,fail||abort?1:2);assert.equal(hostsRemoved,removed);
 }
-(async()=>{await scenario();await scenario({width:1200});await scenario({fail:true});await scenario({abort:true});console.log('PASS: composite/inset geometry, independent basemaps, resolution, no footer, Unicode PNG iTXt + CRC, exact PNG in DOCX, tile errors, abort and cleanup (mocked Leaflet/canvas).');})().catch(error=>{console.error(error);process.exitCode=1;});
+(async()=>{await scenario();await scenario({width:1200,hideMainRoute:true});await scenario({fail:true});await scenario({abort:true});console.log('PASS: narrower inset, full overview GPS independent of main visibility, live vector styles and pane order, both segments, PNG metadata and unchanged PNG in DOCX, abort/cleanup (mocked Leaflet/canvas).');})().catch(error=>{console.error(error);process.exitCode=1;});

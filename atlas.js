@@ -150,8 +150,10 @@
       if(!routes.has(photo.bird))routes.set(photo.bird,await adapter.api(`/api/individuals/${encodeURIComponent(photo.bird)}/route?detail=full&max=100000`,{signal:controller.signal}));
       if(context.settings.stopovers&&!stops.has(photo.bird))stops.set(photo.bird,await adapter.api(`/api/individuals/${encodeURIComponent(photo.bird)}/stopovers`,{signal:controller.signal}));
       const route=routes.get(photo.bird);if(route.individualId&&String(route.individualId)!==String(photo.bird))throw Error(t("mapBirdError"));
-      const sequence=snapshot.photos.filter(p=>p.bird===photo.bird&&time(p)!==null).sort((a,b)=>time(a)-time(b)),index=sequence.findIndex(p=>p.id===photo.id);
-      const settings={...context.settings,segmentStart:sequence[index-1]?.captureTime};
+      // Match the collection track and updateCurrentGpsSegment: current -> next;
+      // the last photograph uses the final preceding interval. Never mix birds.
+      const sequence=snapshot.photos.filter(p=>p.bird===photo.bird&&located(p)).map(p=>p.id===photo.id?photo:p).sort((a,b)=>(time(a)??Infinity)-(time(b)??Infinity)||String(a.filename).localeCompare(String(b.filename))),index=sequence.findIndex(p=>p.id===photo.id),segmentIndex=Math.min(index,sequence.length-2);
+      const settings={...context.settings,photoTrack:sequence.map(p=>({lat:p.lat,lon:p.lon})),segmentStart:sequence[segmentIndex]?.captureTime,segmentEnd:sequence[segmentIndex+1]?.captureTime};
       const blob=await adapter.renderMap({photo,route,stopovers:stops.get(photo.bird),settings,signal:controller.signal,t});check();
       const warning=!route.points?.length?t("noRoute"):route.simplified?t("simplified"):"";
       if(warning)context.warnings.push(`${photo.filename}: ${warning}`);
