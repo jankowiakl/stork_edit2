@@ -1,5 +1,9 @@
 .atlasDialog { width:min(880px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); box-sizing:border-box; padding:20px; color:var(--text,#e6edf5); background:#101d2c; border:1px solid #42617c; border-radius:16px; overflow:auto; }
 .atlasDialog::backdrop { background:#020914b8; backdrop-filter:blur(4px); }
+.atlasDownloadMenu { width:min(360px,calc(100vw - 24px)); }
+.atlasDownloadMenu[open] { display:grid; gap:10px; }
+.atlasDownloadMenu button { min-height:44px; white-space:normal; }
+.atlasDownloadMenu p { margin:0; font-size:.85rem; }
 .atlasDialog header { display:flex!important; position:static; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px; background:none; }
 .atlasDialog h2 { margin:0; font-size:1.3rem; }
 .atlasGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }

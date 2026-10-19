@@ -8,14 +8,14 @@
   <meta name="application-name" content="Ciconia Flight Photo Viewer" />
   <meta name="apple-mobile-web-app-title" content="Ciconia Flight Photo Viewer" />
   <meta name="theme-color" content="#0f2740" />
-  <link rel="manifest" href="manifest.webmanifest?v=2026-10-19-65" />
+  <link rel="manifest" href="manifest.webmanifest?v=2026-10-19-66" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-  <link rel="stylesheet" href="atlas.css?v=2026-10-19-65">
+  <link rel="stylesheet" href="atlas.css?v=2026-10-19-66">
   <style>
     :root {
       --text: #e8eefc;
@@ -2481,15 +2481,15 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
-<script src="vendor/qrcode.min.js?v=2026-10-19-65"></script>
-<script src="vendor/jspdf.umd.min.js?v=2026-10-19-65"></script>
-<script src="app-i18n.js?v=2026-10-19-65"></script>
-<script src="config.js?v=2026-10-19-65"></script>
-<script src="viewer-interactions.js?v=2026-10-19-65"></script>
-<script src="offline-store.js?v=2026-10-19-65"></script>
-<script src="vendor/fflate.min.js?v=2026-10-19-65"></script>
-<script src="atlas.js?v=2026-10-19-65"></script>
-<script src="atlas-map.js?v=2026-10-19-65"></script>
+<script src="vendor/qrcode.min.js?v=2026-10-19-66"></script>
+<script src="vendor/jspdf.umd.min.js?v=2026-10-19-66"></script>
+<script src="app-i18n.js?v=2026-10-19-66"></script>
+<script src="config.js?v=2026-10-19-66"></script>
+<script src="viewer-interactions.js?v=2026-10-19-66"></script>
+<script src="offline-store.js?v=2026-10-19-66"></script>
+<script src="vendor/fflate.min.js?v=2026-10-19-66"></script>
+<script src="atlas.js?v=2026-10-19-66"></script>
+<script src="atlas-map.js?v=2026-10-19-66"></script>
 
 <script>
 (() => {
@@ -2815,7 +2815,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   let apiConnectivity=navigator.onLine===false?"offline":"unknown",apiNetworkFailureHandler=()=>{},apiResponseHandler=()=>{};
   try { authState = { ...authState, ...(JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "{}")) }; } catch(e) {}
   const saveAuth = () => { try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState)); } catch(e) {} };
-  const clearAuth = () => { window.storkAtlasInstance?.reset(); authState = { token:"", user:null, individualIds:[],contribution:null }; try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch(e) {} updateAuthUi(); };
+  const clearAuth = () => { window.storkAtlasInstance?.reset(); window.storkSinglePhotoExporter?.reset(); window.storkPhotoDownloadMenu?.reset(); authState = { token:"", user:null, individualIds:[],contribution:null }; try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch(e) {} updateAuthUi(); };
   const apiFetch = async (apiPath, options = {}, { auth = true, raw = false } = {}) => {
     const headers = new Headers(options.headers || {});
     if (auth && authState.token) headers.set("Authorization", `Bearer ${authState.token}`);
@@ -2856,7 +2856,7 @@ body.interfaceCoachOpen .appLanguage { z-index:10100; }
   for(const workspace of [accountWorkspaceEl,exportWorkspaceEl,installWorkspaceEl])workspace.addEventListener("pointerdown",(event)=>{if(event.target!==workspace)return;if(workspace===accountWorkspaceEl)closeAccountWorkspace();else if(workspace===exportWorkspaceEl)closeExportWorkspace();else closeInstallWorkspace();});
   window.addEventListener("keydown",(event)=>{if(event.key!=="Escape")return;if(accountWorkspaceEl.classList.contains("open")){closeAccountWorkspace();return;}if(exportWorkspaceEl.classList.contains("open")){closeExportWorkspace();return;}if(installWorkspaceEl.classList.contains("open")){closeInstallWorkspace();return;}if(appNavDrawerEl.classList.contains("open"))closeAppNavigation();});
 
-  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public",profile=authState.contribution,bestUnlocked=profile?.bestPicturesUnlocked??!user?.restrictedContributor;appNavUserEl.textContent=user?`${user.name} • ${profile?.level?.name||role}${user.mustChangePassword?" • password change required":""}`:"Project information • not logged in";appNavAccessEl.textContent=ready?(profile?.restricted?`Cycle ${profile.browseCycleNo||1}: ${profile.browseRemaining} of ${profile.browseAllowance} new-photo slots remain`:["admin","coordinator"].includes(role)?"Full scientific access":`Full browsing • edit own and ${authState.individualIds.length} assigned bird(s)`):"Login required for photographs";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"],[data-app-nav="atlas"]').forEach((item)=>item.hidden=!ready||!bestUnlocked);window.storkAtlasInstance?.enforceAccess();accountCollectionsEl.hidden=!ready||!bestUnlocked;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${profile?.level?.name||role}${user.restrictedContributor?" • restricted contributor":""}${user.mustChangePassword?" • change password now":""}`:"Protected scientific archive";accountEmailEl.textContent=user?user.email:"Log in to view photos and scientific records.";};
+  const updateAppNavigation=()=>{const user=authState.user,ready=!!user&&!user.mustChangePassword,role=user?.role||"public",profile=authState.contribution,bestUnlocked=profile?.bestPicturesUnlocked??!user?.restrictedContributor;appNavUserEl.textContent=user?`${user.name} • ${profile?.level?.name||role}${user.mustChangePassword?" • password change required":""}`:"Project information • not logged in";appNavAccessEl.textContent=ready?(profile?.restricted?`Cycle ${profile.browseCycleNo||1}: ${profile.browseRemaining} of ${profile.browseAllowance} new-photo slots remain`:["admin","coordinator"].includes(role)?"Full scientific access":`Full browsing • edit own and ${authState.individualIds.length} assigned bird(s)`):"Login required for photographs";appNavAccountLabelEl.textContent=user?"My account":"Log in";appNavLogoutBtn.hidden=!user;document.querySelectorAll("[data-role]").forEach((item)=>{item.hidden=!ready||!item.dataset.role.split(",").includes(role);});document.querySelectorAll('[data-app-nav="favorites"],[data-app-nav="rated"],[data-app-nav="atlas"]').forEach((item)=>item.hidden=!ready||!bestUnlocked);window.storkAtlasInstance?.enforceAccess();window.storkSinglePhotoExporter?.enforceAccess();accountCollectionsEl.hidden=!ready||!bestUnlocked;accountAvatarEl.textContent=user?String(user.name||user.email||"?").trim().charAt(0).toUpperCase():"?";accountNameEl.textContent=user?user.name:"Not logged in";accountRoleEl.textContent=user?`${profile?.level?.name||role}${user.restrictedContributor?" • restricted contributor":""}${user.mustChangePassword?" • change password now":""}`:"Protected scientific archive";accountEmailEl.textContent=user?user.email:"Log in to view photos and scientific records.";};
 
   const storkBadgeSvg=(index)=>`<svg viewBox="0 0 32 32" width="50" height="50" aria-hidden="true" style="image-rendering:pixelated"><g fill="none" stroke="none"><path fill="#f7fbff" d="M11 9h9v3h3v5h-3v4h-9v-3H8v-6h3z"/><path fill="#d9e7ef" d="M11 18h9v3h-9z"/><path fill="#e44d45" d="M23 13h6v2h-6zM14 21h2v7h-2zM19 21h2v7h-2z"/><path fill="#102337" d="M19 11h2v2h-2z"/>${index>=1?'<path fill="#e0ba5b" d="M4 6h5v2H4z"/>':""}${index>=2?'<path fill="#f7fbff" d="M3 12h8v3H3zM20 9h8v3h-8z"/>':""}${index>=3?'<path fill="#d9ad3f" d="M7 4h2v5H7zM23 4h2v5h-2zM9 3h14v2H9z"/>':""}${index>=4?'<path fill="#d9ad3f" d="M3 2h26v2H3zM2 4h2v24H2zM28 4h2v24h-2zM3 28h26v2H3z"/>':""}</g></svg>`;
   const renderContributionDashboard=(profile,requests=[],tasks=[])=>{
@@ -3805,8 +3805,8 @@ loopCurrentEl.checked = false;
   const humanizeSurveyValue=(value)=>String(value??"").replaceAll("_"," ").replace(/\b\w/g,(letter)=>letter.toUpperCase());
   const surveyQualityLabel=(flag)=>({all_ratings_identical:"All ratings identical",very_low_rating_variance:"Very low rating variance",completed_unusually_fast:"Completed unusually fast",incomplete:"Incomplete response"}[flag]||humanizeSurveyValue(flag));
   const surveyQualityChips=(flags)=>flags?.length?`<div class="btnrow">${flags.map((flag)=>`<span class="statusBadge">${escapeHtml(surveyQualityLabel(flag))}</span>`).join("")}</div>`:"—";
-  const surveyRatingTable=(photos,{showPosition=false}={})=>`<div class="dataTableWrap"><table class="dataTable"><thead><tr>${showPosition?"<th>Position</th>":""}<th>Thumbnail</th><th>Photo ID</th><th>Bird</th><th>Date / time</th><th>Average</th><th>N</th><th>1★</th><th>2★</th><th>3★</th><th>4★</th><th>5★</th>${showPosition?"<th>Rating</th>":""}<th>Open</th><th>Download</th></tr></thead><tbody>${photos.map((photo)=>{const distribution=photo.distribution||[0,0,0,0,0],preview=photo.previewUrl;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-bird="${escapeHtml(photo.bird||"")}">${showPosition?`<td>${Number(photo.position)}</td>`:""}<td>${preview?`<img class="dataThumb" loading="lazy" src="${escapeHtml(preview)}" alt="Photo preview">`:"—"}</td><td>${escapeHtml(photo.id)}</td><td>${escapeHtml(photo.bird||"—")}</td><td>${escapeHtml(surveyDate(photo.captureTime||photo.date))}</td><td>★ ${surveyNumber(photo.averageSurveyRating)}</td><td>${Number(photo.surveyRatingCount||0)}</td>${[0,1,2,3,4].map((index)=>`<td>${Number(distribution[index]||0)}</td>`).join("")}${showPosition?`<td>${photo.rating==null?"—":`${Number(photo.rating)} ★`}</td>`:""}<td><button class="secondary tiny surveyResultOpen" type="button">Open</button></td><td><button class="secondary tiny surveyResultDownload" type="button">Download</button></td></tr>`;}).join("")||`<tr><td colspan="${showPosition?15:13}" class="muted">No survey ratings match these filters.</td></tr>`}</tbody></table></div>`;
-  const bindSurveyPhotoActions=(returnMode="survey-results")=>{dataPanelEl.querySelectorAll(".surveyResultOpen").forEach((button)=>button.addEventListener("click",()=>{const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,false,returnMode);}));dataPanelEl.querySelectorAll(".surveyResultDownload").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");button.disabled=true;try{await downloadApiFile(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/download`,"survey-photo.jpg");}catch(error){setDataStatus(`Download unavailable: ${error.message}`);}finally{button.disabled=false;}}));};
+  const surveyRatingTable=(photos,{showPosition=false}={})=>`<div class="dataTableWrap"><table class="dataTable"><thead><tr>${showPosition?"<th>Position</th>":""}<th>Thumbnail</th><th>Photo ID</th><th>Bird</th><th>Date / time</th><th>Average</th><th>N</th><th>1★</th><th>2★</th><th>3★</th><th>4★</th><th>5★</th>${showPosition?"<th>Rating</th>":""}<th>Open</th><th>Download</th></tr></thead><tbody>${photos.map((photo)=>{const distribution=photo.distribution||[0,0,0,0,0],preview=photo.previewUrl;return`<tr data-photo-id="${escapeHtml(photo.id)}" data-filename="${escapeHtml(photo.filename||"")}" data-bird="${escapeHtml(photo.bird||"")}">${showPosition?`<td>${Number(photo.position)}</td>`:""}<td>${preview?`<img class="dataThumb" loading="lazy" src="${escapeHtml(preview)}" alt="Photo preview">`:"—"}</td><td>${escapeHtml(photo.id)}</td><td>${escapeHtml(photo.bird||"—")}</td><td>${escapeHtml(surveyDate(photo.captureTime||photo.date))}</td><td>★ ${surveyNumber(photo.averageSurveyRating)}</td><td>${Number(photo.surveyRatingCount||0)}</td>${[0,1,2,3,4].map((index)=>`<td>${Number(distribution[index]||0)}</td>`).join("")}${showPosition?`<td>${photo.rating==null?"—":`${Number(photo.rating)} ★`}</td>`:""}<td><button class="secondary tiny surveyResultOpen" type="button">Open</button></td><td><button class="secondary tiny surveyResultDownload" type="button">Download</button></td></tr>`;}).join("")||`<tr><td colspan="${showPosition?15:13}" class="muted">No survey ratings match these filters.</td></tr>`}</tbody></table></div>`;
+  const bindSurveyPhotoActions=(returnMode="survey-results")=>{dataPanelEl.querySelectorAll(".surveyResultOpen").forEach((button)=>button.addEventListener("click",()=>{const row=button.closest("tr");openWorkspacePhoto(row.dataset.photoId,row.dataset.bird,false,returnMode);}));dataPanelEl.querySelectorAll(".surveyResultDownload").forEach(button=>button.addEventListener("click",()=>{const row=button.closest("tr");openPhotoDownloadMenu({photoId:row.dataset.photoId,filename:row.dataset.filename},button);}));};
   const showSurveyCampaignEdit=async(campaign)=>{
     setDataStatus(`Loading settings for ${campaign.name}…`);
     try{
@@ -4396,7 +4396,16 @@ loopCurrentEl.checked = false;
   mapStreetViewBtn.addEventListener("click",()=>{if(!streetViewCoordinates())return;const open=mapGoogleMenuEl.hidden;closeMapControlPanels();if(!open)return;mapGoogleMenuEl.hidden=false;mapStreetViewBtn.setAttribute("aria-expanded","true");document.body.classList.add("mapControlPanelOpen");if(typeof setCollectionDetailsOpen==="function")setCollectionDetailsOpen(false);requestAnimationFrame(()=>mapGoogleStreetViewBtn.focus({preventScroll:true}));});
   mapGoogleStreetViewBtn.addEventListener("click",()=>openGoogleMapForPhoto("streetView"));
   mapGoogleSatelliteBtn.addEventListener("click",()=>openGoogleMapForPhoto("satellite"));
-  const currentViewerDownload=()=>{if(document.body.classList.contains("surveyMode")||document.body.classList.contains("surveyRewardMode"))return null;if(photoSafeViewerContext?.readOnly)return currentPhotoDetails?.imageUrl?{remoteUrl:currentPhotoDetails.imageUrl,filename:currentPhotoDetails.filename||"stork-photo.jpg"}:null;if(!editorHasConnection()||!socialPhotoId)return null;const point=track.find((item)=>item.photoId===socialPhotoId);return{photoId:socialPhotoId,filename:currentPhotoDetails?.filename||point?.name||"stork-photo.jpg"};};
+  const currentViewerDownload=()=>{
+    if(document.body.classList.contains("surveyMode")||document.body.classList.contains("surveyRewardMode"))return null;
+    const inCollection=document.body.classList.contains("collectionMode"),inEditor=document.body.classList.contains("editorOpen");
+    const point=inEditor?activeEditorSequence()[editorPhotoIndex]:inCollection?{photoId:socialPhotoId}:track[currentPhotoIndex()];
+    const id=point?.photoId;if(!id)return null;
+    const detail=String(currentPhotoDetails?.id)===String(id)?currentPhotoDetails:null,selected=inCollection?collectionSequence.find(p=>String(p.id)===String(id)):null;
+    const filename=detail?.filename||selected?.filename||point?.name||point?.filename;
+    if(photoSafeViewerContext?.readOnly){const url=detail?.imageUrl||selected?.imageUrl;return url?{photoId:id,remoteUrl:url,filename,readOnly:true}:null;}
+    return editorHasConnection()?{photoId:id,filename}:null;
+  };
   const renderPhotoDownload=()=>{const available=!!currentViewerDownload(),label=appT("photo.download");photoDownloadPhotoBtn.hidden=!available;photoDownloadPhotoBtn.disabled=!available;photoDownloadPhotoBtn.title=label;photoDownloadPhotoBtn.setAttribute("aria-label",label);};
   const renderPhotoAnnotationStatus=()=>{const unavailable=!editorHasConnection()||!socialPhotoId||!currentPhotoDetails||!!photoSafeViewerContext?.readOnly||document.body.classList.contains("surveyMode");photoAnnotationStatusBtn.hidden=unavailable;if(unavailable)return;const complete=currentPhotoDetails.status==="complete",label=appT(complete?"photo.annotationComplete":"photo.annotationIncomplete");photoAnnotationStatusBtn.textContent=complete?"✓":"○";photoAnnotationStatusBtn.classList.toggle("complete",complete);photoAnnotationStatusBtn.title=label;photoAnnotationStatusBtn.setAttribute("aria-label",label);};
   const countryShort=(country)=>{const value=String(country||"").trim();if(!value)return"";const known={poland:"PL",germany:"DE",czechia:"CZ","czech republic":"CZ",slovakia:"SK",ukraine:"UA",belarus:"BY",lithuania:"LT",latvia:"LV",estonia:"EE",romania:"RO",bulgaria:"BG",hungary:"HU",croatia:"HR",serbia:"RS",turkey:"TR",türkiye:"TR",israel:"IL",jordan:"JO",egypt:"EG",sudan:"SD",chad:"TD",ethiopia:"ET",kenya:"KE",tanzania:"TZ",spain:"ES",france:"FR",italy:"IT",austria:"AT",greece:"GR"};return value.length<=3?value.toUpperCase():(known[value.toLowerCase()]||value.slice(0,3).toUpperCase());};
@@ -4547,7 +4556,7 @@ loopCurrentEl.checked = false;
   };
   const openBestPictures=()=>openPhotoCollection("favorites");
   const openRatedPictures=()=>openPhotoCollection("rated");
-  const atlas=window.storkAtlasInstance=StorkAtlas.create({
+  const atlasAdapter={
     api:apiFetch,userId:()=>editorHasConnection()?authState.user?.id:null,requestLogin:openAccountWorkspace,
     canAccess:()=>StorkAtlas.canUseAtlas(authState.user,authState.contribution),
     onLocked:()=>{if(document.body.classList.contains("atlasMode")){stopCollectionPlayback();void leaveCollectionMode();}},
@@ -4567,7 +4576,13 @@ loopCurrentEl.checked = false;
     beforeOpen:()=>{closeAppNavigation();stopCollectionPlayback();if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return false;return true;},
     selectionChanged:async()=>{if(document.body.classList.contains("atlasMode")){if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))throw Error(appT("editor.cancel"));await leaveCollectionMode();}},
     openCollection:async(snapshot)=>{if(document.body.classList.contains("editorOpen")&&!closeEditorMode({returnPrevious:false}))return;await openPhotoCollection("atlas",null,{payload:{photos:snapshot.photos}});}
-  });
+  };
+  const atlas=window.storkAtlasInstance=StorkAtlas.create(atlasAdapter);
+  const singlePhotoExporter=window.storkSinglePhotoExporter=StorkAtlas.create({...atlasAdapter,
+    canAccess:()=>atlasAdapter.canAccess()&&!photoSafeViewerContext?.readOnly&&!document.body.classList.contains("surveyMode")&&!document.body.classList.contains("surveyRewardMode"),
+    onLocked:()=>{},onReset:()=>{},
+    photoTrack:photo=>birdId===photo.bird&&track.some(p=>p.photoId===photo.id)?track.map(p=>({id:p.photoId,bird:photo.bird,filename:p.name,captureTime:p.dt?.toISOString(),lat:p.lat,lon:p.lon})):[photo]
+  },{singlePhoto:true});
   const renderAtlasPosition=()=>{const text=atlas.label(collectionSequenceIndex);collectionModeLabelEl.textContent=text;collectionModeLabelEl.title=text;collectionModeLabelEl.setAttribute("aria-label",text);const slider=el("atlasSeek");slider.max=Math.max(0,collectionSequence.length-1);slider.value=collectionSequenceIndex;slider.setAttribute("aria-label",appT("atlas.seek"));};
   el("atlasSelection").addEventListener("click",()=>{stopCollectionPlayback();atlas.open();});
   el("atlasDownloadMap").addEventListener("click",()=>{stopCollectionPlayback();atlas.openMaps(collectionSequenceIndex);});
@@ -4654,9 +4669,23 @@ loopCurrentEl.checked = false;
   };
 
   const formatRating=(value)=>value===null||value===undefined?"—":Number(value).toLocaleString("pl-PL",{minimumFractionDigits:1,maximumFractionDigits:1});
-  const downloadApiFile=async(url,fallbackName)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
-  const downloadRemoteImage=async(url,fallbackName)=>{const response=await fetch(url);if(!response.ok)throw new Error(`HTTP ${response.status}`);const blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
-  photoDownloadPhotoBtn.addEventListener("click",async()=>{const source=currentViewerDownload();if(!source)return;photoDownloadPhotoBtn.disabled=true;try{if(source.remoteUrl)await downloadRemoteImage(source.remoteUrl,source.filename);else await downloadApiFile(`/api/photos/${encodeURIComponent(source.photoId)}/download`,source.filename);}catch(error){setStatus(`${appT("photo.downloadFailed")}: ${error.message}`);}finally{renderPhotoDownload();}});
+  const downloadApiFile=async(url,fallbackName,exactName=false)=>{const response=await apiFetch(url,{}, {raw:true}),blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=exactName?fallbackName:(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
+  const downloadRemoteImage=async(url,fallbackName,exactName=false)=>{const response=await fetch(url);if(!response.ok)throw new Error(`HTTP ${response.status}`);const blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement("a");link.href=objectUrl;link.download=exactName?fallbackName:(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)/)?.[1]||fallbackName;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1200);};
+  const photoDownloadMenu=window.storkPhotoDownloadMenu=StorkAtlas.createDownloadMenu({
+    userId:()=>authState.user?.id||null,
+    pause:()=>{stopCollectionPlayback();stopAnim();},
+    advancedReason:source=>source?.readOnly||source?.remoteUrl?appT("atlas.advancedReadOnly"):!source?.photoId||!atlasAdapter.canAccess()||document.body.classList.contains("surveyMode")||document.body.classList.contains("surveyRewardMode")?appT("atlas.advancedRestricted"):"",
+    download:async source=>{
+      let filename=source.filename;
+      if(!filename&&!source.remoteUrl){const result=await apiFetch(`/api/photos/${encodeURIComponent(source.photoId)}`);filename=result.photo?.filename;}
+      if(!filename)throw Error(appT("atlas.photoUnavailable"));
+      if(source.remoteUrl)await downloadRemoteImage(source.remoteUrl,filename,true);
+      else await downloadApiFile(`/api/photos/${encodeURIComponent(source.photoId)}/download`,filename,true);
+    },
+    advanced:source=>singlePhotoExporter.openSingle(source.photoId)
+  });
+  const openPhotoDownloadMenu=(source,button)=>photoDownloadMenu.open(source,button);
+  photoDownloadPhotoBtn.addEventListener("click",()=>openPhotoDownloadMenu(currentViewerDownload(),photoDownloadPhotoBtn));
   const loadCollectionPhotosPanel=async()=>{
     const collection=activeCollectionType,isSafe=collection==="favorites";
     const readOnly=!!photoSafeViewerContext?.readOnly,label=readOnly?`${photoSafeViewerContext.ownerName}'s Photo Safe`:isSafe?"My photo safe":"Top rated";setDataStatus(`Loading ${label}…`);
@@ -4670,7 +4699,7 @@ loopCurrentEl.checked = false;
       el("downloadSafeZip")?.addEventListener("click",async()=>{const button=el("downloadSafeZip");button.disabled=true;try{await downloadApiFile("/api/me/photo-collection/download?collection=favorites","my-photo-safe.zip");}catch(error){setDataStatus(`Photo safe download failed: ${error.message}`);}finally{button.disabled=false;}});
       el("downloadRatedZip")?.addEventListener("click",async()=>{const button=el("downloadRatedZip"),minimum=Math.max(1,Math.min(5,Number(el("ratedDownloadThreshold").value)||4));button.disabled=true;try{await downloadApiFile(`/api/me/photo-collection/download?collection=rated&minimumRating=${encodeURIComponent(minimum)}`,`top-rated-${String(minimum).replace(".","-")}.zip`);}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}});
       dataPanelEl.querySelectorAll(".collectionOpenPhoto").forEach((thumb)=>thumb.addEventListener("click",()=>{const row=thumb.closest("tr");returnToCollectionViewer(row.dataset.photoId);}));
-      dataPanelEl.querySelectorAll(".collectionDownload").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");button.disabled=true;try{await downloadApiFile(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/download`,"stork-photo.jpg");}catch(error){setDataStatus(`Download failed: ${error.message}`);}finally{button.disabled=false;}}));
+      dataPanelEl.querySelectorAll(".collectionDownload").forEach(button=>button.addEventListener("click",()=>{const id=button.closest("tr").dataset.photoId,photo=photos.find(p=>String(p.id)===String(id));openPhotoDownloadMenu({photoId:id,filename:photo?.filename},button);}));
       dataPanelEl.querySelectorAll(".collectionRemoveFavorite").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr");await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/favorite`,{method:"DELETE"});await loadCollectionPhotosPanel();}));
       dataPanelEl.querySelectorAll(".safeMove").forEach((button)=>button.addEventListener("click",async()=>{const row=button.closest("tr"),photoIds=Array.from(dataPanelEl.querySelectorAll("tbody tr[data-photo-id]"),(item)=>item.dataset.photoId),index=photoIds.indexOf(row.dataset.photoId),next=index+Number(button.dataset.delta);if(index<0||next<0||next>=photoIds.length)return;[photoIds[index],photoIds[next]]=[photoIds[next],photoIds[index]];button.disabled=true;try{await apiFetch("/api/me/photo-collection/favorites/order",{method:"PUT",body:JSON.stringify({photoIds})});collectionOrderPreference="custom";collectionOrderEl.value="custom";try{localStorage.setItem("storkPhotoSafeOrderV1","custom");}catch(error){}await loadCollectionPhotosPanel();}catch(error){setDataStatus(`Could not save photo order: ${error.message}`);button.disabled=false;}}));
       dataPanelEl.querySelectorAll(".collectionRating").forEach((select)=>select.addEventListener("change",async()=>{const row=select.closest("tr"),rating=Number(select.value);await apiFetch(`/api/photos/${encodeURIComponent(row.dataset.photoId)}/rating`,{method:rating?"PUT":"DELETE",body:rating?JSON.stringify({rating}):undefined});await loadCollectionPhotosPanel();}));
@@ -5720,15 +5749,10 @@ loopCurrentEl.checked = false;
   editorSaveDraftBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: false, advance: false }));
   editorSaveAnalysedBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: false }));
   editorSaveNextBtn.addEventListener("click", () => saveEditorRecord({ markAnalysed: true, advance: true }));
-  editorDownloadPhotoBtn.addEventListener("click",async()=>{
+  editorDownloadPhotoBtn.addEventListener("click",()=>{
     const point=activeEditorSequence()[editorPhotoIndex];
     if(!point?.photoId||photoSafeViewerContext?.readOnly){editorSetStatus("This photo is not available for download.","error");return;}
-    editorDownloadPhotoBtn.disabled=true;
-    try{
-      await downloadApiFile(`/api/photos/${encodeURIComponent(point.photoId)}/download`,editorLookupFilename(point)||"stork-photo.jpg");
-      editorSetStatus("Photo download started.","ok");
-    }catch(error){editorSetStatus(`Photo download failed: ${error.message}`,"error");}
-    finally{editorSetBusy(false);}
+    openPhotoDownloadMenu({photoId:point.photoId,filename:editorLookupFilename(point)},editorDownloadPhotoBtn);
   });
   const setEditorTab=(tab)=>{document.body.dataset.editorTab=tab;document.querySelectorAll("[data-editor-tab]").forEach((button)=>button.classList.toggle("active",button.dataset.editorTab===tab));requestAnimationFrame(refreshMapSizes);};
   document.querySelectorAll("[data-editor-tab]").forEach((button) => button.addEventListener("click", () => setEditorTab(button.dataset.editorTab)));

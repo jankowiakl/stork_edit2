@@ -40,7 +40,7 @@
   function uniqueNames(photos){
     const used=new Set();return photos.map(p=>{
       const original=String(p.filename||`${p.id}.jpg`).split(/[\\/]/).pop().replace(/[\x00-\x1f<>:"|?*]/g,"_");
-      const base=`${Number(p.averageSurveyRating)}_${original}`,dot=base.lastIndexOf("."),stem=dot>0?base.slice(0,dot):base,ext=dot>0?base.slice(dot):"";
+      const prefix=numeric(p.averageSurveyRating)&&Number(p.surveyRatingCount)>0?Number(p.averageSurveyRating):"bez_oceny",base=`${prefix}_${original}`,dot=base.lastIndexOf("."),stem=dot>0?base.slice(0,dot):base,ext=dot>0?base.slice(dot):"";
       let name=base,n=2;while(used.has(name.toLowerCase()))name=`${stem}_${n++}${ext}`;used.add(name.toLowerCase());return name;
     });
   }
@@ -90,13 +90,44 @@
     const bitmap=await createImageBitmap(blob);try{const scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);const ctx=canvas.getContext("2d");ctx.fillStyle="white";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);const image=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error("Image conversion failed")),"image/jpeg",.88));return{width:canvas.width,height:canvas.height,bytes:new Uint8Array(await image.arrayBuffer())};}finally{bitmap.close();}
   }
 
-  function create(adapter){
+  async function findSurveyRating(api,id,signal){
+    const seen=new Set();let page=1,loaded=0;
+    while(true){
+      const data=await api(`/api/survey-results/photos?search=${encodeURIComponent(id)}&page=${page}&pageSize=100&sort=rating_desc`,{signal});
+      const rows=data.photos||[],match=rows.find(photo=>String(photo.id)===String(id));
+      if(match)return{averageSurveyRating:numeric(match.averageSurveyRating)?Number(match.averageSurveyRating):null,surveyRatingCount:Number(match.surveyRatingCount)||0};
+      if(!rows.length)return{averageSurveyRating:null,surveyRatingCount:0};
+      let added=0;for(const photo of rows)if(!seen.has(photo.id)){seen.add(photo.id);added++;}
+      if(!added)throw Error("Survey pagination did not advance");
+      loaded+=rows.length;if(Number.isFinite(Number(data.total))&&loaded>=Number(data.total))return{averageSurveyRating:null,surveyRatingCount:0};
+      page++;
+    }
+  }
+  // One menu for every single-photo download entry point; freeze its target on click.
+  function createDownloadMenu(adapter){
+    const i18n=window.StorkAppI18n,t=key=>i18n.t(`atlas.${key}`),dialog=document.createElement("dialog");dialog.className="atlasDialog atlasDownloadMenu";document.body.append(dialog);
+    let source=null,owner=null,busy=false,message="",anchor=null;
+    const render=()=>{
+      dialog.replaceChildren();const title=document.createElement("h2");title.id="photoDownloadMenuTitle";title.textContent=t("downloadOptions");dialog.setAttribute("aria-labelledby",title.id);dialog.append(title);
+      const reason=adapter.advancedReason(source),add=(key,action,disabled=false)=>{const button=document.createElement("button");button.type="button";button.className="secondary";button.textContent=t(key);button.disabled=busy||disabled;button.onclick=action;dialog.append(button);return button;};
+      add("downloadPhoto",async()=>{if(busy||!source)return;const selected=source;if(owner!==adapter.userId()){dialog.close();return;}busy=true;message="";render();try{await adapter.download(selected);dialog.close();}catch(error){message=error.message;}finally{busy=false;if(dialog.open)render();}});
+      const advanced=add("advanced",()=>{if(busy||owner!==adapter.userId())return;const selected=source;dialog.close();void adapter.advanced(selected);},!!reason);
+      if(reason){const note=document.createElement("p");note.id="photoDownloadRestriction";note.textContent=reason;advanced.setAttribute("aria-describedby",note.id);dialog.append(note);}
+      if(message){const status=document.createElement("p");status.setAttribute("role","alert");status.textContent=message;dialog.append(status);}
+      add("close",()=>dialog.close());
+    };
+    dialog.addEventListener("click",event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
+    dialog.addEventListener("close",()=>{anchor?.focus({preventScroll:true});});i18n.onChange(()=>{if(dialog.open)render();});
+    return{open(target,button){if(!target||busy)return;source={...target};owner=adapter.userId();anchor=button;message="";adapter.pause?.();render();if(!dialog.open)dialog.showModal();},reset(){source=null;dialog.close();}};
+  }
+  function create(adapter,{singlePhoto=false}={}){
     const i18n=window.StorkAppI18n,t=(key,vars)=>i18n.t(`atlas.${key}`,vars),dialog=document.createElement("dialog");dialog.className="atlasDialog";document.body.append(dialog);
-    let config={...DEFAULTS},snapshot=null,screen="config",controller=null,progressText="",shareValue="",consumedLink=null,jobUser=null;
+    let config={...DEFAULTS},snapshot=null,screen="config",controller=null,progressText="",shareValue="",consumedLink=null,jobUser=null,singleOwner=null;
     let mapPhotoIndex=0,mapPreferences={detailBasemap:"current",overviewBasemap:"current",width:2400,extent:"photo"};
-    try{const saved=JSON.parse(localStorage.getItem("storkAtlasMapExportV1")||"{}");for(const key of Object.keys(mapPreferences))if(saved[key]!==undefined)mapPreferences[key]=saved[key];for(const key of ["route","stopovers","segment"])if(typeof saved[key]==="boolean")mapPreferences[key]=saved[key];}catch(_){}
+    const readMapPreferences=()=>{try{const saved=JSON.parse(localStorage.getItem("storkAtlasMapExportV1")||"{}");for(const key of Object.keys(mapPreferences))if(saved[key]!==undefined)mapPreferences[key]=saved[key];for(const key of ["route","stopovers","segment"])if(typeof saved[key]==="boolean")mapPreferences[key]=saved[key];}catch(_){}};readMapPreferences();
     const saveMapPreferences=()=>{try{localStorage.setItem("storkAtlasMapExportV1",JSON.stringify(mapPreferences));}catch(_){}};
     const resolvedMapSettings=()=>{
+      readMapPreferences();
       const live=adapter.mapSettings(),options=adapter.basemapOptions(),keys=options.map(o=>o.value);
       const result={...live,...mapPreferences};
       for(const key of ["detailBasemap","overviewBasemap"])result[key]=keys.includes(mapPreferences[key])?mapPreferences[key]:live.basemap;
@@ -104,10 +135,11 @@
       result.extent=result.extent==="route"?"route":"photo";
       return result;
     };
-    const allowed=()=>!!adapter.canAccess();
+    const allowed=()=>!!adapter.canAccess()&&(!singlePhoto||singleOwner===null||singleOwner===String(adapter.userId()));
     const requireAccess=()=>{if(allowed())return true;screen="locked";render();show();return false;};
     try{config=settings(JSON.parse(localStorage.getItem("storkAtlasSettingsV1")||"{}"));}catch(_){}
     let wordOptions=Object.fromEntries(["titlePage","average","n","individual","time","filename","description","remarks","altitude","height","place","coords","number"].map(key=>[key,key!=="stopovers"]));
+    if(singlePhoto){wordOptions.titlePage=false;wordOptions.number=false;}
     const button=(key,fn)=>{const b=document.createElement("button");b.type="button";b.className="secondary";b.textContent=t(key);b.onclick=event=>{if(["close","cancel"].includes(key)||requireAccess())return fn(event);};return b;};
     const e=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;};
     const date=value=>{const d=new Date(value);return Number.isNaN(d.getTime())?t("unavailable"):d.toLocaleString(i18n.language);};
@@ -152,7 +184,7 @@
       const route=routes.get(photo.bird);if(route.individualId&&String(route.individualId)!==String(photo.bird))throw Error(t("mapBirdError"));
       // Match the collection track and updateCurrentGpsSegment: current -> next;
       // the last photograph uses the final preceding interval. Never mix birds.
-      const sequence=snapshot.photos.filter(p=>p.bird===photo.bird&&located(p)).map(p=>p.id===photo.id?photo:p).sort((a,b)=>(time(a)??Infinity)-(time(b)??Infinity)||String(a.filename).localeCompare(String(b.filename))),index=sequence.findIndex(p=>p.id===photo.id),segmentIndex=Math.min(index,sequence.length-2);
+      const sequence=(singlePhoto?adapter.photoTrack?.(photo)||snapshot.photos:snapshot.photos).filter(p=>p.bird===photo.bird&&located(p)).map(p=>p.id===photo.id?photo:p).sort((a,b)=>(time(a)??Infinity)-(time(b)??Infinity)||String(a.filename).localeCompare(String(b.filename))),index=sequence.findIndex(p=>p.id===photo.id),segmentIndex=Math.min(index,sequence.length-2);
       const settings={...context.settings,photoTrack:sequence.map(p=>({lat:p.lat,lon:p.lon})),segmentStart:sequence[segmentIndex]?.captureTime,segmentEnd:sequence[segmentIndex+1]?.captureTime};
       const blob=await adapter.renderMap({photo,route,stopovers:stops.get(photo.bird),settings,signal:controller.signal,t});check();
       const warning=!route.points?.length?t("noRoute"):route.simplified?t("simplified"):"";
@@ -161,6 +193,7 @@
       return{photo,blob,source,width:settings.width,height:settings.width*3/4};
     }
     function mapSettingsPanel(){
+      readMapPreferences();
       const section=e("section"),grid=e("div",undefined,"atlasGrid");section.append(e("h3",t("mapSettings")));
       const field=(key,options,value,onchange)=>{const label=e("label",t(key)),input=e("select");for(const option of options)input.add(new Option(option.label,String(option.value)));input.value=String(value);input.onchange=()=>{onchange(input.value);saveMapPreferences();};label.append(input);grid.append(label);};
       const bases=[{value:"current",label:t("currentBasemap")},...adapter.basemapOptions()];
@@ -209,7 +242,7 @@
           if(batch.length===1)throw Error(t("wordSingleTooLarge",{photo:first+1}));
           multipart=true;const middle=Math.ceil(batch.length/2);await writePart(batch.slice(0,middle),first);await writePart(batch.slice(middle),first+middle);return;
         }
-        const pad=n=>String(n).padStart(3,"0"),name=multipart?`atlas-part-${pad(written+1)}-photos-${pad(first+1)}-${pad(first+batch.length)}.docx`:"atlas.docx";
+        const pad=n=>String(n).padStart(3,"0"),name=singlePhoto?uniqueNames(snapshot.photos)[0].replace(/\.[^.]+$/,"")+".docx":multipart?`atlas-part-${pad(written+1)}-photos-${pad(first+1)}-${pad(first+batch.length)}.docx`:"atlas.docx";
         notify(label);await archive(parts,name,mime);written++;
       };
       const flush=async()=>{await writePart(pages,start);start+=pages.length;pages=[];size=0;};
@@ -220,18 +253,34 @@
         const pageBytes=map.bytes.length+image.bytes.length;
         if(pages.length&&size+pageBytes>partBudget){multipart=true;await flush();}
         const a=photo.annotation||{},height=numeric(a.Above_ground)?a.Above_ground:numeric(photo.altitudeM)&&numeric(photo.elevationM)?Number(photo.altitudeM)-Number(photo.elevationM):null;
-        const values={average:selected.averageSurveyRating,n:selected.surveyRatingCount,individual:photo.bird,time:photo.captureTime?date(photo.captureTime):null,filename:photo.filename,description:a.Env_desc_en||photo.geoDescription,remarks:a.Remarks,altitude:photo.altitudeM,height,place:[photo.country,photo.closeCity,photo.address].filter(Boolean).join(" • "),coords:located(photo)?`${photo.lat}, ${photo.lon}`:null};
+        const values={average:singlePhoto&&!Number(selected.surveyRatingCount)?t("noSurveyRating"):selected.averageSurveyRating,n:selected.surveyRatingCount,individual:photo.bird,time:photo.captureTime?date(photo.captureTime):null,filename:photo.filename,description:a.Env_desc_en||photo.geoDescription,remarks:a.Remarks,altitude:photo.altitudeM,height,place:[photo.country,photo.closeCity,photo.address].filter(Boolean).join(" • "),coords:located(photo)?`${photo.lat}, ${photo.lon}`:null};
         const lines=Object.entries(values).filter(([key,value])=>wordOptions[key]&&value!==null&&value!==undefined&&value!=="").map(([key,value])=>`${t(key)}: ${value}`);
-        pages.push({heading:wordOptions.number?`Atlas • ${i+1} / ${snapshot.photos.length}`:"Atlas",map,photo:image,lines,source:exported.source});size+=pageBytes;await yieldUI();
+        pages.push({heading:singlePhoto?photo.filename:wordOptions.number?`Atlas • ${i+1} / ${snapshot.photos.length}`:"Atlas",map,photo:image,lines,source:exported.source});size+=pageBytes;await yieldUI();
       }
       await flush();finished=true;progressText=t("wordFinished",{count:written});
       if(context.warnings.length)progressText+=" • "+context.warnings.join(" • ");
     });if(written&&!finished){progressText+=" • "+t("wordPartial",{count:written});render();}}
+    async function openSingle(id){
+      if(!singlePhoto||controller||!id)return;singleOwner=String(adapter.userId());if(!requireAccess())return;snapshot=null;screen="single";show();
+      await job(async()=>{
+        const [{photo},rating]=await Promise.all([adapter.api(`/api/photos/${encodeURIComponent(id)}`,{signal:controller.signal}),findSurveyRating(adapter.api,id,controller.signal)]);check();
+        if(!photo||String(photo.id)!==String(id))throw Error(t("photoUnavailable"));
+        snapshot={photos:[{...photo,...rating}],criteria:{...DEFAULTS},createdAt:new Date().toISOString()};
+      });
+    }
     function render(){
-      dialog.replaceChildren();const header=e("header"),heading=e("h2","Atlas");heading.id="atlasDialogTitle";dialog.setAttribute("aria-labelledby",heading.id);header.append(heading,button(controller?"cancel":"close",()=>controller?controller.abort():dialog.close()));dialog.append(header);
+      dialog.replaceChildren();const header=e("header"),heading=e("h2",singlePhoto?t("advanced"):"Atlas");heading.id=singlePhoto?"singlePhotoExportTitle":"atlasDialogTitle";dialog.setAttribute("aria-labelledby",heading.id);header.append(heading,button(controller?"cancel":"close",()=>controller?controller.abort():dialog.close()));dialog.append(header);
       if(!allowed()){dialog.append(e("p",t("locked"),"atlasNotice"));return;}
       if(controller){dialog.append(e("p",progressText));const progress=e("progress");dialog.append(progress);const status=e("p",progressText);status.dataset.atlasStatus="";status.setAttribute("role","status");dialog.append(status);return;}
-      if(screen==="config"){
+      if(singlePhoto){
+        if(snapshot){
+          const photo=snapshot.photos[0];dialog.append(e("h3",photo.filename),e("p",Number(photo.surveyRatingCount)>0?`${t("average")}: ${photo.averageSurveyRating} ★ • ${t("n")}: ${photo.surveyRatingCount}`:t("noSurveyRating")),mapSettingsPanel());
+          const grid=e("div",undefined,"atlasChecks");dialog.append(e("h3",t("wordFields")));
+          for(const key of Object.keys(wordOptions).filter(key=>!["titlePage","number"].includes(key))){const label=e("label"),input=e("input");input.type="checkbox";input.checked=wordOptions[key];input.onchange=()=>{wordOptions[key]=input.checked;};label.append(input,document.createTextNode(t(key)));grid.append(label);}dialog.append(grid,e("p",t("sourceRequired")));
+          const actions=e("div",undefined,"atlasActions"),mapButton=button("mapSingle",()=>exportMaps(true)),wordButton=button("singleWord",exportWord);mapButton.disabled=wordButton.disabled=!located(photo);
+          actions.append(button("ratedPhoto",()=>job(async()=>{const blob=await imageBlob(photo);check();download(blob,uniqueNames([photo])[0]);})),mapButton,wordButton);dialog.append(actions);if(!located(photo))dialog.append(e("p",t("noLocation"),"atlasNotice"));
+        }
+      }else if(screen==="config"){
         dialog.append(e("p",t("criteria")));const form=e("form"),grid=e("div",undefined,"atlasGrid");
         for(const [key,min,max,step] of [["count",1,10000,1],["minimum",1,5,.1],["votes",1,10000000,1],["cap",0,10000,1]]){const label=e("label",t(key)),input=e("input");input.type="number";input.min=min;input.max=max;input.step=step;input.required=true;input.value=config[key];input.oninput=()=>{config[key]=Number(input.value);};label.append(input);grid.append(label);}
         const label=e("label",t("order")),orderSelect=e("select");ORDERS.forEach(key=>orderSelect.add(new Option(t(key),key)));orderSelect.value=config.order;orderSelect.onchange=()=>{config.order=orderSelect.value;};label.append(orderSelect);grid.append(label);form.append(grid);const actions=e("div",undefined,"atlasActions"),buildButton=button("build",()=>{});buildButton.type="submit";actions.append(buildButton);if(snapshot)actions.append(button("back",()=>{screen="summary";render();}));form.append(actions);form.onsubmit=event=>{event.preventDefault();if(form.reportValidity()){config=settings(config);void build();}};dialog.append(form);
@@ -263,8 +312,9 @@
       });return true;
     }
     dialog.addEventListener("cancel",event=>{if(controller){event.preventDefault();controller.abort();}});
+    if(singlePhoto)dialog.addEventListener("click",event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom){if(controller)controller.abort();else dialog.close();}}});
     i18n.onChange(()=>{if(dialog.open)render();});
-    return{open(){if(!adapter.userId()){adapter.requestLogin();return;}if(!requireAccess())return;if(adapter.beforeOpen?.()===false)return;screen=snapshot?"summary":"config";render();show();},openMaps(index=0){if(!adapter.userId()){adapter.requestLogin();return;}if(!requireAccess()||!snapshot?.photos.length)return;mapPhotoIndex=Math.max(0,Math.min(Number(index)||0,snapshot.photos.length-1));screen="maps";render();show();},enforceAccess(){if(allowed())return;controller?.abort();if(dialog.open)render();adapter.onLocked?.();},consumeLink,get snapshot(){return snapshot;},setOrder(mode){if(!snapshot||!ORDERS.includes(mode))return;snapshot.photos=order(snapshot.photos,mode);snapshot.criteria.order=mode;config.order=mode;},label(index){const p=snapshot?.photos[index];return p?t("position",{current:index+1,total:snapshot.photos.length,rating:Number(p.averageSurveyRating).toLocaleString(i18n.language),n:p.surveyRatingCount}):"Atlas";},reset(){controller?.abort();snapshot=null;screen="config";consumedLink=null;dialog.close();adapter.onReset?.();},isOpen:()=>dialog.open};
+    return{openSingle,open(){if(!adapter.userId()){adapter.requestLogin();return;}if(!requireAccess())return;if(adapter.beforeOpen?.()===false)return;screen=snapshot?"summary":"config";render();show();},openMaps(index=0){if(!adapter.userId()){adapter.requestLogin();return;}if(!requireAccess()||!snapshot?.photos.length)return;mapPhotoIndex=Math.max(0,Math.min(Number(index)||0,snapshot.photos.length-1));screen="maps";render();show();},enforceAccess(){if(allowed())return;controller?.abort();if(dialog.open)render();adapter.onLocked?.();},consumeLink,get snapshot(){return snapshot;},setOrder(mode){if(!snapshot||!ORDERS.includes(mode))return;snapshot.photos=order(snapshot.photos,mode);snapshot.criteria.order=mode;config.order=mode;},label(index){const p=snapshot?.photos[index];return p?t("position",{current:index+1,total:snapshot.photos.length,rating:Number(p.averageSurveyRating).toLocaleString(i18n.language),n:p.surveyRatingCount}):"Atlas";},reset(){controller?.abort();snapshot=null;screen="config";consumedLink=null;dialog.close();adapter.onReset?.();},isOpen:()=>dialog.open};
   }
-  return{DEFAULTS,ORDERS,canUseAtlas,settings,located,order,select,uniqueNames,manifest,encodeLink,decodeLink,docxParts,create};
+  return{DEFAULTS,ORDERS,canUseAtlas,settings,located,order,select,uniqueNames,manifest,encodeLink,decodeLink,docxParts,findSurveyRating,createDownloadMenu,create};
 });

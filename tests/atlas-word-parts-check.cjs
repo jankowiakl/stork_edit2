@@ -7,7 +7,7 @@ assert.ok(start>0&&end>start);
 const MB=1024*1024;
 async function run(count,{mapSize=3*MB,extra=0,failAt=-1}={}){
   const files=[],photos=Array.from({length:count},(_,i)=>({id:String(i),bird:'A',filename:`photo-${i}.jpg`}));let context;
-  const state={snapshot:{photos,createdAt:'2026-10-19'},controller:{signal:{}},LIMIT:192*MB,TextEncoder,
+  const state={singlePhoto:false,snapshot:{photos,createdAt:'2026-10-19'},controller:{signal:{}},LIMIT:192*MB,TextEncoder,
     // Media buffers report their real-world sizes without allocating hundreds of MiB in a test.
     Uint8Array:class{constructor(buffer){this.length=this.byteLength=buffer.byteLength;}},
     wordOptions:{number:true,titlePage:true},t:(key,vars={})=>`${key} ${JSON.stringify(vars)}`,date:x=>x,summaryLines:()=>[],

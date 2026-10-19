@@ -193,6 +193,13 @@
 
   // Atlas uses the main application language; survey language is independent.
   const atlasTranslations={
+    downloadOptions:["Download options","Opcje pobierania"],downloadPhoto:["Download photo","Pobierz zdjęcie"],advanced:["Advanced download","Pobieranie zaawansowane"],
+    ratedPhoto:["Download photo with survey rating in filename","Pobierz zdjęcie z oceną ankietową w nazwie"],singleWord:["Download Word for this photo","Pobierz Word dla tego zdjęcia"],
+    noSurveyRating:["No survey ratings","Brak ocen ankietowych"],wordFields:["Information in Word","Informacje w Wordzie"],
+    sourceRequired:["Map attribution is always included. Word contains one landscape page with a separate map and photograph; there is no title page.","Źródła mapy są zawsze uwzględniane. Word zawiera jedną stronę poziomą z mapą i zdjęciem obok siebie, bez strony tytułowej."],
+    advancedReadOnly:["Advanced export is unavailable in shared/public read-only views. You can download the original photo using the existing authorised link.","Eksport zaawansowany nie jest dostępny w widokach Shared/Public tylko do odczytu. Możesz pobrać oryginalne zdjęcie przez istniejący uprawniony link."],
+    advancedRestricted:["Advanced export requires a signed-in account with Atlas/Photo Safe unlocked and access to the photo and map data.","Eksport zaawansowany wymaga zalogowanego konta z odblokowanym Atlasem/Photo Safe oraz dostępu do zdjęcia i danych mapowych."],
+    photoUnavailable:["The selected photo or its original filename is unavailable.","Wybrane zdjęcie lub jego oryginalna nazwa pliku są niedostępne."],
     mapsAutoSplit:["Large map ZIP exports are automatically split into numbered archives. Each contains its own manifest and settings. Allow multiple downloads if your browser asks.","Duże ZIP-y z mapami są automatycznie dzielone na ponumerowane archiwa. Każde zawiera własny manifest i ustawienia. Jeśli przeglądarka zapyta, zezwól na pobieranie wielu plików."],
     mapsPart:["ZIP part {part} • maps for photos {first}–{last} / {total}","Część ZIP {part} • mapy zdjęć {first}–{last} / {total}"],
     mapsFinished:["Map export ready: {count} ZIP file(s). If files are missing, allow multiple downloads and export again.","Eksport map gotowy: {count} plików ZIP. Jeśli brakuje plików, zezwól na pobieranie wielu plików i ponów eksport."],
