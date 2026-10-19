@@ -193,6 +193,11 @@
 
   // Atlas uses the main application language; survey language is independent.
   const atlasTranslations={
+    mapsAutoSplit:["Large map ZIP exports are automatically split into numbered archives. Each contains its own manifest and settings. Allow multiple downloads if your browser asks.","Duże ZIP-y z mapami są automatycznie dzielone na ponumerowane archiwa. Każde zawiera własny manifest i ustawienia. Jeśli przeglądarka zapyta, zezwól na pobieranie wielu plików."],
+    mapsPart:["ZIP part {part} • maps for photos {first}–{last} / {total}","Część ZIP {part} • mapy zdjęć {first}–{last} / {total}"],
+    mapsFinished:["Map export ready: {count} ZIP file(s). If files are missing, allow multiple downloads and export again.","Eksport map gotowy: {count} plików ZIP. Jeśli brakuje plików, zezwól na pobieranie wielu plików i ponów eksport."],
+    mapsPartial:["{count} complete ZIP part(s) were already sent for download; the remaining maps were not exported.","Przekazano już do pobrania kompletne części ZIP: {count}. Pozostałe mapy nie zostały wyeksportowane."],
+    mapSingleTooLarge:["The map for photo {photo} exceeds the single-archive limit. Reduce map resolution and try again.","Mapa zdjęcia {photo} przekracza limit pojedynczego archiwum. Zmniejsz rozdzielczość mapy i spróbuj ponownie."],
     wordAutoSplit:["Large Word exports are automatically split into numbered files, keeping photo order and quality. Allow multiple downloads if your browser asks.","Duże eksporty Word są automatycznie dzielone na ponumerowane pliki, bez zmiany kolejności i jakości zdjęć. Jeśli przeglądarka zapyta, zezwól na pobieranie wielu plików."],
     wordPart:["Part {part} • photos {first}–{last} / {total}","Część {part} • zdjęcia {first}–{last} / {total}"],
     wordFinished:["Word export ready: {count} file(s). If files are missing, allow multiple downloads in your browser and export again.","Eksport Word gotowy: {count} plików. Jeśli brakuje plików, zezwól przeglądarce na pobieranie wielu plików i ponów eksport."],

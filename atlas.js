@@ -44,9 +44,9 @@
       let name=base,n=2;while(used.has(name.toLowerCase()))name=`${stem}_${n++}${ext}`;used.add(name.toLowerCase());return name;
     });
   }
-  function manifest(photos){
+  function manifest(photos,{names=uniqueNames(photos),offset=0}={}){
     const cell=value=>{let s=String(value??"");if(/^[=+@\t\r]/.test(s)||(/^\-/.test(s)&&!numeric(s)))s="'"+s;return `"${s.replace(/"/g,'""')}"`;};
-    const names=uniqueNames(photos);return "\ufeff"+[["position","filename","bird","averageSurveyRating","surveyRatingCount","captureTime","lat","lon","export_filename","map_filename"],...photos.map((p,i)=>[i+1,p.filename,p.bird,p.averageSurveyRating,p.surveyRatingCount,p.captureTime,p.lat,p.lon,names[i],`${names[i]}.map.png`])].map(row=>row.map(cell).join(",")).join("\r\n");
+    return "\ufeff"+[["position","filename","bird","averageSurveyRating","surveyRatingCount","captureTime","lat","lon","export_filename","map_filename"],...photos.map((p,i)=>[offset+i+1,p.filename,p.bird,p.averageSurveyRating,p.surveyRatingCount,p.captureTime,p.lat,p.lon,names[i],`${names[i]}.map.png`])].map(row=>row.map(cell).join(",")).join("\r\n");
   }
   function encodeLink(snapshot,expiresAt){
     const data={v:1,expiresAt,criteria:snapshot.criteria,createdAt:snapshot.createdAt,photos:snapshot.photos.map(p=>({id:String(p.id),averageSurveyRating:Number(p.averageSurveyRating),surveyRatingCount:Number(p.surveyRatingCount)}))};
@@ -170,16 +170,30 @@
       section.append(grid);const checks=e("div",undefined,"atlasChecks"),resolved=resolvedMapSettings();
       for(const key of ["route","stopovers","segment"]){const label=e("label"),input=e("input");input.type="checkbox";input.checked=!!resolved[key];input.onchange=()=>{mapPreferences[key]=input.checked;saveMapPreferences();};label.append(input,document.createTextNode(t(key)));checks.append(label);}section.append(checks,e("p",t("mapExportNote")));return section;
     }
-    async function exportMaps(single=false){await job(async()=>{
-      const photos=[...snapshot.photos],names=uniqueNames(photos),indices=single?[mapPhotoIndex]:photos.map((_,i)=>i),parts=Object.create(null),context=mapExportContext();let size=0;
+    async function exportMaps(single=false){let written=0,finished=false;await job(async()=>{
+      const photos=[...snapshot.photos],names=uniqueNames(photos),indices=single?[mapPhotoIndex]:photos.map((_,i)=>i),context=mapExportContext(),partBudget=96*1024*1024;
+      let entries=[],size=0,multipart=false;
+      const writePart=async batch=>{
+        if(!batch.length)return;check();const first=batch[0].index,last=batch.at(-1).index,parts=Object.create(null);
+        for(const entry of batch)parts[`${names[entry.index]}.map.png`]=entry.bytes;
+        parts["atlas_manifest.csv"]=manifest(batch.map(entry=>photos[entry.index]),{names:batch.map(entry=>names[entry.index]),offset:first});
+        parts["atlas_map_settings.json"]=JSON.stringify(context.settings,null,2);
+        const warnings=batch.flatMap(entry=>entry.warnings);if(warnings.length)parts["atlas_map_warnings.txt"]=warnings.join("\n");
+        const bytes=Object.values(parts).reduce((sum,value)=>sum+(typeof value==="string"?new TextEncoder().encode(value).byteLength:value.byteLength),0);
+        if(bytes>LIMIT){if(batch.length===1)throw Error(t("mapSingleTooLarge",{photo:first+1}));multipart=true;const middle=Math.ceil(batch.length/2);await writePart(batch.slice(0,middle));await writePart(batch.slice(middle));return;}
+        const pad=n=>String(n).padStart(3,"0"),name=multipart?`atlas-maps-part-${pad(written+1)}-photos-${pad(first+1)}-${pad(last+1)}.zip`:"atlas-maps.zip";
+        notify(t("mapsPart",{part:written+1,first:first+1,last:last+1,total:photos.length}));await archive(parts,name,"application/zip");written++;
+      };
+      const flush=async()=>{await writePart(entries);entries=[];size=0;};
       for(let i=0;i<indices.length;i++){
         check();const index=indices[i];notify(t("progress",{current:i+1,total:indices.length}));
-        const {blob}=await mapForPhoto(photos[index],context);size+=blob.size;if(size>LIMIT)throw Error(t("memory"));
-        const name=`${names[index]}.map.png`;if(single)download(blob,name);else parts[name]=new Uint8Array(await blob.arrayBuffer());await yieldUI();
+        const warningStart=context.warnings.length,{blob}=await mapForPhoto(photos[index],context);
+        if(single){if(blob.size>LIMIT)throw Error(t("memory"));download(blob,`${names[index]}.map.png`);}
+        else{if(blob.size>LIMIT)throw Error(t("mapSingleTooLarge",{photo:index+1}));if(entries.length&&size+blob.size>partBudget){multipart=true;await flush();}entries.push({index,bytes:new Uint8Array(await blob.arrayBuffer()),warnings:context.warnings.slice(warningStart)});size+=blob.size;}await yieldUI();
       }
-      if(!single){parts["atlas_manifest.csv"]=manifest(photos);parts["atlas_map_settings.json"]=JSON.stringify(context.settings,null,2);if(context.warnings.length)parts["atlas_map_warnings.txt"]=context.warnings.join("\n");await archive(parts,"atlas-maps.zip","application/zip");}
-      if(context.warnings.length)progressText=context.warnings.join(" • ");
-    });}
+      if(!single){await flush();progressText=t("mapsFinished",{count:written});}finished=true;
+      if(context.warnings.length)progressText+=(progressText?" • ":"")+context.warnings.join(" • ");
+    });if(written&&!finished){progressText+=" • "+t("mapsPartial",{count:written});render();}}
     async function exportWord(){let written=0,finished=false;await job(async()=>{
       // Keep only one bounded document in memory. Leave room for XML and ZIP copies.
       const partBudget=96*1024*1024,context=mapExportContext(),mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -227,7 +241,7 @@
         const missing=photos.filter(p=>!located(p)).length;if(missing)dialog.append(e("p",t("missing",{count:missing}),"atlasNotice"));if(!photos.length)dialog.append(e("p",t("empty")));
         const actions=e("div",undefined,"atlasActions");if(photos.length)actions.append(button("open",async()=>{dialog.close();await adapter.openCollection(snapshot);}),button("zip",exportZip),button("maps",()=>{screen="maps";render();}),button("share",()=>{screen="share";shareValue="";render();}),button("word",()=>{screen="word";render();}));actions.append(button("settings",()=>{screen="config";render();}));dialog.append(actions);
       }else if(screen==="maps"){
-        dialog.append(e("p",t("mapsNote")),mapSettingsPanel());
+        dialog.append(e("p",t("mapsNote")),e("p",t("mapsAutoSplit")),mapSettingsPanel());
         const photoLabel=e("label",t("mapPhoto")),photoSelect=e("select");snapshot.photos.forEach((p,i)=>photoSelect.add(new Option(`${i+1}. ${p.filename} — ${p.bird}`,String(i))));mapPhotoIndex=Math.min(mapPhotoIndex,snapshot.photos.length-1);photoSelect.value=String(mapPhotoIndex);photoSelect.onchange=()=>{mapPhotoIndex=Number(photoSelect.value);};photoLabel.append(photoSelect);dialog.append(photoLabel);
         const actions=e("div",undefined,"atlasActions");actions.append(button("mapSingle",()=>exportMaps(true)),button("mapsZip",()=>exportMaps(false)),button("back",()=>{screen="summary";render();}));dialog.append(actions);
       }else if(screen==="word"){
