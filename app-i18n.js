@@ -193,6 +193,11 @@
 
   // Atlas uses the main application language; survey language is independent.
   const atlasTranslations={
+    wordAutoSplit:["Large Word exports are automatically split into numbered files, keeping photo order and quality. Allow multiple downloads if your browser asks.","Duże eksporty Word są automatycznie dzielone na ponumerowane pliki, bez zmiany kolejności i jakości zdjęć. Jeśli przeglądarka zapyta, zezwól na pobieranie wielu plików."],
+    wordPart:["Part {part} • photos {first}–{last} / {total}","Część {part} • zdjęcia {first}–{last} / {total}"],
+    wordFinished:["Word export ready: {count} file(s). If files are missing, allow multiple downloads in your browser and export again.","Eksport Word gotowy: {count} plików. Jeśli brakuje plików, zezwól przeglądarce na pobieranie wielu plików i ponów eksport."],
+    wordPartial:["{count} complete part(s) were already sent for download before the interruption; the remaining photos were not exported.","Przed przerwaniem przekazano do pobrania kompletne części: {count}. Pozostałe zdjęcia nie zostały wyeksportowane."],
+    wordSingleTooLarge:["Photo {photo} with its map exceeds the single-document limit. Reduce map export resolution and try again.","Zdjęcie {photo} wraz z mapą przekracza limit pojedynczego dokumentu. Zmniejsz rozdzielczość eksportowanej mapy i spróbuj ponownie."],
     locked:["Atlas unlocks together with Photo Safe. Continue contributing to the project to unlock this feature.","Atlas odblokowuje się razem z Photo Safe. Kontynuuj opisywanie zdjęć, aby uzyskać dostęp do tej funkcji."],
     mapSettings:["Map export settings — PNG and Word","Ustawienia eksportu map — PNG i Word"],
     detailBasemap:["Detailed map basemap","Podkład mapy szczegółowej"],

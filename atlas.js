@@ -180,21 +180,39 @@
       if(!single){parts["atlas_manifest.csv"]=manifest(photos);parts["atlas_map_settings.json"]=JSON.stringify(context.settings,null,2);if(context.warnings.length)parts["atlas_map_warnings.txt"]=context.warnings.join("\n");await archive(parts,"atlas-maps.zip","application/zip");}
       if(context.warnings.length)progressText=context.warnings.join(" • ");
     });}
-    async function exportWord(){await job(async()=>{
-      const pages=[],context=mapExportContext();let size=0;
+    async function exportWord(){let written=0,finished=false;await job(async()=>{
+      // Keep only one bounded document in memory. Leave room for XML and ZIP copies.
+      const partBudget=96*1024*1024,context=mapExportContext(),mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      let pages=[],size=0,start=0,multipart=false;
+      const coverLines=[date(snapshot.createdAt),t("summary",{photos:snapshot.photos.length,birds:new Set(snapshot.photos.map(p=>p.bird)).size}),...summaryLines().map(([k,v])=>`${k}: ${v}`)];
+      const writePart=async(batch,first)=>{
+        if(!batch.length)return;check();
+        const label=t("wordPart",{part:written+1,first:first+1,last:first+batch.length,total:snapshot.photos.length});
+        const parts=docxParts(batch,{title:t("title"),subtitle:t("subtitle"),cover:wordOptions.titlePage,coverLines:multipart?[label,...coverLines]:coverLines,source:t("mapSource")});
+        const bytes=Object.values(parts).reduce((sum,value)=>sum+(typeof value==="string"?new TextEncoder().encode(value).byteLength:value.byteLength),0);
+        // Check actual package size too: unusually long descriptions must not break a batch.
+        if(bytes>LIMIT){
+          if(batch.length===1)throw Error(t("wordSingleTooLarge",{photo:first+1}));
+          multipart=true;const middle=Math.ceil(batch.length/2);await writePart(batch.slice(0,middle),first);await writePart(batch.slice(middle),first+middle);return;
+        }
+        const pad=n=>String(n).padStart(3,"0"),name=multipart?`atlas-part-${pad(written+1)}-photos-${pad(first+1)}-${pad(first+batch.length)}.docx`:"atlas.docx";
+        notify(label);await archive(parts,name,mime);written++;
+      };
+      const flush=async()=>{await writePart(pages,start);start+=pages.length;pages=[];size=0;};
       for(let i=0;i<snapshot.photos.length;i++){
         check();const selected=snapshot.photos[i];notify(t("progress",{current:i+1,total:snapshot.photos.length}));
         const {photo:detail}=await adapter.api(`/api/photos/${encodeURIComponent(selected.id)}`,{signal:controller.signal});check();const photo={...selected,...detail,annotation:detail.annotation};
         const exported=await mapForPhoto(selected,context),map={width:exported.width,height:exported.height,type:"image/png",bytes:new Uint8Array(await exported.blob.arrayBuffer())},image=await raster(await imageBlob(photo));
-        size+=map.bytes.length+image.bytes.length;if(size>LIMIT)throw Error(t("memory"));
+        const pageBytes=map.bytes.length+image.bytes.length;
+        if(pages.length&&size+pageBytes>partBudget){multipart=true;await flush();}
         const a=photo.annotation||{},height=numeric(a.Above_ground)?a.Above_ground:numeric(photo.altitudeM)&&numeric(photo.elevationM)?Number(photo.altitudeM)-Number(photo.elevationM):null;
         const values={average:selected.averageSurveyRating,n:selected.surveyRatingCount,individual:photo.bird,time:photo.captureTime?date(photo.captureTime):null,filename:photo.filename,description:a.Env_desc_en||photo.geoDescription,remarks:a.Remarks,altitude:photo.altitudeM,height,place:[photo.country,photo.closeCity,photo.address].filter(Boolean).join(" • "),coords:located(photo)?`${photo.lat}, ${photo.lon}`:null};
         const lines=Object.entries(values).filter(([key,value])=>wordOptions[key]&&value!==null&&value!==undefined&&value!=="").map(([key,value])=>`${t(key)}: ${value}`);
-        pages.push({heading:wordOptions.number?`Atlas • ${i+1} / ${snapshot.photos.length}`:"Atlas",map,photo:image,lines,source:exported.source});await yieldUI();
+        pages.push({heading:wordOptions.number?`Atlas • ${i+1} / ${snapshot.photos.length}`:"Atlas",map,photo:image,lines,source:exported.source});size+=pageBytes;await yieldUI();
       }
-      await archive(docxParts(pages,{title:t("title"),subtitle:t("subtitle"),cover:wordOptions.titlePage,coverLines:[date(snapshot.createdAt),t("summary",{photos:snapshot.photos.length,birds:new Set(snapshot.photos.map(p=>p.bird)).size}),...summaryLines().map(([k,v])=>`${k}: ${v}`)],source:t("mapSource")}),"atlas.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-      if(context.warnings.length)progressText=context.warnings.join(" • ");
-    });}
+      await flush();finished=true;progressText=t("wordFinished",{count:written});
+      if(context.warnings.length)progressText+=" • "+context.warnings.join(" • ");
+    });if(written&&!finished){progressText+=" • "+t("wordPartial",{count:written});render();}}
     function render(){
       dialog.replaceChildren();const header=e("header"),heading=e("h2","Atlas");heading.id="atlasDialogTitle";dialog.setAttribute("aria-labelledby",heading.id);header.append(heading,button(controller?"cancel":"close",()=>controller?controller.abort():dialog.close()));dialog.append(header);
       if(!allowed()){dialog.append(e("p",t("locked"),"atlasNotice"));return;}
@@ -213,7 +231,7 @@
         const photoLabel=e("label",t("mapPhoto")),photoSelect=e("select");snapshot.photos.forEach((p,i)=>photoSelect.add(new Option(`${i+1}. ${p.filename} — ${p.bird}`,String(i))));mapPhotoIndex=Math.min(mapPhotoIndex,snapshot.photos.length-1);photoSelect.value=String(mapPhotoIndex);photoSelect.onchange=()=>{mapPhotoIndex=Number(photoSelect.value);};photoLabel.append(photoSelect);dialog.append(photoLabel);
         const actions=e("div",undefined,"atlasActions");actions.append(button("mapSingle",()=>exportMaps(true)),button("mapsZip",()=>exportMaps(false)),button("back",()=>{screen="summary";render();}));dialog.append(actions);
       }else if(screen==="word"){
-        dialog.append(e("p",t("mapNote")),mapSettingsPanel());const grid=e("div",undefined,"atlasChecks");for(const key of Object.keys(wordOptions)){const label=e("label"),input=e("input");input.type="checkbox";input.checked=wordOptions[key];input.onchange=()=>{wordOptions[key]=input.checked;};label.append(input,document.createTextNode(t(key)));grid.append(label);}dialog.append(grid);const actions=e("div",undefined,"atlasActions");actions.append(button("word",exportWord),button("back",()=>{screen="summary";render();}));dialog.append(actions);
+        dialog.append(e("p",t("mapNote")),e("p",t("wordAutoSplit")),mapSettingsPanel());const grid=e("div",undefined,"atlasChecks");for(const key of Object.keys(wordOptions)){const label=e("label"),input=e("input");input.type="checkbox";input.checked=wordOptions[key];input.onchange=()=>{wordOptions[key]=input.checked;};label.append(input,document.createTextNode(t(key)));grid.append(label);}dialog.append(grid);const actions=e("div",undefined,"atlasActions");actions.append(button("word",exportWord),button("back",()=>{screen="summary";render();}));dialog.append(actions);
       }else if(screen==="share"){
         dialog.append(e("p",t("linkNote"),"atlasNotice"));const label=e("label",t("expiry")),expiry=e("select"),custom=e("input");for(const days of [1,7,14,30])expiry.add(new Option(t("days",{n:days}),String(days)));expiry.add(new Option(t("custom"),"custom"));expiry.value="14";custom.type="datetime-local";custom.hidden=true;
         const output=e("textarea");output.rows=4;output.readOnly=true;output.setAttribute("aria-label",t("share"));
