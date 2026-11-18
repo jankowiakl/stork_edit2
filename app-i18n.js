@@ -192,6 +192,11 @@
   document.addEventListener("click",(event)=>{const button=event.target.closest?.("[data-app-lang]");if(button)setLanguage(button.dataset.appLang);});
 
   const surveyExportTranslations={
+    surveyData:["Downloading survey data…","Pobieranie danych ankietowych…"],merging:["Joining photograph data…","Łączenie danych fotografii…"],matched:["Matched {count} of {total} photographs.","Dopasowano {count} z {total} fotografii."],
+    creatingCsv:["Creating CSV file…","Tworzenie pliku CSV…"],creatingXlsx:["Creating XLSX file…","Tworzenie pliku XLSX…"],
+    unmatched:["Warning: data could not be matched for {count} photo IDs. All survey ratings are retained; unavailable photo fields are blank.","Uwaga: nie udało się dopasować danych dla {count} identyfikatorów zdjęć. Zachowano wszystkie oceny ankietowe; niedostępne pola zdjęć są puste."],
+    invalidCsv:["Invalid survey CSV or missing photo_id column. Export stopped to protect data integrity.","Nieprawidłowy CSV ankietowy lub brak kolumny photo_id. Eksport zatrzymano, aby uniknąć uszkodzenia danych."],
+    xlsxLimit:["The dataset exceeds Excel worksheet limits. Use CSV instead.","Zbiór przekracza limity arkusza Excel. Wybierz CSV."],xlsxCellLimit:["A value cannot be stored in an XLSX cell without data loss. Use CSV instead.","Wartości nie można zapisać w komórce XLSX bez utraty danych. Wybierz CSV."],
     title:["Survey data export","Eksport danych ankietowych"],summary:["Summary","Podsumowanie"],long:["Long","Long"],longPhotos:["Long + photos","Long + zdjęcia"],
     preparing:["Preparing data and generating the file on the server…","Przygotowywanie danych i generowanie pliku na serwerze…"],
     downloading:["Downloading data…","Pobieranie danych…"],saving:["Saving file…","Zapisywanie pliku…"],
