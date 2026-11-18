@@ -45,7 +45,7 @@
       if(!Array.isArray(data.responses))fail("invalidResponseData");return{id,responses:data.responses};
     });
     for(const {id,responses} of lists)for(const response of responses){
-      if(!response.id)fail("invalidResponseData");
+      if(!response.id||!["started","completed"].includes(response.status))fail("invalidResponseData");
       // Also cover a response completed between the CSV snapshot and the results request.
       if(response.status==="started"||(response.status==="completed"&&!known.has(responseKey(id,response.id))))jobs.set(responseKey(id,response.id),{campaign:id,id:String(response.id)});
     }
