@@ -7,13 +7,14 @@
     title.id="surveyExportTitle";dialog.setAttribute("aria-labelledby",title.id);status.setAttribute("role","status");status.setAttribute("aria-live","polite");details.className="miniNote";action.type="button";action.className="secondary";
     const warning=document.createElement("p");warning.className="atlasNotice";warning.setAttribute("role","status");
     dialog.append(title,dataset,status,progress,details,action,warning);document.body.append(dialog);
-    let controller=null,stage="preparing",labelKey="",format="",received=0,total=0,errorText="",trigger=null,photoProgress=null,missing=0;
+    let controller=null,stage="preparing",labelKey="",format="",received=0,total=0,errorText="",trigger=null,photoProgress=null,missing=0,responseProgress=null;
     const render=()=>{
       title.textContent=t("surveyExport.title");dataset.textContent=`${t(labelKey)} ${format.toUpperCase()}`;
-      status.textContent=t(`surveyExport.${stage}`)+(stage==="merging"&&photoProgress?` ${t("surveyExport.matched",{count:photoProgress.matched,total:photoProgress.total})}`:"")+(errorText?` ${errorText}`:"");
+      status.textContent=(stage==="incomplete"&&responseProgress?t("surveyExport.incomplete",responseProgress):t(`surveyExport.${stage}`))+(stage==="merging"&&photoProgress?` ${t("surveyExport.matched",{count:photoProgress.matched,total:photoProgress.total})}`:"")+(errorText?` ${errorText}`:"");
       progress.setAttribute("aria-label",t("surveyExport.progress"));progress.hidden=["done","cancelled","error"].includes(stage);
       const measurable=stage==="downloading"&&total>0&&received<=total;
-      if(stage==="merging"&&photoProgress?.total){progress.max=photoProgress.total;progress.value=photoProgress.processed;}
+      if(stage==="incomplete"&&responseProgress?.total){progress.max=responseProgress.total;progress.value=responseProgress.done;}
+      else if(stage==="merging"&&photoProgress?.total){progress.max=photoProgress.total;progress.value=photoProgress.processed;}
       else if(measurable){progress.max=total;progress.value=received;}else progress.removeAttribute("value");
       details.textContent=received?t("surveyExport.bytes",{count:received.toLocaleString()})+(measurable?` (${Math.floor(100*received/total)}%)`:""):"";
       action.textContent=t(controller?"editor.cancel":"help.close");
@@ -24,10 +25,10 @@
     dialog.addEventListener("cancel",event=>{if(controller){event.preventDefault();cancel();}});
     dialog.addEventListener("close",()=>{cancel();trigger?.focus({preventScroll:true});});
     onChange?.(()=>{if(dialog.open)render();});
-    async function download({url,filename,label,format:extension,button,withPhotos=false,filenameOnly=false}){
+    async function download({url,filename,label,format:extension,button,withPhotos=false,filenameOnly=false,campaignId=null}){
       if(controller){if(!dialog.open)dialog.showModal();return;}
       const enrichPhotos=withPhotos||filenameOnly;
-      const active=new AbortController(),owner=userId?.();controller=active;trigger=button;labelKey=label;format=extension;stage=enrichPhotos?"surveyData":"preparing";received=0;total=0;errorText="";photoProgress=null;missing=0;
+      const active=new AbortController(),owner=userId?.();controller=active;trigger=button;labelKey=label;format=extension;stage=enrichPhotos?"surveyData":"preparing";received=0;total=0;errorText="";photoProgress=null;missing=0;responseProgress=null;
       const wasDisabled=button?.disabled;if(button)button.disabled=true;render();dialog.showModal();
       const check=()=>{if(active.signal.aborted||(userId&&owner!==userId()))throw new DOMException("Cancelled","AbortError");};
       let reader;
@@ -46,8 +47,10 @@
           blob=new Blob(chunks,{type:response.headers.get("Content-Type")||"application/octet-stream"});
         }else{blob=await response.blob();received=blob.size;}
         if(enrichPhotos){
-          check();stage="merging";render();const exporter=root.StorkSurveyPhotoExport;
-          const table=await exporter.parseCsv(await blob.text(),check);
+          check();stage="checkingResponses";render();const exporter=root.StorkSurveyPhotoExport;
+          const original=await exporter.parseCsv(await blob.text(),check);
+          const table=await exporter.appendIncompleteRatings(original,{request,signal:active.signal,check,campaignId,onProgress:value=>{responseProgress=value;stage="incomplete";render();},onMerge:()=>{stage="joining";render();}});
+          check();stage="merging";render();
           const merged=await exporter.enrich(table,{request,signal:active.signal,check,filenameOnly,onProgress:value=>{photoProgress=value;missing=value.missing;render();}});
           check();missing=merged.missing;stage=format==="xlsx"?"creatingXlsx":"creatingCsv";render();
           blob=format==="xlsx"?await exporter.xlsxBlob(merged,{check,signal:active.signal}):await exporter.csvBlob(merged,check);received=blob.size;total=0;

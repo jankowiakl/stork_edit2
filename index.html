@@ -3854,7 +3854,7 @@ loopCurrentEl.checked = false;
     const type=button.dataset.surveyExport,format=button.dataset.exportFormat,withPhotos=type==="longPhotos",filenameOnly=type==="long",suffix=withPhotos?"-with-photos":"";
     const path=campaignId?`/api/surveys/${encodeURIComponent(campaignId)}/export`:`/api/survey-results/export-${type==="summary"?"summary":"long"}`;
     const filename=(campaignId?`survey-${campaignId}-long${suffix}`:type==="summary"?"survey-summary":`all-surveys-long${suffix}`)+`.${format}`;
-    void surveyDataDownload.download({url:`${path}?format=${withPhotos||filenameOnly?"csv":format}`,filename,label:`surveyExport.${type}`,format,button,withPhotos,filenameOnly});
+    void surveyDataDownload.download({url:`${path}?format=${withPhotos||filenameOnly?"csv":format}`,filename,label:`surveyExport.${type}`,format,button,withPhotos,filenameOnly,campaignId});
   }));
   const showSurveyCampaignResults=async(campaignId)=>{
     setDataStatus("Loading campaign research results…");

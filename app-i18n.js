@@ -192,6 +192,8 @@
   document.addEventListener("click",(event)=>{const button=event.target.closest?.("[data-app-lang]");if(button)setLanguage(button.dataset.appLang);});
 
   const surveyExportTranslations={
+    checkingResponses:["Checking survey responses…","Sprawdzanie odpowiedzi ankietowych…"],incomplete:["Downloading ratings from incomplete surveys: {done} of {total}.","Pobieranie ocen z niekompletnych ankiet: {done} z {total}."],joining:["Joining data…","Łączenie danych…"],
+    invalidResponseData:["Incomplete or inconsistent response data. Export stopped; no partial file was saved.","Niekompletne lub niespójne dane odpowiedzi. Eksport zatrzymano; nie zapisano częściowego pliku."],
     surveyData:["Downloading survey data…","Pobieranie danych ankietowych…"],merging:["Joining photograph data…","Łączenie danych fotografii…"],matched:["Matched {count} of {total} photographs.","Dopasowano {count} z {total} fotografii."],
     creatingCsv:["Creating CSV file…","Tworzenie pliku CSV…"],creatingXlsx:["Creating XLSX file…","Tworzenie pliku XLSX…"],
     unmatched:["Warning: data could not be matched for {count} photo IDs. All survey ratings are retained; unavailable photo fields are blank.","Uwaga: nie udało się dopasować danych dla {count} identyfikatorów zdjęć. Zachowano wszystkie oceny ankietowe; niedostępne pola zdjęć są puste."],

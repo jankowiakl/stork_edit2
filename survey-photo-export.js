@@ -25,6 +25,59 @@
     if(!headers.includes("photo_id")||new Set(headers).size!==headers.length||rows.some(values=>values.length!==headers.length))fail("invalidCsv");
     return{headers,rows};
   }
+  async function appendIncompleteRatings(table,{request,signal,campaignId=null,check=()=>{},onProgress=()=>{},onMerge=()=>{}}){
+    for(const key of ["survey_id","response_id","photo_id","rating"])if(!table.headers.includes(key))fail("invalidCsv");
+    const json=async url=>{check();const response=await request(url,{signal});check();if(!response.ok)throw Error(`HTTP ${response.status}`);const data=await response.json();check();return data;};
+    const limited=async(items,fn)=>{
+      let cursor=0,failure;const results=new Array(items.length);
+      const worker=async()=>{while(cursor<items.length&&!failure){const index=cursor++;try{check();results[index]=await fn(items[index]);}catch(error){failure=error;throw error;}}};
+      await Promise.allSettled(Array.from({length:Math.min(4,items.length)},worker));if(failure)throw failure;check();return results;
+    };
+    const validRating=value=>["number","string"].includes(typeof value)&&String(value).trim()!==""&&Number.isInteger(Number(value))&&Number(value)>=1&&Number(value)<=5;
+    const column=key=>table.headers.indexOf(key),responseKey=(survey,id)=>JSON.stringify([String(survey),String(id)]);
+    const known=new Set(table.rows.filter(row=>validRating(row[column("rating")])).map(row=>responseKey(row[column("survey_id")],row[column("response_id")])));
+    let campaigns;
+    if(campaignId)campaigns=[String(campaignId)];
+    else{const data=await json("/api/surveys");if(!Array.isArray(data.campaigns)||data.campaigns.some(c=>!c.id))fail("invalidResponseData");campaigns=[...new Set(data.campaigns.map(c=>String(c.id)))];}
+    const jobs=new Map();
+    const lists=await limited(campaigns,async id=>{
+      const data=await json(`/api/surveys/${encodeURIComponent(id)}/results`);
+      if(!Array.isArray(data.responses))fail("invalidResponseData");return{id,responses:data.responses};
+    });
+    for(const {id,responses} of lists)for(const response of responses){
+      if(!response.id)fail("invalidResponseData");
+      // Also cover a response completed between the CSV snapshot and the results request.
+      if(response.status==="started"||(response.status==="completed"&&!known.has(responseKey(id,response.id))))jobs.set(responseKey(id,response.id),{campaign:id,id:String(response.id)});
+    }
+    let done=0;onProgress({done,total:jobs.size});
+    const details=await limited([...jobs.values()],async job=>{
+      const {response}=await json(`/api/surveys/${encodeURIComponent(job.campaign)}/responses/${encodeURIComponent(job.id)}`);
+      if(!response||String(response.id)!==job.id||!Array.isArray(response.photos)||!["started","completed"].includes(response.status))fail("invalidResponseData");
+      done++;onProgress({done,total:jobs.size});return{campaign:job.campaign,response};
+    });
+    onMerge();await pause();check();
+    const headers=[...table.headers];if(!headers.includes("response_status"))headers.splice(headers.indexOf("response_id")+1,0,"response_status");
+    const sourceIndices=headers.map(key=>table.headers.indexOf(key)),statusIndex=headers.indexOf("response_status"),rows=[],seen=new Set();
+    const add=(row)=>{
+      const id=row[headers.indexOf("response_id")],photo=row[headers.indexOf("photo_id")];
+      if(!id||!photo||!validRating(row[headers.indexOf("rating")]))return;
+      const key=JSON.stringify([String(id),String(photo)]);if(seen.has(key))return;seen.add(key);rows.push(row);
+    };
+    for(let i=0;i<table.rows.length;i++){
+      if(i%500===0){await pause();check();}
+      const row=sourceIndices.map(index=>index<0?"":table.rows[i][index]);if(!row[statusIndex])row[statusIndex]="completed";add(row);
+    }
+    for(const {campaign,response} of details){
+      const values={survey_id:campaign,response_id:response.id,response_status:response.status,started_at:response.startedAt??"",completed_at:response.completedAt??"",duration:response.duration??"",quality_flags:(response.qualityFlags||[]).join("|"),included:response.included,demographics:JSON.stringify(response.demographics??{})};
+      for(let i=0;i<response.photos.length;i++){
+        if(i%500===0){await pause();check();}
+        const photo=response.photos[i];if(!validRating(photo.rating))continue;if(!photo.id)fail("invalidResponseData");
+        const data={...values,photo_id:photo.id,filename:photo.filename??"",rating:photo.rating};
+        add(headers.map(key=>Object.hasOwn(data,key)?data[key]??"":response.demographics?.[key]??""));
+      }
+    }
+    return{headers,rows};
+  }
   function project(photo,filenameOnly=false){
     const result={filename:photo.filename??""};
     if(filenameOnly)return result;
@@ -102,5 +155,5 @@
       if(signal?.aborted)abort();
     });check();return new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   }
-  root.StorkSurveyPhotoExport={parseCsv,enrich,csvBlob,xlsxBlob,photoColumns};
+  root.StorkSurveyPhotoExport={parseCsv,appendIncompleteRatings,enrich,csvBlob,xlsxBlob,photoColumns};
 })(typeof window!=="undefined"?window:globalThis);
