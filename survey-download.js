@@ -24,9 +24,10 @@
     dialog.addEventListener("cancel",event=>{if(controller){event.preventDefault();cancel();}});
     dialog.addEventListener("close",()=>{cancel();trigger?.focus({preventScroll:true});});
     onChange?.(()=>{if(dialog.open)render();});
-    async function download({url,filename,label,format:extension,button,withPhotos=false}){
+    async function download({url,filename,label,format:extension,button,withPhotos=false,filenameOnly=false}){
       if(controller){if(!dialog.open)dialog.showModal();return;}
-      const active=new AbortController(),owner=userId?.();controller=active;trigger=button;labelKey=label;format=extension;stage=withPhotos?"surveyData":"preparing";received=0;total=0;errorText="";photoProgress=null;missing=0;
+      const enrichPhotos=withPhotos||filenameOnly;
+      const active=new AbortController(),owner=userId?.();controller=active;trigger=button;labelKey=label;format=extension;stage=enrichPhotos?"surveyData":"preparing";received=0;total=0;errorText="";photoProgress=null;missing=0;
       const wasDisabled=button?.disabled;if(button)button.disabled=true;render();dialog.showModal();
       const check=()=>{if(active.signal.aborted||(userId&&owner!==userId()))throw new DOMException("Cancelled","AbortError");};
       let reader;
@@ -36,7 +37,7 @@
         const length=Number(response.headers.get("Content-Length"));
         // Compressed Content-Length is not the decoded stream length.
         total=!response.headers.get("Content-Encoding")&&Number.isSafeInteger(length)&&length>0?length:0;
-        stage=withPhotos?"surveyData":"downloading";render();let blob;
+        stage=enrichPhotos?"surveyData":"downloading";render();let blob;
         if(response.body?.getReader){
           reader=response.body.getReader();const chunks=[];
           const abortReader=()=>{void reader.cancel().catch(()=>{});};active.signal.addEventListener("abort",abortReader,{once:true});
@@ -44,10 +45,10 @@
           finally{active.signal.removeEventListener("abort",abortReader);}
           blob=new Blob(chunks,{type:response.headers.get("Content-Type")||"application/octet-stream"});
         }else{blob=await response.blob();received=blob.size;}
-        if(withPhotos){
+        if(enrichPhotos){
           check();stage="merging";render();const exporter=root.StorkSurveyPhotoExport;
           const table=await exporter.parseCsv(await blob.text(),check);
-          const merged=await exporter.enrich(table,{request,signal:active.signal,check,onProgress:value=>{photoProgress=value;missing=value.missing;render();}});
+          const merged=await exporter.enrich(table,{request,signal:active.signal,check,filenameOnly,onProgress:value=>{photoProgress=value;missing=value.missing;render();}});
           check();missing=merged.missing;stage=format==="xlsx"?"creatingXlsx":"creatingCsv";render();
           blob=format==="xlsx"?await exporter.xlsxBlob(merged,{check,signal:active.signal}):await exporter.csvBlob(merged,check);received=blob.size;total=0;
         }

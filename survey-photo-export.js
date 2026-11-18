@@ -25,13 +25,14 @@
     if(!headers.includes("photo_id")||new Set(headers).size!==headers.length||rows.some(values=>values.length!==headers.length))fail("invalidCsv");
     return{headers,rows};
   }
-  function project(photo){
+  function project(photo,filenameOnly=false){
     const result={filename:photo.filename??""};
+    if(filenameOnly)return result;
     for(const [key,source] of Object.entries(photoFields))result[key]=photo[source]??"";
     for(const key of annotationFields)result[`photo_${key.toLowerCase()}`]=photo.annotation?.[key]??"";
     return result;
   }
-  async function enrich(table,{request,signal,check=()=>{},onProgress=()=>{}}){
+  async function enrich(table,{request,signal,check=()=>{},onProgress=()=>{},filenameOnly=false}){
     const idColumn=table.headers.indexOf("photo_id"),ids=[...new Set(table.rows.map(row=>row[idColumn]))];
     // Per-export cache is deliberately not persisted or reused between accounts.
     const cache=new Map();let cursor=0,processed=0,matched=0;
@@ -42,7 +43,7 @@
         try{
           if(id){const response=await request(`/api/photos/${encodeURIComponent(id)}`,{signal});check();if(!response.ok)throw Error(`HTTP ${response.status}`);
             const payload=await response.json();check();
-            if(payload.photo&&String(payload.photo.id)===id)data=project(payload.photo);
+            if(payload.photo&&String(payload.photo.id)===id)data=project(payload.photo,filenameOnly);
           }
         }catch(error){check();if(error.name==="AbortError")throw error;}
         cache.set(id,data);processed++;if(data)matched++;report();
@@ -51,10 +52,13 @@
     // Keep all workers settled on cancellation so no request outlives this export.
     const results=await Promise.allSettled(Array.from({length:Math.min(4,ids.length)},worker));
     const failed=results.find(result=>result.status==="rejected");if(failed)throw failed.reason;check();
-    const headers=[...table.headers,...photoColumns.filter(key=>!table.headers.includes(key))],positions=photoColumns.map(key=>[key,headers.indexOf(key)]),rows=[];
+    const columns=filenameOnly?["filename"]:photoColumns;
+    const headers=filenameOnly?table.headers.filter(key=>key!=="filename"):[...table.headers,...columns.filter(key=>!table.headers.includes(key))];
+    if(filenameOnly)headers.splice(headers.indexOf("photo_id")+1,0,"filename");
+    const sourceIndices=headers.map(key=>table.headers.indexOf(key)),positions=columns.map(key=>[key,headers.indexOf(key)]),rows=[];
     for(let i=0;i<table.rows.length;i++){
       if(i%500===0){await pause();check();}
-      const original=table.rows[i],data=cache.get(original[idColumn]),row=[...original,...Array(headers.length-original.length).fill("")];
+      const original=table.rows[i],data=cache.get(original[idColumn]),row=sourceIndices.map(index=>index<0?"":original[index]);
       if(data)for(const [key,index] of positions)row[index]=data[key];
       rows.push(row);
     }

@@ -1,5 +1,5 @@
 const CACHE_PREFIX="stork-edit2-";
-const BUILD_VERSION="2026-11-18-68";
+const BUILD_VERSION="2026-11-18-69";
 const CACHE_NAME=`stork-edit2-shell-v${BUILD_VERSION}`;
 const APP_SHELL=[`./survey-photo-export.js?v=${BUILD_VERSION}`,`./survey-download.js?v=${BUILD_VERSION}`,`./app-i18n.js?v=${BUILD_VERSION}`,`./config.js?v=${BUILD_VERSION}`,`./viewer-interactions.js?v=${BUILD_VERSION}`,`./atlas.js?v=${BUILD_VERSION}`,`./atlas-map.js?v=${BUILD_VERSION}`,`./atlas.css?v=${BUILD_VERSION}`,`./vendor/fflate.min.js?v=${BUILD_VERSION}`,`./vendor/qrcode.min.js?v=${BUILD_VERSION}`,`./vendor/jspdf.umd.min.js?v=${BUILD_VERSION}`,`./manifest.webmanifest?v=${BUILD_VERSION}`,"./icons/icon.svg","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png"];
 const shellUrl=(path)=>new URL(path,self.registration.scope).href;
