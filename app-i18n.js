@@ -191,6 +191,16 @@
   observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
   document.addEventListener("click",(event)=>{const button=event.target.closest?.("[data-app-lang]");if(button)setLanguage(button.dataset.appLang);});
 
+  const surveyExportTranslations={
+    title:["Survey data export","Eksport danych ankietowych"],summary:["Summary","Podsumowanie"],long:["Long","Long"],longPhotos:["Long + photos","Long + zdjęcia"],
+    preparing:["Preparing data and generating the file on the server…","Przygotowywanie danych i generowanie pliku na serwerze…"],
+    downloading:["Downloading data…","Pobieranie danych…"],saving:["Saving file…","Zapisywanie pliku…"],
+    done:["Completed. The file has been handed to your browser for saving.","Zakończono. Plik został przekazany przeglądarce do zapisania."],
+    cancelled:["Download cancelled. No file was saved.","Pobieranie anulowane. Nie zapisano pliku."],error:["Export failed:","Eksport nie powiódł się:"],
+    progress:["Export progress","Postęp eksportu"],bytes:["File downloaded: {count} bytes","Pobrano: {count} bajtów"]
+  };
+  for(const [key,[en,pl]] of Object.entries(surveyExportTranslations)){APP_TRANSLATIONS.en[`surveyExport.${key}`]=en;APP_TRANSLATIONS.pl[`surveyExport.${key}`]=pl;}
+
   // Atlas uses the main application language; survey language is independent.
   const atlasTranslations={
     downloadOptions:["Download options","Opcje pobierania"],downloadPhoto:["Download photo","Pobierz zdjęcie"],advanced:["Advanced download","Pobieranie zaawansowane"],

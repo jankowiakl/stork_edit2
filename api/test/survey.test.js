@@ -150,7 +150,7 @@ test("quality flags cover identical, low variance and unusually fast responses",
 });
 
 test("long and summary exports expose the intended research columns",()=>{
-  assert.deepEqual(SURVEY_LONG_HEADERS.slice(0,4),["survey_id","response_id","photo_id","rating"]);
+  assert.deepEqual(SURVEY_LONG_HEADERS.slice(0,5),["survey_id","response_id","photo_id","filename","rating"]);
   assert.ok(SURVEY_LONG_HEADERS.includes("white_stork_knowledge"));
   assert.ok(SURVEY_LONG_HEADERS.includes("quality_flags"));
   assert.ok(SURVEY_SUMMARY_HEADERS.includes("completion_rate_percent"));
